@@ -41,6 +41,8 @@ Constraints:
 - Legacy `HectonVisorUberPost.shader` quality gates for heat haze, VR comfort mask blending, light shafts, water refraction, and droplet refraction use continuous `smoothstep`/`lerp` weights; no hard low-tier branch is accepted for those paths.
 - Loop 29 also removes the hard low-tier VR comfort spatial edge: both comfort mask paths use `smoothstep(0.36, 0.48, edge01)` instead of `step(0.42, edge01)`.
 - Loop 30 removes the mobile waterline camera-crossing cliff: `cameraSubmerged` uses `smoothstep(-softness, softness, (waterlineY - 0.03) - cameraPosition.y)` rather than a hard `step`.
+- Loop 31 removes hard crack reveal thresholds: procedural and texture-driven crack reveals use narrow `smoothstep` bands against `damage01`.
+- Loop 32 removes the radial falloff exponent-family snap: `FastRadialFalloff01()` blends low/high polynomial approximations with `smoothstep(1.85, 2.15, e)`.
 - No active Noir synchronous Burst job route remains; batched visor wound work still uses Burst, while the one-record Noir CBuffer math stays owner-local to avoid a scheduler tax.
 - No runtime damage ingress path may call `EnsureInitialized()`; cold initialization is confined to `TryInitializeColdStorage`, hot-swap rebind, CSV/profile/editor tuning, mock generation, and fault dump/bootstrap lanes.
 - Active wounds scale continuously from 8 to 128 via `HomeostasisBrain.GlobalQualityWeight`; thermal pressure accelerates fade.
@@ -49,7 +51,7 @@ Constraints:
 - Gameplay authority and rollback state are not mutated by the renderer; wounds are presentation-only signal consumers.
 
 Proof:
-- `Tools/Decal_Projector_Inquisition.py` latest SHINOBU_275 run 2026-05-21T23:37:35Z reports 0 active GameObject/URP decal violations.
+- `Tools/Decal_Projector_Inquisition.py` latest SHINOBU_275 run 2026-05-21T23:42:38Z reports 0 active GameObject/URP decal violations.
 - Binary payload ledger and route card are synchronized with the active C#/HLSL ABI: offset 72 is `BirthTime`; lifetime is packed inside `DecalTypeHash` bits 8..23, shader branch reads low 4 type bits, and atlas sampling reads bits 4..7.
 - Black-box telemetry uses 300 `VisorWoundTelemetryEntry` records and dumps to `Docs/AgentLogs/Dump_SHINOBU_275.bin` on layout/non-finite/upload faults. Loop 21 format is a fixed 16-byte little-endian header followed by 300 fixed 64-byte telemetry rows written through stack spans; no `BinaryWriter` is used.
 - Shader binding proof: `Hecton_VisorGlitchACES.shader.meta` GUID `2b2a9f18d90f4b35b8b4f9d1a8e23501`; `Hecton_VisorWounds.shader.meta` GUID `0a2df57d7a4e4d44a95b1b4c4bfb2750`.

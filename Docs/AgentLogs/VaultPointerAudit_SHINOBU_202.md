@@ -935,3 +935,4 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - Telemetry readback uses pure `TryReadHandle` after exact BufferID, `SystemID.GameplayRadiation`, and nonzero generation validation.
 - Tuning mutation uses `TryAcquireWriteLock` and releases the owner write lock in `finally`.
 - This entry does not change `RadiationTuningDTO`, `RadiationTelemetryEntry`, BufferIDs `Shinobu274RadiationTuning`, `Shinobu274RadiationTelemetryRing`, `Shinobu274RadiationTelemetryCursor`, shader preview globals, or GameplayRadiation authority.
+- Build note: guarded solution build after this editor patch failed in external Visor RenderGraph binding code (`DeferredDecalPass.cs:245`, `HectonVisorUberPostFeature.cs:584-587`) and reported no errors in `RadiationShieldingTunerWindow.cs`. SHINOBU_202 does not claim the Visor render-binding route.

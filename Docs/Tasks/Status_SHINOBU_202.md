@@ -4259,4 +4259,8 @@ Mandates read before coding:
 - Descriptor route scan confirmed `TryReadRadiationVaultBuffer`, `IsRadiationVaultHandle`, `VaultGenerationHandle<T>`, `TryAcquireWriteLock`, `ReleaseWriteLock`, `TryReadHandle`, and `SystemID.GameplayRadiation`.
 - Brace/preprocessor counts are balanced: `RadiationShieldingTunerWindow.cs` braces `75/75`, preprocessor `#if/#endif` `0/0`.
 - `git diff --check` passed for `RadiationShieldingTunerWindow.cs`; CRLF warning only.
-- Build not relaunched after this editor patch: CPU sampled at 100 percent and compiler activity was present.
+- Initial build was deferred because CPU sampled at 100 percent with compiler activity. After the gate cleared, guarded `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` failed outside this domain: `DeferredDecalPass.cs:245` and `HectonVisorUberPostFeature.cs:584-587` call `RasterCommandBuffer.SetGlobalTexture` with integer shader IDs and `Texture`/`Texture2DArray` objects where the active overload expects `string` plus `TextureHandle`. Build result: 10 errors, 29 warnings, elapsed `00:01:29.56`. No `RadiationShieldingTunerWindow.cs` errors were reported.
+
+## Compile Wall Note 233
+- [BLOCKED BY EXTERNAL VISOR DEPENDENCY] Current source still contains the Visor `SetGlobalTexture(int, Texture*)` RenderGraph binding regression in `Assets/_Project/Scripts/Visor/DeferredDecalPass.cs` and `Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs`. This SHINOBU_202 loop does not claim or edit the Visor render binding route.
+- Rebuild is currently prohibited again: `dotnet.exe` and `csc.exe` are active, so another build would violate the compiler-process gate.

@@ -194,6 +194,31 @@ Exact microseconds saved:
   <BINARY_GATE vocal_bank="H8VB_SCHEMA_VALIDATED" remaining_failure="STATIC_DATA_MISSING" remaining_owner="DataMonolith"/>
 </SELF_AUDIT_UPDATE>
 
+## 2026-05-22 Post-Compaction Loop 21 Verification
+
+What was wrong:
+- Active memory files still said Loop 21 was pending verification after the donor reference and stale generated-report wall was added.
+- Build execution was still forbidden by the project gate: active `csc` and `dotnet` processes were present, and CPU sampled at 98.6 percent.
+
+What was done:
+- Reran static verification only: py_compile for Crest proof tools, `Tools/Crest_Dependency_Scanner.py`, `Tools/Crest_Quarantine_Polish_Audit.py`, exact profiler CSV archive checks, exact absent HDRP/PostProcessing reference checks, JSON/XML report parse, focused hot-path rg scan, and `git diff --check`.
+- Updated `Docs/Tasks/Status_SHINOBU_260.md` and `Docs/AgentLogs/Rationale_SHINOBU_260.md` from pending verification to static verified with Task 12 still blocked by dependency.
+
+Cinematic Cheats used:
+- None added in this verification loop. Existing Dear Lie route remains deterministic deferred/mock ocean sampling behind the strict bridge contract.
+
+Exact Microseconds saved:
+- Runtime: 0 microseconds claimed for this proof loop.
+- Developer iteration: avoided forbidden rebuild under active compiler/CPU contention; static scanner remains `breach_count=0`, polish audit remains `failed_count=0`.
+
+Verification:
+- `python -m py_compile Tools\Crest_Baseline_Archiver.py Tools\Crest_Dependency_Scanner.py Tools\Crest_Quarantine_Polish_Audit.py`: PASS.
+- `python Tools\Crest_Dependency_Scanner.py`: `breach_count=0`, `global_scripting_define_hit_count=1`, `compliance_denylist_hit_count=6`, `vocabulary_debt_hit_count=111`.
+- `python Tools\Crest_Quarantine_Polish_Audit.py`: `status=PASS`, `failed_count=0`.
+- Exact gates: active `Assets/profilermarkers.csv` absent; archived profiler CSV present; selected Crest donor asmdef/package files contain no absent HDRP/PostProcessing references.
+- Focused hot-path rg scan: no Pack=1, hot auto-properties, foreach, hidden `.Complete()`, LINQ, `UnityEngine.Random`, or private native collection allocation hits in checked Crest/Environment surfaces.
+- Rebuild: not launched; gate blocked by active `csc` and `dotnet` with CPU at 98.6 percent.
+
 ## 2026-05-22 Donor Reference And Generated Report Wall
 
 What was wrong:

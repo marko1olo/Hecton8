@@ -120,6 +120,17 @@ Loop 30 mobile waterline smoothstep correction:
 - It now uses the existing softness scalar as `smoothstep(-softness, softness, (waterlineY - 0.03) - cameraPosition.y)`.
 - Scanner PASS timestamp is 2026-05-21T23:37:35Z with 0 active GameObject/URP decal violations.
 
+Loop 31 crack reveal smoothstep correction:
+- `HectonVisorUberPost.shader` procedural crack reveal no longer uses `step(threshold, damage01)`.
+- Texture-driven crack reveal no longer uses `step(crackSample.a, damage01)`.
+- Both paths use narrow `smoothstep` reveal bands; shader property IDs, DTOs, and BufferIDs are unchanged.
+- Scanner PASS timestamp is 2026-05-21T23:40:23Z with 0 active GameObject/URP decal violations.
+
+Loop 32 radial falloff smoothstep correction:
+- `FastRadialFalloff01()` no longer uses `step(2.0, e)` to switch exponent approximation families.
+- It now blends low/high polynomial falloff approximations through `smoothstep(1.85, 2.15, e)`.
+- Scanner PASS timestamp is 2026-05-21T23:42:38Z with 0 active GameObject/URP decal violations.
+
 GC proof required:
 - Unity Profiler / GCMonitor capture in Play Mode. Static source proof only exists now.
 

@@ -86,6 +86,14 @@
         "**/UserSettings/**": true,
         "**/Docs/Reports/**": true,
         "**/Docs/AgentLogs/**": true,
+        "**/Docs/Tasks/**": true,
+        "**/Docs/Archive/**": true,
+        "**/.agents*/**": true,
+        "**/.agents-skills/**": true,
+        "**/bin/**": true,
+        "**/obj/**": true,
+        "**/Build/**": true,
+        "**/build/**": true,
         "**/node_modules/**": true
     },
     "search.exclude": {
@@ -101,6 +109,14 @@
         "**/UserSettings/**": true,
         "**/Docs/Reports/**": true,
         "**/Docs/AgentLogs/**": true,
+        "**/Docs/Tasks/**": true,
+        "**/Docs/Archive/**": true,
+        "**/.agents*/**": true,
+        "**/.agents-skills/**": true,
+        "**/bin/**": true,
+        "**/obj/**": true,
+        "**/Build/**": true,
+        "**/build/**": true,
         "**/node_modules/**": true
     }
 }

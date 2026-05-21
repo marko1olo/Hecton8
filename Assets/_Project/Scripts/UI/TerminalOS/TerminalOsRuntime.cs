@@ -20,11 +20,11 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
-    public unsafe sealed class TerminalOsRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
+    public unsafe sealed class TerminalOsRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int ActiveRuntimeCapacity = 4;
-        private const int HighResolution = 512;
-        private const int LowResolution = 256;
+        private const int MaxQualityResolution = 512;
+        private const int MinQualityResolution = 256;
         private const int MaxIdleDecryptionStride = 6;
         private const float AttentionCullDistanceMeters = 20f;
         private const float AttentionCullDistanceSq = AttentionCullDistanceMeters * AttentionCullDistanceMeters;
@@ -224,7 +224,6 @@ namespace Hecton8.UI
         private IInputService _input;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _registeredHotSwapListener;
-        private bool _registeredScalabilityListener;
         private string _csvFullPath;
         private string _decryptionCsvFullPath;
         private string _dumpFullPath;
@@ -850,7 +849,6 @@ namespace Hecton8.UI
             EnsureColdPaths();
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             EnsureRuntimeReady();
             RegisterActiveRuntime();
             TryRegisterLateFrame();
@@ -860,7 +858,6 @@ namespace Hecton8.UI
         {
             UnregisterActiveRuntime();
             TryUnregisterLateFrame();
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
             CompleteJobsForTeardown();
             DisposeGraphicsResources();
@@ -872,7 +869,6 @@ namespace Hecton8.UI
         {
             UnregisterActiveRuntime();
             TryUnregisterLateFrame();
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
             CompleteJobsForTeardown();
             DisposeGraphicsResources();
@@ -992,7 +988,7 @@ namespace Hecton8.UI
 
             _nextQualityRefreshFrame = frame + math.clamp((int)math.round(math.lerp(30f, 120f, 1f - quality)), 30, 120);
             float resolutionCurve = Smooth01(quality);
-            int targetResolution = AlignResolution((int)math.round(math.lerp(LowResolution, HighResolution, resolutionCurve)));
+            int targetResolution = AlignResolution((int)math.round(math.lerp(MinQualityResolution, MaxQualityResolution, resolutionCurve)));
             bool resolutionChanged = _textureResolution != targetResolution;
             if (_terminalTextureArray != null && Application.isPlaying)
                 return;
@@ -1042,12 +1038,6 @@ namespace Hecton8.UI
             }
         }
 
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _nextQualityRefreshFrame = 0;
-            RefreshScalabilityPolicy();
-        }
-
         private void TryRegisterHotSwapListener()
         {
             if (_registeredHotSwapListener || !Application.isPlaying)
@@ -1065,24 +1055,6 @@ namespace Hecton8.UI
             _registeredHotSwapListener = false;
         }
 
-        private void TryRegisterScalabilityListener()
-        {
-            if (_registeredScalabilityListener || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _registeredScalabilityListener = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            if (!_registeredScalabilityListener)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _registeredScalabilityListener = false;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float Smooth01(float value)
         {
@@ -1093,7 +1065,7 @@ namespace Hecton8.UI
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int AlignResolution(int value)
         {
-            int clamped = math.clamp(value, LowResolution, HighResolution);
+            int clamped = math.clamp(value, MinQualityResolution, MaxQualityResolution);
             return (clamped + 7) & ~7;
         }
 
@@ -1530,7 +1502,7 @@ namespace Hecton8.UI
         {
             int resolution = _textureResolution > 0
                 ? _textureResolution
-                : AlignResolution((int)math.round(math.lerp(LowResolution, HighResolution, Smooth01(_globalQualityWeight))));
+                : AlignResolution((int)math.round(math.lerp(MinQualityResolution, MaxQualityResolution, Smooth01(_globalQualityWeight))));
             if (_terminalTextureArray != null &&
                 _terminalTextureArray.width == resolution &&
                 _terminalTextureArray.height == resolution &&

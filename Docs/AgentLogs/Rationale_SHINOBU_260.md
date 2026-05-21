@@ -1,6 +1,6 @@
 # Rationale_SHINOBU_260
 
-Status: PENDING VERIFICATION / POLISH PASS LOOP 21 WITH TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE COMPILER PROCESS GATE
+Status: POLISH PASS LOOP 21 STATIC VERIFIED / TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE ACTIVE csc+dotnet CPU GATE
 
 ## Decision 001: Resolve Duplicate SHINOBU_260 Prompt By ID And Role
 
@@ -210,3 +210,11 @@ Solution: Move `Assets/profilermarkers.csv` and `.meta` to `Docs/Archive/Crest_V
 Rejected Alternatives: Editing the CSV in place was rejected because it is generated profiler output, not source authority. Leaving it active was rejected because Unity-visible generated reports should not carry stale donor assembly evidence after quarantine.
 Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. The archive keeps forensic data available without letting stale rows confuse active dependency proof.
 Hardware Impact: Runtime frame saving is 0 microseconds. Editor/import hygiene improves; the active Assets tree no longer carries a 2.7 MB stale profiler CSV with donor rows.
+
+## Decision 027: Keep Loop 21 Static-Only Under Active Compiler/CPU Gate
+
+Problem: The final Loop 21 proof needed verification after context compaction, but the rebuild gate showed active `csc` and `dotnet` processes with CPU sampled at 98.6 percent.
+Solution: Rerun static gates only: py_compile, dependency scanner, polish audit, exact file presence/reference checks, report parse, diff whitespace check, and focused hot-path rg scan over Crest/Environment surfaces.
+Rejected Alternatives: Launching a dotnet/Unity rebuild was rejected because it violates the explicit compiler-process/CPU gate and would add compile-wall pressure without new C# dependency evidence.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. The scanner/audit wall remains repeatable without forcing every proof pass into a rebuild.
+Hardware Impact: Runtime frame saving is 0 microseconds. Developer hardware impact is avoided rebuild contention while csc/dotnet are already active; static proof reports `breach_count=0` and `failed_count=0`.

@@ -475,6 +475,48 @@ Updated static counts from that artifact:
 
 This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
 
+## 2026-05-22 Toxic Outgassing Readback Follow-Up
+
+Additional native API narrowing after the construction occupancy pass:
+
+- `ToxicOutgassingChemistryRuntime.TryGetGridReadback` now returns `NativeArray<float>.ReadOnly`.
+- `ToxicOutgassingChemistryRuntime.TryGetCellStates` now returns `NativeArray<ToxicityStateDTO>.ReadOnly`.
+- `ToxicOutgassingTunerWindow` consumes the read-only density view and validates via `Length`.
+
+Rejected:
+
+- Toxic chemistry simulation/job buffers, because those are writer-owned by the runtime.
+- Generic Vault/open helper narrowing, because those helpers feed writer routes.
+- Copied managed readbacks, because that would allocate and weaken the zero-copy grid route.
+
+Focused proof:
+
+- Focused scans found no stale mutable declarations for the two narrowed APIs.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_toxic_readonly_readbacks.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 217, down from 219.
+- `nativeApiExposureBuildPlayerRuntime`: 204, down from 206.
+- `nativeApiExposureOutRefMutable`: 165, down from 167.
+- `nativeApiRiskRuntimeOutRefMutableView`: 92, down from 93.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 HectonSeismicTideDirector Native API Rejection
+
+Subagent triage found no safe read-only narrowing candidates in `HectonSeismicTideDirector`.
+
+Rejected:
+
+- `OpenOrAcquireVaultBuffer<T>` because it is an acquire route and can create or return mutable Vault buffers.
+- `TryOpenExistingVaultBuffer<T>` because current observed editor readers do not justify narrowing a generic Vault-open primitive.
+- `TryOpenVaultBuffer<T>` because call sites include read/write output, telemetry, tuning, CSV scratch, and celestial buffers.
+- `OpenVaultPointer<T>` because it feeds pointer-based initialization, job input/output, and commit/swap paths.
+- `TryResolveTuning` because editor tuning UI writes back into returned arrays.
+
+This is route classification only. No source edit, Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
 ## 2026-05-22 Construction Occupancy Read Accessor Follow-Up
 
 Additional native API narrowing after the PDA snapshot pass:

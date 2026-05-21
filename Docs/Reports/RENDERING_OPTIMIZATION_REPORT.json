@@ -47,7 +47,7 @@
     "editorPreviewAllocationPolish": "HectonVisorStencilPreviewGizmo no longer allocates a Temp NativeArray; editor preview uses a fixed stackalloc Span and ARWaypointOverlay exposes a Span overload for the latest stencil target snapshot.",
     "cameraOwnershipPolish": "HectonVisorARStencilRendererFeature now accepts only the cached player runtime camera reference for runtime stencil takeover; unrelated Game/Base cameras cannot suppress the HUD Canvas fallback.",
     "renderGraphAbortFailOpen": "Stencil and AR RecordRenderGraph early exits for backbuffer or invalid source/depth resources clear renderer-owned stencil suppression instead of leaving Canvas fallback hidden after a previous good frame.",
-    "stencilLanePolish": "Stencil read/write defaults now reserve bit 0 only. Legacy serialized 255 writer masks are coerced to lane 1 until a wider stencil-lane reservation is documented.",
+    "stencilLanePolish": "Stencil read/write now reserve bit 0 only. Stencil ref/mask material properties were removed; both visor shaders hard-code Ref 1 with WriteMask/ReadMask 1 until a wider stencil-lane reservation is documented.",
     "shaderWarmupPolish": "Added Assets/_Project/Art/Shaders/Variants/Hecton_VisorAR_Stencil.shadervariants and routes it through BootstrapController shaderVariantCollections for cold bootstrap prewarm; renderer Create() does not own shader warmup.",
     "compileStatus": "Blocked by latest build gate: no compiler process output was returned, but CPU stayed 100% by CIM and 98.84%, 99.81%, 100% by counter samples; SHINOBU_270 did not launch dotnet build."
   },
@@ -165,7 +165,7 @@
   "shinobu_275_screen_space_wound_decal_compressor": {
     "agentId": "SHINOBU_275",
     "scanner": "Decal_Projector_Inquisition",
-    "timestampUtc": "2026-05-21T23:37:35Z",
+    "timestampUtc": "2026-05-21T23:42:38Z",
     "evidenceClass": "STATIC_SOURCE_TARGETED",
     "scannedAssetCount": 5825,
     "candidateAssetCount": 336,

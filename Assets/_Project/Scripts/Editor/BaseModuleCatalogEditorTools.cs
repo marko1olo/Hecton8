@@ -408,7 +408,7 @@ namespace Hecton8.Editor
             if (!BaseModuleCatalogRuntime.TryGetModuleSocketRangeFromVault(
                     GlobalRegistry.DataVault,
                     prefabHash,
-                    out NativeArray<SocketDefinitionDTO> sockets,
+                    out NativeArray<SocketDefinitionDTO>.ReadOnly sockets,
                     out int socketStart,
                     out int socketCount,
                     out ModuleDefinitionDTO module))

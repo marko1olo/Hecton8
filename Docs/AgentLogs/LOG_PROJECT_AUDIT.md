@@ -516,3 +516,27 @@ Cinematic Cheats used: None added. Construction validation continues to use comp
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `220` to `219`; `nativeApiExposureOutRefMutable` dropped from `168` to `167`.
 
 Evidence: Focused scan found no first-party call sites for `TryReadOccupancyHashTable`. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_construction_readonly_occupancy.json --report-path Docs\Reports\PROJECT_AUDIT_polish_after_construction_readonly_occupancy.md` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=219`, `nativeApiExposureOutRefMutable=167`, `nativeApiExposureBuildQaDevProof=8`, and `nativeApiRiskEditorOrProofSurface=13`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Toxic Outgassing Readback Narrowing
+
+What was wrong: `ToxicOutgassingChemistryRuntime.TryGetGridReadback` and `TryGetCellStates` exposed toxic chemistry owner buffers as mutable native arrays. The observed density reader is an editor gizmo; the state reader has no first-party call sites.
+
+What was done: Converted both methods to `NativeArray<T>.ReadOnly`. Updated `ToxicOutgassingTunerWindow` to request a read-only density view and validate through `Length`.
+
+Cinematic Cheats used: No new physical simulation was added. Toxic plume inspection remains a grid readback/visualization path over the existing chemistry field instead of per-cell scene objects or duplicated managed buffers.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `219` to `217`; `nativeApiExposureOutRefMutable` dropped from `167` to `165`.
+
+Evidence: Focused scan found no stale mutable declarations for `TryGetGridReadback` or `TryGetCellStates`. `python Tools\PolishMandateStaticAudit.py --source-root Assets/_Project/Scripts --report-path Docs/Reports/PROJECT_AUDIT_polish_after_toxic_readonly_readbacks.md --json-path Docs/Reports/PROJECT_AUDIT_polish_after_toxic_readonly_readbacks.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=217`, `nativeApiExposureBuildPlayerRuntime=204`, `nativeApiExposureOutRefMutable=165`, and `nativeApiRiskRuntimeOutRefMutableView=92`. `git diff --check` on touched files and new audit artifacts produced no whitespace errors. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - HectonSeismicTideDirector Native API Exclusion
+
+What was wrong: Static audit flags `HectonSeismicTideDirector` for mutable native out/ref exposure, but the hits are shared Vault acquisition/open helpers, pointer routes, and editor tuning writer views.
+
+What was done: Read-only subagent triage classified `OpenOrAcquireVaultBuffer`, `TryOpenExistingVaultBuffer`, `TryOpenVaultBuffer`, `OpenVaultPointer`, and `TryResolveTuning`. No safe read-only narrowing was applied.
+
+Cinematic Cheats used: None added. This was route protection, not simulation work.
+
+Exact Microseconds saved: 0 us measured. Static debt unchanged by design.
+
+Evidence: Subagent `019e4ce5-d823-70d2-99bf-5611a680fed2` reported no safe candidates: helper call sites include event slot, tuning, telemetry, output, CSV scratch, celestial buffer, commit/swap, and editor tuning writes. No source edit, Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

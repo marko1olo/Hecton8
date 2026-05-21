@@ -781,7 +781,7 @@ namespace Hecton8.Construction
             if (BaseModuleCatalogRuntime.TryGetModuleSocketRangeFromVault(
                     catalogVault,
                     prefabHash,
-                    out NativeArray<SocketDefinitionDTO> catalogSockets,
+                    out NativeArray<SocketDefinitionDTO>.ReadOnly catalogSockets,
                     out int socketStart,
                     out int socketCount,
                     out _))
@@ -808,7 +808,7 @@ namespace Hecton8.Construction
             return true;
         }
 
-        private bool IndexSocketRange(int moduleIndex, Vector3 rootPosition, Quaternion rootRotation, NativeArray<SocketDefinitionDTO> sockets, int socketStart, int socketCount, int validationGridSize, ref IntegrityGraphBuffers graphBuffers)
+        private bool IndexSocketRange(int moduleIndex, Vector3 rootPosition, Quaternion rootRotation, NativeArray<SocketDefinitionDTO>.ReadOnly sockets, int socketStart, int socketCount, int validationGridSize, ref IntegrityGraphBuffers graphBuffers)
         {
             int end = math.min(socketStart + socketCount, sockets.Length);
             for (int i = socketStart; i < end; i++)
@@ -830,7 +830,7 @@ namespace Hecton8.Construction
             if (BaseModuleCatalogRuntime.TryGetModuleSocketRangeFromVault(
                     catalogVault,
                     prefabHash,
-                    out NativeArray<SocketDefinitionDTO> catalogSockets,
+                    out NativeArray<SocketDefinitionDTO>.ReadOnly catalogSockets,
                     out int socketStart,
                     out int socketCount,
                     out _))
@@ -857,7 +857,7 @@ namespace Hecton8.Construction
             return true;
         }
 
-        private bool IndexCandidateSocketRange(int moduleIndex, Vector3 rootPosition, Quaternion rootRotation, NativeArray<SocketDefinitionDTO> sockets, int socketStart, int socketCount, int validationGridSize, ref IntegrityGraphBuffers graphBuffers)
+        private bool IndexCandidateSocketRange(int moduleIndex, Vector3 rootPosition, Quaternion rootRotation, NativeArray<SocketDefinitionDTO>.ReadOnly sockets, int socketStart, int socketCount, int validationGridSize, ref IntegrityGraphBuffers graphBuffers)
         {
             int end = math.min(socketStart + socketCount, sockets.Length);
             for (int i = socketStart; i < end; i++)

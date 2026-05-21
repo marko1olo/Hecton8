@@ -259,7 +259,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float v8 = v4 * v4;
                 float low = lerp(v, v2, saturate(e - 1.0));
                 float high = lerp(v2, v8, saturate((e - 2.0) * 0.16666667));
-                return lerp(low, high, step(2.0, e));
+                return lerp(low, high, smoothstep(1.85, 2.15, e));
             }
 
             void ResolveProceduralCracks(float2 uv, float damage01, out float crackReveal, out float2 crackNormal)

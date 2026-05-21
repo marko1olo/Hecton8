@@ -385,3 +385,19 @@ Solution: Replace the hard step with `smoothstep(-softness, softness, (waterline
 Rejected Alternatives: Leaving the hard threshold because it is cheaper; adding a shader keyword/variant for mobile waterline mode; smoothing with an unrelated constant width instead of the existing authorable softness.
 Scalability potential: Low/mobile devices keep the cheap screen-space Dear Lie waterline path but get a continuous transition. Middle/high/ultra keep the same shader route and can layer richer waterline/refraction work through unchanged continuous quality weights.
 Hardware Impact: No measured frame-time claim. Expected cost is one smooth interpolation in the mobile path; expected visual benefit is removal of a threshold pop during waterline crossing. Static scanner PASS is 2026-05-21T23:37:35Z. Compile remains blocked by host policy: CPU sampled 90% with active `dotnet` PID 13592.
+
+## Decision 049: Loop 31 Crack Reveal Smoothstep
+
+Problem: Both procedural and texture-driven crack reveal paths in `HectonVisorUberPost.shader` still used hard `step` thresholds against `damage01`. As trauma intensity changes continuously, those thresholds can pop entire crack veins on a single frame.
+Solution: Replace procedural reveal with `smoothstep(threshold - 0.045, threshold + 0.045, damage01) * vein` and texture reveal with `smoothstep(crackSample.a - 0.045, crackSample.a + 0.045, damage01)`.
+Rejected Alternatives: Leaving hard reveal because the dither/hash steps are still valid; blurring the crack texture; adding a temporal accumulation buffer; adding a shader variant or CPU crack state.
+Scalability potential: Low devices keep the same screen-space crack fake with no extra texture or CPU route. Middle/high/ultra keep richer crack texture/procedural detail and now get a smoother damage ramp through the existing continuous trauma scalars.
+Hardware Impact: No measured frame-time claim. Expected cost is two narrow smooth interpolation evaluations in crack reveal paths; expected visual benefit is removal of threshold pop during damage changes. Static scanner PASS is 2026-05-21T23:40:23Z. Compile remains blocked by host policy: CPU sampled 88% with active `csc` PID 18188 and `dotnet` PID 38572.
+
+## Decision 050: Loop 32 Radial Falloff Exponent Smoothstep
+
+Problem: `FastRadialFalloff01()` selected between low and high exponent approximations with `step(2.0, e)`. If the authored exponent crosses 2.0, the visual falloff family changes abruptly.
+Solution: Replace the family selector with `smoothstep(1.85, 2.15, e)`, preserving the same low/high approximations and avoiding new shader variants.
+Rejected Alternatives: Leaving the branch because it is a small helper; using a dynamic `pow` instead of the cheap polynomial approximations; adding a keyword for exponent family selection.
+Scalability potential: Low devices keep the cheap polynomial falloff approximation. Middle/high/ultra keep the same helper and avoid visible discontinuity when designer tuning or quality-driven settings cross the exponent boundary.
+Hardware Impact: No measured frame-time claim. Expected cost is one smooth interpolation in the helper; expected visual benefit is removal of a hard falloff-family transition. Static scanner PASS is 2026-05-21T23:42:38Z. Compile remains blocked by host policy: CPU sampled 51% with active `csc` PID 1036 and `dotnet` PID 24648.

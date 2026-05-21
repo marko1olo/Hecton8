@@ -229,7 +229,7 @@ namespace Hecton8.UI
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Wrist Hologram HUD Runtime")]
-    public sealed unsafe class WristHologramHudRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
+    public sealed unsafe class WristHologramHudRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int StateCapacity = 1;
         private const int GlyphCapacity = 128;
@@ -319,7 +319,6 @@ namespace Hecton8.UI
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _registeredHotSwapListener;
-        private bool _registeredScalabilityListener;
         private bool _blackBoxDumped;
         private bool _csvLoaded;
         private bool _legacyMissing;
@@ -466,7 +465,6 @@ namespace Hecton8.UI
         {
             RefreshCachedRegistryServices();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             ColdSanityCheckLayout();
             EnsureNativeBuffers();
             EnsureNativeQueues();
@@ -487,7 +485,6 @@ namespace Hecton8.UI
         {
             CompletePendingJob(forceComplete: true);
             TryUnregisterTickLanes();
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
             _frontQuadCount = 0;
             _lastUploadCount = -1;
@@ -498,7 +495,6 @@ namespace Hecton8.UI
         {
             CompletePendingJob(forceComplete: true);
             TryUnregisterTickLanes();
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
             ReleaseGraphicsResources();
             DisposeNativeState();
@@ -832,6 +828,7 @@ namespace Hecton8.UI
         private void DrainSignalQueues(float deltaTime)
         {
             float previousMathLodPressure = ResolveMathLodPressure01();
+            RefreshQualityPolicy();
             DrainGlobalSignalSnapshots();
 
             if (enableMockSignals)
@@ -1871,13 +1868,6 @@ namespace Hecton8.UI
             }
         }
 
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _ = payload;
-            RefreshQualityPolicy();
-            ApplyMaterialColdState();
-        }
-
         private void RefreshCachedRegistryServices()
         {
             _cachedDataVault = GlobalRegistry.DataVault;
@@ -1899,24 +1889,6 @@ namespace Hecton8.UI
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwapListener = false;
-        }
-
-        private void TryRegisterScalabilityListener()
-        {
-            if (_registeredScalabilityListener || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _registeredScalabilityListener = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            if (!_registeredScalabilityListener)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _registeredScalabilityListener = false;
         }
 
         private static string ResolveProjectRoot()

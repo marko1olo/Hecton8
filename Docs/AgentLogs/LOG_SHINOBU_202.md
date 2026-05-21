@@ -5622,4 +5622,21 @@ Exact microseconds saved:
 Static verification:
 - Focused direct/legacy route scan found no `TryGetBuffer`, `GetBuffer<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` hits in `RadiationShieldingTunerWindow.cs`.
 - Descriptor scan confirms `TryReadRadiationVaultBuffer`, `IsRadiationVaultHandle`, `VaultGenerationHandle<T>`, `TryAcquireWriteLock`, `ReleaseWriteLock`, `TryReadHandle`, and `SystemID.GameplayRadiation`.
-- Brace/preprocessor counts are balanced: braces `75/75`, `#if/#endif` `0/0`. `git diff --check` passed with CRLF warning only. Build was not relaunched because CPU was 100 percent with compiler activity.
+- Brace/preprocessor counts are balanced: braces `75/75`, `#if/#endif` `0/0`. `git diff --check` passed with CRLF warning only.
+- Build verification after the CPU/process gate cleared: `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` failed outside this patch, in Visor RenderGraph texture binding. Errors are `DeferredDecalPass.cs:245` and `HectonVisorUberPostFeature.cs:584-587`, where `RasterCommandBuffer.SetGlobalTexture` is called with integer shader IDs and `Texture`/`Texture2DArray` objects instead of the active `string` + `TextureHandle` overload. Result: 10 errors, 29 warnings, elapsed `00:01:29.56`. No `RadiationShieldingTunerWindow.cs` errors were reported.
+
+## 2026-05-22 - Compile Wall Note - External Visor RenderGraph Binding
+
+What was wrong:
+- A guarded solution build after Loop 238 failed on Visor code, not on SHINOBU_202 touched files.
+- Current source has `RasterCommandBuffer.SetGlobalTexture(int, Texture*)` calls in `DeferredDecalPass.cs` and `HectonVisorUberPostFeature.cs`.
+
+What was done:
+- Recorded the compile wall and did not edit Visor from this Vault pointer pass.
+- Confirmed another build is currently gated off by active `dotnet.exe` and `csc.exe` processes.
+
+Cinematic cheats used:
+- None. This is compile-wall triage only.
+
+Exact microseconds saved:
+- No runtime speedup claimed. Avoided a cross-domain render binding edit from a memory-domain route pass.

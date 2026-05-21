@@ -3344,3 +3344,36 @@ Verification:
     Targeted scan found no `_lowTier`, `LowTier`, `StatusModeLow`, `MidRadar`, `_lastExternalFeedActive`, low-tier damage glyph names, `ScalabilityEvents`, `IScalabilityChangedEventListener`, `ScalabilityChangedEvent`, `LOW LOD`, `LowRadar`, `LowUi`, `lowWidth`, `lowHeight`, or `tier clamping` in `VehicleSubOsCockpitRuntime.cs`. `git diff --check` passed with line-ending warning only. Build was not launched because active compiler processes were present.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="TerminalOsQualityPull">
+  <WHAT_WAS_WRONG>
+    `TerminalOsRuntime` retained `IScalabilityChangedEventListener`, `ScalabilityEvents` lifecycle registration, callback state, and low/high resolution endpoint names even though its owner phase already refreshes continuous quality every late frame.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the scalability listener interface, registration flag, register/unregister calls, and callback. Renamed render resolution endpoints to `MinQualityResolution` and `MaxQualityResolution`. The existing `RefreshScalabilityPolicy` still pulls finite-guarded `HomeostasisBrain.GlobalQualityWeight` and drives update cadence, decryption stride, texture-array resolution, and panel shader scalar.
+  </WHAT_WAS_DONE>
+  <STRUCT_LAYOUT>
+    No DTO layout changed. `TerminalTelemetryEntry` remains `[StructLayout(LayoutKind.Explicit, Size = 64)]`: offsets 0/4/8/12 int frame/count/dirty/dispatched, 16/20/24 float timings, 28 uint faults, 32/36 uint layout/hover hashes, 40/44 float power/damage, 48/52 int evaluated/framesBetweenUpdates, 56/60 float intersection/GlobalQualityWeight. `TerminalPanelInstanceDTO` remains 80 bytes.
+  </STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>
+    Terminal resolution now names the existing continuous endpoints directly: `Smooth01(GlobalQualityWeight)` lerps 256..512 texture slices, frame cadence lerps 15..1 frames between updates, and decryption evaluation stride lerps 6..1. Below 0.3, presentation collapses to fewer texture pixels and slower visual refresh; high/ultra get full texture resolution and tighter decryption visual cadence without changing terminal facts.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    Existing terminal state, command, glyph, plane, interaction, puzzle, panel, and telemetry buffers remain Vault generation handles with unchanged BufferIDs `71360..71375` plus terminal decryption IDs. No private native allocation or global route was added.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    Terminal jobs remain in `TerminalOsTypes.cs` with deterministic Burst attributes and `[NoAlias]` fields. This pass added no job, no `.Complete()` path, and no dispatcher dependency change.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    No asmdef, sibling runtime reference, SignalBus lane, DTO ABI, or GlobalRegistry route changed. Build was skipped because CPU was 96 percent with active `dotnet` and `csc`.
+  </COMPILE_GUARD>
+  <CINEMATIC_CHEATS>
+    Terminal screens remain texture-array and instanced-panel visual fakes over vault-owned terminal facts. Quality scales pixels and cadence; it does not change command truth, puzzle identity, or interaction ownership.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No measured speed claim. Removed one callback registration path; smaller texture slices can reduce GPU memory bandwidth at minimum quality, pending profiler proof.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scan found no `IScalabilityChangedEventListener`, `ScalabilityEvents`, `ScalabilityChangedEvent`, registered scalability listener state, quality tier, scalability tier, low-tier route, `LowResolution`, or `HighResolution` in `TerminalOsRuntime.cs`. `git diff --check` passed with line-ending warning only. Build was not launched because active compiler processes and 96 percent CPU violated AGENTS guard.
+  </VERIFICATION>
+</SELF_AUDIT>

@@ -1529,3 +1529,107 @@ Verification:
   <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU sampled at 90% with active `dotnet` PID 13592.</COMPILE_GUARD>
   <DEAR_LIE_CONFIRMATION>Before/after visual complexity remains O(1) per pixel in the existing screen-space waterline fake. The hard boolean threshold is replaced by a smooth polynomial band; no CPU fluid simulation is added.</DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>
+
+## 2026-05-22T03:40+04:00 - Polish Loop 31 / Crack Reveal Smoothstep
+
+What was wrong:
+- Procedural and texture-driven crack reveal paths in `HectonVisorUberPost.shader` used hard `step` thresholds against `damage01`, allowing visible crack pops as trauma intensity crossed a single value.
+
+What was done:
+- Procedural crack reveal now uses `smoothstep(threshold - 0.045, threshold + 0.045, damage01) * vein`.
+- Texture crack reveal now uses `smoothstep(crackSample.a - 0.045, crackSample.a + 0.045, damage01)`.
+
+Cinematic Cheats used:
+- Cracks remain procedural/texture screen-space masks. No CPU crack mesh, physics fracture, object decal, or temporal buffer route was added.
+
+Exact Microseconds saved:
+- No savings claimed. The patch spends a small amount of shader ALU to remove visible threshold popping.
+
+Verification:
+- `python Tools\Decal_Projector_Inquisition.py`: PASS at `2026-05-21T23:40:23Z`; 5825 scanned assets, 336 candidates, 0 active GameObject decal violations, 0 active URP decal renderer feature violations.
+- Focused source scan found no `crackReveal = step`, no `cameraSubmerged = step`, no `comfortEdgeLowTier = step(0.42...)`, and no active owned `Material.SetTexture` target calls.
+- `git diff --check` passed for touched source.
+- Compile not launched: CPU sampled at 88% with active `csc` PID 18188 and `dotnet` PID 38572.
+
+<SELF_AUDIT agent_id="SHINOBU_275" loop="31_crack_reveal_smoothstep">
+  <TASK_RECONCILIATION>
+    <TASK id="01" result="PASS_STATIC">Re-read remaining shader step sites and selected crack reveal thresholds as actionable visible pop risks.</TASK>
+    <TASK id="02" result="PASS_STATIC">Scanner PASS at 2026-05-21T23:40:23Z; no active object/URP decal route introduced.</TASK>
+    <TASK id="03" result="PASS_STATIC">No unmanaged DTO properties or managed hot structs were added.</TASK>
+    <TASK id="04" result="PASS_STATIC">No DTO layout changed; `VisorDecalDTO` remains explicit 80B.</TASK>
+    <TASK id="05" result="PASS_STATIC">Mock wound generator unchanged.</TASK>
+    <TASK id="06" result="PASS_STATIC">Burst wound jobs unchanged.</TASK>
+    <TASK id="07" result="PASS_STATIC">Dear Lie route preserved: cracks remain procedural/texture screen-space masks.</TASK>
+    <TASK id="08" result="PASS_STATIC">Circular overwrite unchanged.</TASK>
+    <TASK id="09" result="PASS_STATIC">Deterministic decay unchanged.</TASK>
+    <TASK id="10" result="PASS_STATIC">GPU upload route unchanged.</TASK>
+    <TASK id="11" result="PASS_STATIC">Continuous trauma/quality route preserved; crack reveal now interpolates across a narrow damage band.</TASK>
+    <TASK id="12" result="PASS_STATIC">Shader crack reveal thresholds now use smoothstep rather than hard step.</TASK>
+    <TASK id="13" result="PASS_STATIC">AUP localization unchanged.</TASK>
+    <TASK id="14" result="PASS_STATIC">No gameplay authority, rollback, save, or Merkle route changed.</TASK>
+    <TASK id="15" result="PASS_STATIC">Black-box telemetry unchanged.</TASK>
+    <TASK id="16" result="PASS_STATIC">Editor facade unchanged.</TASK>
+    <TASK id="17" result="PASS_STATIC">CSV parser unchanged.</TASK>
+    <TASK id="18" result="PASS_STATIC">Editor-only matrix gizmo unchanged.</TASK>
+    <TASK id="19" result="PASS_STATIC">Metric validator rerun and report timestamp refreshed to 2026-05-21T23:40:23Z.</TASK>
+    <TASK id="20" result="PASS_STATIC_COMPILE_BLOCKED">Docs/logs synchronized; compile gate blocked by CPU 88% and active `csc`/`dotnet`.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>`VisorDecalDTO`: `LocalToWorld@0` 64B, `DecalTypeHash@64` 4B, `Opacity01@68` 4B, `BirthTime@72` 4B, `Flags@76` 4B; total 80B, 80 % 16 = 0. Loop 31 changed no DTO bytes.</STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>Low devices keep the same cheap crack mask route with smoother reveal. Middle/high/ultra keep texture and procedural crack detail through unchanged continuous trauma and quality scalars.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>Vault lanes unchanged. No persistent private native container was introduced.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_DEPENDENCY_GRAPH>Job graph unchanged. Loop 31 adds no Burst job, no `[NoAlias]` surface, no `.Complete()`, and no same-frame schedule/readback loop.</POINTER_ALIASING_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU sampled at 88% with active `csc` PID 18188 and `dotnet` PID 38572.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>Before/after visual complexity remains O(1) per pixel crack mask math. Hard threshold reveal is replaced by a narrow polynomial band; no CPU crack simulation is added.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>
+
+## 2026-05-22T03:42+04:00 - Polish Loop 32 / Radial Falloff Exponent Smoothstep
+
+What was wrong:
+- `FastRadialFalloff01()` selected between low and high exponent approximations with `step(2.0, e)`, so designer exponent tuning could cross 2.0 and pop the visual falloff family.
+
+What was done:
+- Replaced the hard selector with `smoothstep(1.85, 2.15, e)`.
+- Preserved the same cheap polynomial falloff approximations; no dynamic `pow`, shader keyword, DTO, or BufferID was added.
+
+Cinematic Cheats used:
+- Falloff remains polynomial shader math. No CPU simulation or new texture route was added.
+
+Exact Microseconds saved:
+- No savings claimed. This spends one smooth interpolation in exchange for continuous visual falloff.
+
+Verification:
+- `python Tools\Decal_Projector_Inquisition.py`: PASS at `2026-05-21T23:42:38Z`; 5825 scanned assets, 336 candidates, 0 active GameObject decal violations, 0 active URP decal renderer feature violations.
+- Focused source scan found no `return lerp(low, high, step(2.0, e))`, no `crackReveal = step`, no `cameraSubmerged = step`, no `comfortEdgeLowTier = step(0.42...)`, and no active owned `Material.SetTexture` target calls.
+- `git diff --check` passed for the touched shader with CRLF warning only.
+- Compile not launched: CPU sampled at 51% with active `csc` PID 1036 and `dotnet` PID 24648.
+
+<SELF_AUDIT agent_id="SHINOBU_275" loop="32_radial_falloff_exponent_smoothstep">
+  <TASK_RECONCILIATION>
+    <TASK id="01" result="PASS_STATIC">Re-read shader helper step sites and selected only the falloff-family switch as actionable visual discontinuity.</TASK>
+    <TASK id="02" result="PASS_STATIC">Scanner PASS at 2026-05-21T23:42:38Z; no active object/URP decal route introduced.</TASK>
+    <TASK id="03" result="PASS_STATIC">No unmanaged DTO properties or managed hot structs were added.</TASK>
+    <TASK id="04" result="PASS_STATIC">No DTO layout changed; `VisorDecalDTO` remains explicit 80B.</TASK>
+    <TASK id="05" result="PASS_STATIC">Mock wound generator unchanged.</TASK>
+    <TASK id="06" result="PASS_STATIC">Burst wound jobs unchanged.</TASK>
+    <TASK id="07" result="PASS_STATIC">Dear Lie route preserved: falloff remains shader polynomial math.</TASK>
+    <TASK id="08" result="PASS_STATIC">Circular overwrite unchanged.</TASK>
+    <TASK id="09" result="PASS_STATIC">Deterministic decay unchanged.</TASK>
+    <TASK id="10" result="PASS_STATIC">GPU upload route unchanged.</TASK>
+    <TASK id="11" result="PASS_STATIC">Continuous route improved; exponent-family blend now transitions across 1.85..2.15 instead of a hard 2.0 switch.</TASK>
+    <TASK id="12" result="PASS_STATIC">Shader radial falloff helper now uses smoothstep.</TASK>
+    <TASK id="13" result="PASS_STATIC">AUP localization unchanged.</TASK>
+    <TASK id="14" result="PASS_STATIC">No gameplay authority, rollback, save, or Merkle route changed.</TASK>
+    <TASK id="15" result="PASS_STATIC">Black-box telemetry unchanged.</TASK>
+    <TASK id="16" result="PASS_STATIC">Editor facade unchanged.</TASK>
+    <TASK id="17" result="PASS_STATIC">CSV parser unchanged.</TASK>
+    <TASK id="18" result="PASS_STATIC">Editor-only matrix gizmo unchanged.</TASK>
+    <TASK id="19" result="PASS_STATIC">Metric validator rerun and report timestamp refreshed to 2026-05-21T23:42:38Z.</TASK>
+    <TASK id="20" result="PASS_STATIC_COMPILE_BLOCKED">Docs/logs synchronized; compile gate blocked by CPU 51% and active `csc`/`dotnet`.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>`VisorDecalDTO`: `LocalToWorld@0` 64B, `DecalTypeHash@64` 4B, `Opacity01@68` 4B, `BirthTime@72` 4B, `Flags@76` 4B; total 80B, 80 % 16 = 0. Loop 32 changed no DTO bytes.</STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>Low devices keep polynomial falloff instead of dynamic `pow`; middle/high/ultra avoid a visual family snap when tuning crosses exponent 2.0.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>Vault lanes unchanged. No persistent private native container was introduced.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_DEPENDENCY_GRAPH>Job graph unchanged. Loop 32 adds no Burst job, no `[NoAlias]` surface, no `.Complete()`, and no same-frame schedule/readback loop.</POINTER_ALIASING_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU sampled at 51% with active `csc` PID 1036 and `dotnet` PID 24648.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>Before/after visual complexity remains O(1) shader helper math. Hard exponent-family switch is replaced by a smooth polynomial selector; no CPU or texture simulation is added.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>

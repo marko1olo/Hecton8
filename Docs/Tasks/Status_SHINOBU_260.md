@@ -3,7 +3,7 @@
 Agent: SHINOBU_260
 Domain: CREST_VERSION_QUARANTINE_DIRECTOR / Echelon 9 Meta & Integration
 Task Count: 20
-Status: PENDING VERIFICATION / POLISH PASS LOOP 21 WITH TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE COMPILER PROCESS GATE
+Status: POLISH PASS LOOP 21 STATIC VERIFIED / TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE ACTIVE csc+dotnet CPU GATE
 Batch Source: Docs/Tasks/CURRENT_BATCH.md `<AGENT_PROMPT id="SHINOBU_260" role="CREST_VERSION_QUARANTINE_DIRECTOR">`
 
 ## Hygiene
@@ -442,3 +442,7 @@ Rule quote: `Hecton8.Core` and `Hecton8.Physics` must have zero direct assembly 
   - DOD practice: dependency scanner hard-fails reintroduced absent optional donor assembly references and Unity-visible generated profiler reports containing Crest rows; polish audit checks `crest_donor_no_absent_hdrp_postprocessing_references`, `stale_profiler_markers_outside_unity_visibility`, `dependency_scanner_blocks_absent_optional_donor_references`, and `dependency_scanner_blocks_stale_generated_report_crest_rows`.
   - Rejected alternative: relying on sub-agent notes only was rejected because future regressions require machine-readable gates.
   - Estimated saving: editor proof time; no runtime frame claim.
+- [x] Loop 21 post-compaction verification gate rerun.
+  - DOD practice: py_compile passed for the three Crest tools; dependency scanner reports `breach_count=0`, `global_scripting_define_hit_count=1`, `compliance_denylist_hit_count=6`, `vocabulary_debt_hit_count=111`; polish audit reports `failed_count=0`; exact file gates prove `Assets/profilermarkers.csv` absent, archived profiler CSV present, and no HDRP/PostProcessing donor references remain; domain hot-path rg scan found no Pack=1, hot auto-properties, foreach, hidden `.Complete()`, LINQ, `UnityEngine.Random`, or private native collection allocation hits in the checked Crest/Environment surfaces.
+  - Rejected alternative: launching Unity/dotnet rebuild was rejected because the build gate sampled active `csc` and `dotnet` processes and CPU at 98.6 percent.
+  - Estimated saving: avoids a forbidden compile-wall hit; runtime frame claim remains 0 microseconds for this proof loop.

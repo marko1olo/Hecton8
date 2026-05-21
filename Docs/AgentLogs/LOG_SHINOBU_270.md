@@ -833,3 +833,50 @@ Build gate:
   <compile_guard note="No sibling assembly dependency added. Build not run because active compiler and CPU gates are closed, and generated project coverage remains stale."/>
   <dear_lie note="The stencil shader documentation now matches source: stencil lane write only, no depth write, no color write."/>
 </SELF_AUDIT_ADDENDUM>
+
+## 2026-05-22 - Fixed Stencil Lane / Legacy HUD Fence Proof
+
+What was wrong:
+- The static audit still had evidence of a runtime material stencil-mutation route for a fixed SHINOBU_270 lane.
+- Shared report text claimed Canvas suppression after "successful frame prep"; the actual safe proof point is AR resolve record plus `resourceData.cameraColor` assignment for the authorized player camera.
+- Ledger wording said "shader global setters" too broadly. Static `Shader.SetGlobal*` and runtime material stencil setters are banned; declared RenderGraph command-buffer resource bindings are still the correct route.
+- Legacy acoustic radar and threat chevron methods still contained expensive texture/material/instancing tokens. They needed explicit stencil-mode fences before any resource work.
+
+What was done:
+- Verified the fixed-lane shader route: `Hecton_VisorStencilMask` uses `Ref 1` and `WriteMask 1`; `Hidden/Hecton8/VisorAR` uses `Ref 1` and `ReadMask 1`.
+- Verified the renderer/shader route is clean for `_StencilRef`, `_StencilReadMask`, `_StencilWriteMask`, `SetInt`, `ApplyStencilMaterialState`, and stencil ref/mask resolver tokens.
+- Fenced `RefreshAcousticRadarPayload`, `RenderThreatChevrons`, and `ApplyAcousticRadarVisuals` before texture/material/instancing work when renderer-owned stencil suppression is active.
+- Made `TargetCanvas` a pure cached read accessor and guarded active `HectonUIScaler.RegisterToTickManager()` before `GlobalRegistry.Dispatcher` once both tick registrations are proven.
+- Updated `RENDERING_OPTIMIZATION_REPORT.json`, `BINARY_PAYLOAD_INTEGRATION_LEDGER.md`, and `VISOR_AR_STENCIL_RENDERER.md` to match the fixed-lane source reality.
+
+Cinematic Cheats used:
+- The active visor route remains the Dear Lie: fixed stencil mask plus fullscreen shader digits/brackets/scanlines/fog. Legacy acoustic radar texture and instanced chevrons are not allowed to execute while the RenderGraph stencil route owns presentation.
+
+Exact Microseconds saved:
+- Fixed stencil lane: removes runtime material stencil-property mutation risk; exact CPU us pending profiler proof.
+- Legacy radar/chevron fences: prevents stencil-mode cost from `Texture2D` allocation/update, material setters, property-block vector arrays, and `DrawMeshInstanced`; exact saved cost depends on radar resolution and chevron count.
+- HectonUIScaler registration guard: estimated 1-3 us CPU variance reduction after registration on weak CPUs, pending profiler proof.
+
+Verification:
+- Prompt extraction rerun from `CURRENT_BATCH.md`: `PROMPT_FOUND=1`, `PROMPT_BYTES=17478`, `TASK_COUNT=20`, tasks `01..20`.
+- `rg` forbidden scan over SHINOBU_270 source/shader targets returned no hits for `GlobalSignals`, `FromRuntimePosition`, `Shader.SetGlobal*`, `Canvas.ForceUpdateCanvases`, `TryGetLatestCreated`, `.Run()`, `.Complete()`, `new NativeArray`, `_CameraDepthTexture`, `UnityEngine.Random`, `Time.deltaTime`, LINQ, `foreach`, or `string.Format`.
+- Fixed-stencil scan returned no hits for `_StencilRef`, `_StencilReadMask`, `_StencilWriteMask`, `SetInt`, `ApplyStencilMaterialState`, `ResolveStencilRef`, or `ResolveStencilWriteMask`.
+- `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json` parses.
+- Generated `Hecton8.Core.csproj` still includes `HectonVisorFluidDistortionFeature.cs` but not `HectonVisorARStencilRendererFeature.cs` or `HectonVisorStencilPreviewGizmo.cs`.
+- `git diff --check` on the SHINOBU_270 patch surface reports only Git LF-to-CRLF warning for `BINARY_PAYLOAD_INTEGRATION_LEDGER.md`.
+
+Build gate:
+- Build not launched.
+- Active compiler processes: `csc` PID 17588 and `dotnet` PID 24648.
+- CPU gate closed: CIM CPU 90%; processor counter samples 95%, 63.29%, 67.53%.
+- Compile remains PENDING VERIFICATION until Unity regenerates/imports the new scripts and the active-compiler/CPU gates are open.
+
+<SELF_AUDIT_ADDENDUM agent_id="SHINOBU_270" evidence="STATIC_SOURCE" verification="PENDING_UNITY_IMPORT_AND_BUILD">
+  <task_reconciliation note="Tasks 01-20 remain PASS from the prior audit. Iteration 25 tightens Task 02 Canvas suppression proof, Task 06/07 fixed stencil lane proof, Task 19 report artifact honesty, and Task 20 self-audit evidence."/>
+  <struct_layout note="No DTO layout changed. `VisorHudParamsDTO`, `VisorArTargetDTO`, `VisorHudDigitParamsDTO`, `VisorTelemetryEntry`, and `VisorHudProfileDTO` remain 64-byte payloads; stencil lane state is shader render state, not a DTO."/>
+  <scalability note="No binary quality route was added. `GlobalQualityWeight` continues to scale shader ALU/taps/target work continuously; fixed stencil bit 0 does not change gameplay truth, DTO layout, save identity, or authority route."/>
+  <h_phi note="No private persistent native container was added. Vault lanes 73180..73186 remain visual-only UI generation descriptors; this pass only verifies route state and docs."/>
+  <dependency_graph note="No new jobs and no hidden `.Complete()` added. Renderer still consumes RenderGraph resources and emits suppression only after resolve proof."/>
+  <compile_guard note="No sibling runtime assembly reference added. Build not run because active compiler and CPU gates were closed, and generated project coverage remains stale."/>
+  <dear_lie note="Legacy acoustic radar/chevron visuals are fenced out under stencil ownership; active presentation remains stencil-gated shader optics rather than Canvas/TMP/instanced legacy work."/>
+</SELF_AUDIT_ADDENDUM>

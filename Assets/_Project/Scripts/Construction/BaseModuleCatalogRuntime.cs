@@ -568,7 +568,7 @@ namespace Hecton8.Construction
         public static bool TryGetModuleSocketRangeFromVault(
             IDataVault vault,
             uint prefabHashId,
-            out NativeArray<SocketDefinitionDTO> sockets,
+            out NativeArray<SocketDefinitionDTO>.ReadOnly sockets,
             out int start,
             out int count,
             out ModuleDefinitionDTO definition)
@@ -586,7 +586,7 @@ namespace Hecton8.Construction
             if (!TryGetSocketRange(definition, views.Sockets, out start, out count))
                 return false;
 
-            sockets = views.Sockets;
+            sockets = views.Sockets.AsReadOnly();
             return true;
         }
 
