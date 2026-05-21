@@ -419,6 +419,7 @@ namespace Hecton8.Visor
                     _mockSignalHandle = default;
                     _aestheticCsvLoaded = false;
                     _aestheticCsvLoadAttempted = false;
+                    _aestheticProfileCacheCount = 0;
                     _reconstructionTelemetryCursor = 0;
                     if (_dataVault != null)
                     {
