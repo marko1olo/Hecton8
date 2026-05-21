@@ -1984,6 +1984,11 @@ namespace Hecton8.Visor
             _spatialAudioManager = null;
         }
 
+        private static float ResolveUnityShaderTimeSeconds()
+        {
+            return Time.timeSinceLevelLoad;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  ITickable
         // ══════════════════════════════════════════════════════════
@@ -1997,7 +2002,7 @@ namespace Hecton8.Visor
                 return;
             }
 
-            float now = Time.time;
+            float now = ResolveUnityShaderTimeSeconds();
             UpdateActiveSonarGeoIllumination(deltaTime, now);
             UpdateActiveSonarWavefront(deltaTime, now);
             UpdateLidarPersistence(deltaTime);
@@ -2103,7 +2108,7 @@ namespace Hecton8.Visor
                 survivalSystem.DrainEnergy(sonarPulseEnergyCost);
 
             Vector3 playerPosition = ToVector3(playerAup.ToRuntimeFloat3());
-            float pulseTime = Time.time;
+            float pulseTime = ResolveUnityShaderTimeSeconds();
             float pulseIntensity = math.saturate(pulseRadius * 0.005f);
             float depth = ResolvePlayerMovement() != null ? math.max(0f, _playerMovement.CurrentDepth) : 0f;
             float abyssalDistortion = ResolveAbyssalDistortion(depth);
@@ -2237,7 +2242,7 @@ namespace Hecton8.Visor
             if (echoEvent.ReturnStrength <= 0.001f)
                 return;
 
-            float now = Time.time;
+            float now = ResolveUnityShaderTimeSeconds();
             float speed = math.max(0.01f, sonarScreenSpacePulseSpeedMetersPerSecond * math.max(0.05f, sonarEchoVisualSpeedScale));
             float inverseRevealWaveSpeed = math.rcp(math.max(0.01f, sonarRevealWaveSpeed));
             float delaySeconds = echoEvent.DistanceMeters > 0f
@@ -2269,7 +2274,7 @@ namespace Hecton8.Visor
             if (signal.ReturnStrength <= 0.001f)
                 return;
 
-            float now = Time.time;
+            float now = ResolveUnityShaderTimeSeconds();
             float speed = math.max(0.01f, sonarScreenSpacePulseSpeedMetersPerSecond * math.max(0.05f, sonarEchoVisualSpeedScale));
             float echoStartTime = now + math.max(0f, signal.EchoDelaySeconds);
             float echoRadius = math.clamp(signal.DistanceMeters * 0.42f, 10f, math.max(10f, sonarRadius * 0.65f));

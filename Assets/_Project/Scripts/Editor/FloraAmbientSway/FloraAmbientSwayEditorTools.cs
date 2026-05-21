@@ -504,6 +504,32 @@ namespace Hecton8.Editor.FloraAmbientSway
             bool layoutOffsetApi =
                 runtime.Contains("GetFieldOffset<FloraSwayParamsDTO>(nameof(FloraSwayParamsDTO.GlobalFlowVector))") &&
                 runtime.Contains("GetFieldOffset<FloraSwayParamsDTO>(nameof(FloraSwayParamsDTO.SwayMathParams))") &&
+                runtime.Contains("GetFieldOffset<FloraAmbientFlowStateDTO>(nameof(FloraAmbientFlowStateDTO.FlowDirectionSpeed))") &&
+                runtime.Contains("GetFieldOffset<FloraAmbientFlowStateDTO>(nameof(FloraAmbientFlowStateDTO.SourceAndFrame))") &&
+                runtime.Contains("GetFieldOffset<FloraSwayTuningDTO>(nameof(FloraSwayTuningDTO.GlobalAmplitudeMeters))") &&
+                runtime.Contains("GetFieldOffset<FloraSwayTuningDTO>(nameof(FloraSwayTuningDTO.Frequency))") &&
+                runtime.Contains("GetFieldOffset<FloraSwayTuningDTO>(nameof(FloraSwayTuningDTO.PhaseSpatialOffset))") &&
+                runtime.Contains("GetFieldOffset<FloraSwayTuningDTO>(nameof(FloraSwayTuningDTO.AlphaClip))") &&
+                runtime.Contains("GetFieldOffset<FloraSwayTuningDTO>(nameof(FloraSwayTuningDTO.MockFlowSpeed))") &&
+                runtime.Contains("GetFieldOffset<FloraSwayTuningDTO>(nameof(FloraSwayTuningDTO.MockFlowIntensity))") &&
+                runtime.Contains("GetFieldOffset<FloraSwayTuningDTO>(nameof(FloraSwayTuningDTO.Flags))") &&
+                runtime.Contains("GetFieldOffset<FloraSwayTuningDTO>(nameof(FloraSwayTuningDTO.ProfileHash))") &&
+                runtime.Contains("GetFieldOffset<FloraBiomeSwayProfileDTO>(nameof(FloraBiomeSwayProfileDTO.BiomeHash))") &&
+                runtime.Contains("GetFieldOffset<FloraBiomeSwayProfileDTO>(nameof(FloraBiomeSwayProfileDTO.GlobalAmplitudeMeters))") &&
+                runtime.Contains("GetFieldOffset<FloraBiomeSwayProfileDTO>(nameof(FloraBiomeSwayProfileDTO.Frequency))") &&
+                runtime.Contains("GetFieldOffset<FloraBiomeSwayProfileDTO>(nameof(FloraBiomeSwayProfileDTO.PhaseSpatialOffset))") &&
+                runtime.Contains("GetFieldOffset<FloraBiomeSwayProfileDTO>(nameof(FloraBiomeSwayProfileDTO.AlphaClip))") &&
+                runtime.Contains("GetFieldOffset<FloraBiomeSwayProfileDTO>(nameof(FloraBiomeSwayProfileDTO.MockFlowIntensity))") &&
+                runtime.Contains("GetFieldOffset<FloraBiomeSwayProfileDTO>(nameof(FloraBiomeSwayProfileDTO.Flags))") &&
+                runtime.Contains("GetFieldOffset<FloraBiomeSwayProfileDTO>(nameof(FloraBiomeSwayProfileDTO.StateHash))") &&
+                runtime.Contains("GetFieldOffset<SwayTelemetryEntry>(nameof(SwayTelemetryEntry.Frame))") &&
+                runtime.Contains("GetFieldOffset<SwayTelemetryEntry>(nameof(SwayTelemetryEntry.Flags))") &&
+                runtime.Contains("GetFieldOffset<SwayTelemetryEntry>(nameof(SwayTelemetryEntry.WrappedTime))") &&
+                runtime.Contains("GetFieldOffset<SwayTelemetryEntry>(nameof(SwayTelemetryEntry.FlowMagnitude))") &&
+                runtime.Contains("GetFieldOffset<SwayTelemetryEntry>(nameof(SwayTelemetryEntry.GlobalQualityWeight))") &&
+                runtime.Contains("GetFieldOffset<SwayTelemetryEntry>(nameof(SwayTelemetryEntry.AmplitudeMeters))") &&
+                runtime.Contains("GetFieldOffset<SwayTelemetryEntry>(nameof(SwayTelemetryEntry.StateHash))") &&
+                runtime.Contains("GetFieldOffset<SwayTelemetryEntry>(nameof(SwayTelemetryEntry.SourceHash))") &&
                 runtime.Contains("UnsafeUtility.GetFieldOffset(field)") &&
                 !runtime.Contains(forbiddenLayoutOffsetApi);
             bool dispatcher = runtime.Contains("DispatcherPhase.PreSimulation") && runtime.Contains("DispatcherPhase.VisualSync");

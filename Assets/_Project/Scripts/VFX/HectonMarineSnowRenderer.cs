@@ -3782,7 +3782,7 @@ namespace Hecton8.Environment
                 return false;
             }
 
-            return Time.time <= Shader.GetGlobalFloat(ShaderIds.SonarRevealExpireTimeId);
+            return Time.timeSinceLevelLoad <= Shader.GetGlobalFloat(ShaderIds.SonarRevealExpireTimeId);
         }
 
         private bool IsFogDensityInjectionActive()

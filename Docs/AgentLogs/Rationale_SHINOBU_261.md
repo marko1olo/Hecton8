@@ -458,6 +458,12 @@ Rejected Alternatives: Pretending to have applied a missing polish document was 
 Scalability potential: Runtime behavior unchanged.
 Hardware Impact: 0 runtime us.
 
+Problem: The SHINOBU_261 sidecar report carried the current scanner proof (`scannedScripts=2178`, four legacy Player/Flora findings), but the shared `PHYSICS_OPTIMIZATION_REPORT.json` SHINOBU_261 block still had an empty `scannedScripts` field and omitted the concrete finding array.
+Solution: Mirrored the sidecar proof fields into the shared root block: generation route, scan scope, script count, four explicit findings, and a stable compile-proof pointer to `Status_SHINOBU_261.md`. Revalidated root/sidecar JSON after the patch.
+Rejected Alternatives: Leaving the shared root as a weaker stale summary was rejected because CTO-facing aggregate reports must not contradict dedicated sidecars. Re-running the Unity menu scanner was rejected because CPU/build/editor gate is closed.
+Scalability potential: Runtime unchanged. The proof artifact now consistently distinguishes SHINOBU_261's scalable Vault/Burst route from Player/Flora migration debt across both report surfaces.
+Hardware Impact: 0 runtime us. Build was not launched; latest CPU sample was 99.
+
 Problem: Queued evaluator scheduling still used a budget-sized `IJobParallelFor` after the drain job, so empty or sparse queues could still pay per-index no-op checks up to the drain budget while waiting on `QueueCounterPacked`.
 Solution: Converted `GenerateMockOceanWavesJob`, `EvaluateAnalyticalWavesJob`, and `ResolveDearLieCachedResultsJob` to `IJobParallelForBatch`. Scheduler call sites now use `ScheduleBatch`; every batch resolves the packed counter once, clamps the batch end, and skips the entire tail range when `startIndex >= packedCount`.
 Rejected Alternatives: Reading `NativeQueue.Count` on the main thread was rejected because producer jobs can still be unresolved behind `inputDeps`. A new deferred NativeList/Vault lane was rejected for this patch because it changes ownership and dispatcher contracts beyond SHINOBU_261. Serial evaluation was rejected because it destroys high-tier throughput for packed 50k query frames.

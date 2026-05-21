@@ -25,6 +25,7 @@ Route:
 - Shared visor host state no longer calls `PlayerRuntimeContextService.TryGetActiveRuntimeContext()` from render enqueue. It consumes the cached `IPlayerRuntimeContext` snapshot route for player camera, survival status, and movement stress; wet-lens scalar remains a presentation read from the cached movement owner. The touched host file no longer imports `Hecton8.Gameplay`.
 - The touched shared host no longer imports `Hecton8.Physics`, caches `HectonFluidEngine`, or subscribes to `GlobalRegistryServiceSlot.FluidRuntime` for Noir/wound visuals. The removed concrete maelstrom warp is replaced by a pressure/stress screen-space surge scalar derived from existing presentation inputs until a contracts-only fluid read model exists.
 - The live matrix debug view is editor-owned by `ScreenSpaceDecalTunerWindow` through `SceneView.duringSceneGui`; `DynamicDecalGizmoVisualizer` is compiled only under `UNITY_EDITOR`, so player builds do not carry a scene-component proof surface.
+- `ScreenSpaceDecalTunerWindow` exposes the designer bridge facts for visor wound material profiles: source CSV path, schema id/hash, runtime Vault route, current DataMonolith output caveat, last validation state, row count, header hash, and ABI summaries for `VisorDecalDTO` / `DecalMaterialProfileDTO`. Schema mismatch fails before the cold Vault CSV load.
 - Diagnostic `TryGetTuning`, `TryGetRuntimeState`, and `TryGetLatestTelemetry` calls return immutable owner-phase snapshots. They do not lock Vault buffers, resolve native arrays, complete jobs, allocate, or mutate global lock state.
 - `TryAcquireDecalBufferRead` / `ReleaseDecalBufferRead` is also compiled only under `UNITY_EDITOR`; it is an explicit acquire/release debug lane for SceneView gizmos and is not available to player runtime callers.
 - Runtime state pointer access in `ExecuteVisualSync()` is fail-closed. A stale or invalid one-row Vault state buffer marks the existing layout/fault telemetry bit and returns false instead of throwing a managed gameplay exception.
@@ -43,7 +44,7 @@ Constraints:
 - Gameplay authority and rollback state are not mutated by the renderer; wounds are presentation-only signal consumers.
 
 Proof:
-- `Tools/Decal_Projector_Inquisition.py` writes `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json`; latest SHINOBU_275 run 2026-05-21T20:11:44Z reports 0 active GameObject/URP decal violations.
+- `Tools/Decal_Projector_Inquisition.py` latest SHINOBU_275 run 2026-05-21T20:24:06Z reports 0 active GameObject/URP decal violations.
 - Binary payload ledger and route card are synchronized with the active C#/HLSL ABI: offset 72 is `BirthTime`; lifetime is packed inside `DecalTypeHash` bits 8..23, shader branch reads low 4 type bits, and atlas sampling reads bits 4..7.
 - Black-box telemetry uses 300 `VisorWoundTelemetryEntry` records and dumps to `Docs/AgentLogs/Dump_SHINOBU_275.bin` on layout/non-finite/upload faults. Loop 21 format is a fixed 16-byte little-endian header followed by 300 fixed 64-byte telemetry rows written through stack spans; no `BinaryWriter` is used.
 - Shader binding proof: `Hecton_VisorGlitchACES.shader.meta` GUID `2b2a9f18d90f4b35b8b4f9d1a8e23501`; `Hecton_VisorWounds.shader.meta` GUID `0a2df57d7a4e4d44a95b1b4c4bfb2750`.

@@ -1138,3 +1138,57 @@ Exact Microseconds saved:
   <PARKED_WORK_REJECTED>Build launch under CPU/dotnet/csc gate and DTO size changes.</PARKED_WORK_REJECTED>
   <STATIC_VERIFICATION>Editor scan reports no hardcoded `Params=32`, `Telemetry=32`, or `Profile=32` success strings; owned forbidden scan is clean; editor brace/preprocessor balance is zero; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 72.8%, dotnet=1, csc=1.</STATIC_VERIFICATION>
 </SELF_AUDIT_DELTA>
+
+## 2026-05-22 - Polish Pass 50
+
+What was wrong:
+- `ValidateFloraSwayLayouts()` still used `Marshal.OffsetOf` for the primary CBuffer DTO offset proof.
+
+What was done:
+- Replaced the offset checks with `UnsafeUtility.GetFieldOffset` through a local `GetFieldOffset<T>()` helper.
+- Added `layoutOffsetApi` to `FloraAmbientSwaySelfAudit` so owned runtime `Marshal.OffsetOf` regressions fail the self-audit.
+
+Cinematic Cheats used:
+- No physical simulation was added. Flora ambient motion remains a shader-side Dear Lie driven by one 32-byte global CBuffer.
+
+Exact Microseconds saved:
+- 0 hot us. This is editor/static validation hardening; the existing saved-cost model remains removal of per-flora CPU animation.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-22-P50_LAYOUT_OFFSET_API_HARDENING">
+  <TASK id="04" status="PASS">`FloraSwayParamsDTO` offset validation now routes through `UnsafeUtility.GetFieldOffset`, matching the ARM64 layout mandate's verifier API.</TASK>
+  <TASK id="20" status="PASS">`FloraAmbientSwaySelfAudit` now contains `layoutOffsetApi` and rejects owned runtime `Marshal.OffsetOf` regressions.</TASK>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Early-route flora CBuffer ABI proof now uses the same Unity native layout API as the wider ARM64 verifier surface.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static source/self-audit now; Unity import/Console, editor menu invocation, route run, profiler/GC, Frame Debugger, screenshot/clip, save/load diff, and fault dump smoke read remain pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Build launch under CPU/dotnet gate, unrelated offset cleanup in other agents' domains, and DTO ABI changes.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>SHINOBU_267 XML extraction remains 15929 chars with 20 task labels; owned forbidden scan reports no `Marshal.OffsetOf`, `BinaryWriter`, `FloatMode.Fast`, `parameters[0]`, `.Run()`, `.Complete()`, direct scalar-kernel `Execute()`, vector upload, random, `foreach`, `Pack=1`, hot vector constructors, or hardcoded layout success strings; runtime/editor brace and preprocessor balances are zero; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=1, csc=0.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-22 - Polish Pass 51
+
+What was wrong:
+- The layout validator proved only the primary CBuffer DTO offsets, while SHINOBU_267 also owns Vault profile/tuning/flow rows and fixed telemetry dump rows.
+
+What was done:
+- Expanded `ValidateFloraSwayLayouts()` to verify size, alignment, and every field offset for `FloraSwayParamsDTO`, `FloraAmbientFlowStateDTO`, `FloraSwayTuningDTO`, `FloraBiomeSwayProfileDTO`, and `SwayTelemetryEntry`.
+- Added explicit size constants for flow state, tuning, and biome profile DTOs.
+- Extended editor `layoutOffsetApi` self-audit coverage to require the full offset matrix and continue rejecting `Marshal.OffsetOf`.
+
+Cinematic Cheats used:
+- No CPU flora simulation was added. The Dear Lie remains one global CBuffer feeding GPU vertex displacement through painted stiffness.
+
+Exact Microseconds saved:
+- 0 hot us in this pass. It protects the existing saved-cost model: no per-flora CPU transforms, no bones, no material property loops.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-22-P51_FULL_DTO_OFFSET_MATRIX">
+  <TASK id="04" status="PASS">DTO layout validation now covers the full SHINOBU_267 binary matrix, not only the CBuffer params DTO.</TASK>
+  <TASK id="15" status="PASS">Telemetry dump row offsets are now tied to the same validator as the advertised 32-byte row size.</TASK>
+  <TASK id="16" status="PASS">Tuning/profile Vault DTO offsets are now part of the audit route used by the editor facade.</TASK>
+  <TASK id="20" status="PASS">`layoutOffsetApi` now requires full-matrix `UnsafeUtility.GetFieldOffset` coverage and still rejects `Marshal.OffsetOf`.</TASK>
+  <STRUCT_LAYOUT_VERIFICATION>All five SHINOBU_267 DTOs are `[StructLayout(LayoutKind.Explicit, Size = 32)]`. Params: `GlobalFlowVector@0` size16, `SwayMathParams@16` size16. Flow: `FlowDirectionSpeed@0` size16, `SourceAndFrame@16` size16. Tuning/Profile/Telemetry scalar lanes are verified at offsets 0,4,8,12,16,20,24,28. Final size 32 bytes, alignment >=4, no `Pack=1`.</STRUCT_LAYOUT_VERIFICATION>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Profile hydration, Vault rows, CBuffer upload, and dump-reader expectations now share one validator-backed ABI proof.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static source/self-audit now; Unity import/Console, editor self-audit invocation, selected route run, profiler/GC, Frame Debugger, screenshot/clip, save/load diff, and dump-read smoke test remain pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Build launch before it is useful, unrelated sibling-domain DTO cleanup, DTO size changes, and hot managed reflection.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>Owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; runtime has 29 `GetFieldOffset&lt;...&gt;` checks, explicit size constants for flow/tuning/profile DTOs, no `profileSize == 32` literal, no `Marshal.OffsetOf`, asmdef JSON parse passed, and `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because this was static ABI proof work.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>

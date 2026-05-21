@@ -404,3 +404,11 @@ Solution: Ran `git diff --check` on patched source/docs; it returned only Git LF
 Rejected Alternatives: Treating one low CIM sample as permission while another compiler was active, launching a second compiler, or building the stale generated `Hecton8.Core.csproj`.
 Scalability potential: No runtime route change.
 Hardware Impact: Protects shared workstation CPU/IO. Compile remains PENDING VERIFICATION.
+
+### D050 AR Target Upload MemCpy Correction
+
+Problem: `ArPass.UpdateGpuPayload` uploaded HUD and digit constant buffers through `UnsafeUtility.MemCpy`, but copied the 16-row AR target structured buffer with per-row C# assignment loops. The route was bounded and cheap, but it contradicted the logged Task 11 claim that all mapped GPU payloads used direct MemCpy.
+Solution: Added `CopyTargetsToMappedBuffer`, which clamps the source count, copies active `VisorArTargetDTO` rows with `UnsafeUtility.MemCpy`, and clears inactive mapped rows with `UnsafeUtility.MemClear`. DTO layout, BufferIDs, shader binding names, RenderGraph declarations, stencil lane, and rollback exclusion are unchanged.
+Rejected Alternatives: Keeping the loop because the count is only 16 was rejected because the code and evidence log would stay inconsistent. Reintroducing a Burst job was rejected because this is still a tiny same-frame visual payload and would add dispatch overhead.
+Scalability potential: Low devices reduce CPU copy variance while retaining flat stencil linework; Middle/High/Ultra keep the same continuous `GlobalQualityWeight` shader overkill path and target capacity.
+Hardware Impact: Expected i3/MX350 gain is small, roughly 1-3 us CPU variance reduction pending profiler proof. The larger impact is eliminating a false proof artifact in the upload path.

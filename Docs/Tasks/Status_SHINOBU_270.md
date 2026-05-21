@@ -4,7 +4,7 @@ Agent: SHINOBU_270
 Domain: ECHELON 8 Presentation & UX / Visor AR (HUD)
 Prompt role: VISOR_AR_STENCIL_RENDERER
 Task count: 20
-Status: VAULT LIFECYCLE PATCHED / STATIC SCAN CLEAN / GENERATED CSPROJ STALE / COMPILE BLOCKED BY ACTIVE COMPILER AND CPU GATE
+Status: TARGET UPLOAD MEMCPY PATCHED / VAULT LIFECYCLE PATCHED / STATIC SCAN CLEAN / GENERATED CSPROJ STALE / COMPILE BLOCKED BY CPU/PROJECT GATE
 
 ## Mandates Read
 
@@ -159,3 +159,8 @@ Status: VAULT LIFECYCLE PATCHED / STATIC SCAN CLEAN / GENERATED CSPROJ STALE / C
 - [x] Post-lifecycle static verification rerun | Justification: targeted visor/UI/shader forbidden scan returned no `GlobalSignals`, `FromRuntimePosition`, shader global setters, `Canvas.ForceUpdateCanvases`, `TryGetLatestCreated`, Burst/job/tiny-run wrappers, `.Complete()`, persistent runtime `NativeArray`, or `_CameraDepthTexture`; `git diff --check` reports only Git LF-to-CRLF warning | Alternatives Rejected: waiting for build output before checking deterministic source risks | Estimated impact: proof only
 - [x] Build gate resampled after lifecycle patch | Justification: active `dotnet` PID 34832 and `csc` PID 15644 were present; CPU was 100% by CIM and 90.05%, 82.47%, 86.72% by processor counter samples, so SHINOBU_270 did not launch `dotnet build` | Alternatives Rejected: launching a competing compiler or building under saturated CPU | Estimated impact: protects shared workstation and IO; compile remains PENDING VERIFICATION
 - [x] Documentation verification and final gate resampled | Justification: `diff --check` on patched source/docs returned only Git LF-to-CRLF warning; a later gate found active `dotnet` PID 22280 and `csc` PID 13460 with CPU samples 43% by CIM but 85.74%, 72.45%, 95.18% by processor counter, so active compiler plus hot counter gate still blocked build | Alternatives Rejected: launching a second compiler or using one low CIM sample to override active compiler and counter samples | Estimated impact: proof/workstation protection only
+
+## Iteration 20: Target Upload MemCpy Patch
+
+- [x] AR target GPU upload loop removed | Justification: `ArPass.UpdateGpuPayload` now copies the mapped `VisorArTargetDTO[16]` structured buffer through `UnsafeUtility.MemCpy` and clears unused mapped rows with `UnsafeUtility.MemClear`, matching the HUD/digit upload route already claimed in the rationale | Alternatives Rejected: keeping bounded per-row C# loops after claiming direct mapped-buffer MemCpy | Estimated impact: 1-3 us CPU variance reduction on low-end silicon pending profiler proof; primary value is evidence honesty and upload-route consistency
+- [x] Post-upload static verification rerun | Justification: targeted visor/UI/shader forbidden scan returned no `GlobalSignals`, `FromRuntimePosition`, shader global setters, `Canvas.ForceUpdateCanvases`, `TryGetLatestCreated`, Burst/job/tiny-run wrappers, `.Complete()`, persistent runtime `NativeArray`, or `_CameraDepthTexture`; `git diff --check` reports only Git LF-to-CRLF warning | Alternatives Rejected: declaring the prior rationale accurate without source correction | Estimated impact: proof only

@@ -858,3 +858,11 @@ Solution: Removed the cached profile byte. Retinal-blind signals are consumed on
 Rejected Alternatives: Keeping the binary tier gate was rejected because visual lanes must degrade continuously. Dropping the effect entirely at low quality was rejected because the player feedback becomes inconsistent; scaling intensity preserves the cue with lower presentation cost.
 Scalability potential: Low devices get a reduced but visible strobe; middle devices get partial intensity; high/ultra get full strobe. The gameplay blind state remains unchanged.
 Hardware Impact: 0 us speed claim. One cold registry tier field was removed; the route is presentation only.
+
+## Visor Material Texture Binding Repair II
+
+Problem: Compile Check 87 proved the previous Visor fix did not reach the actual RenderGraph render function lines. `RasterCommandBuffer.SetGlobalTexture` still received ordinary `UnityEngine.Texture` / `Texture2DArray` assets, but this Unity 6000 overload expects RenderGraph `TextureHandle` values.
+Solution: Bound ordinary visor crack, lens dirt, blue-noise, VR comfort mask, and decal atlas textures through the persistent fullscreen `Material.SetTexture(int, Texture)` API. Kept transient source/depth `TextureHandle` bindings on `RasterCommandBuffer`.
+Rejected Alternatives: Importing stable asset textures into RenderGraph was rejected because ownership is persistent material state, not transient graph storage. String property names were rejected because existing shader IDs are already precomputed integer IDs and avoid per-call lookup/allocation risk.
+Scalability potential: Low/Middle/High/Ultra use the same shader assets; fidelity continues to scale through existing scalar uniforms and continuous presentation weights, not through compile-invalid binding paths.
+Hardware Impact: 0 us runtime. This is a compile-wall repair; no gameplay or frame-time speed claim.

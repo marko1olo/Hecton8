@@ -67,6 +67,24 @@ Remaining blocked/pending:
   <QUALITY status="DRS shader uses continuous scale-deficit curve; no binary low-tier switch added" />
 </SELF_AUDIT>
 
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="VisorMaterialTextureBindingRepairII">
+  <WHAT_WAS_WRONG>
+    Compile Check 87 failed because ordinary `UnityEngine.Texture` assets were still being passed to `RasterCommandBuffer.SetGlobalTexture`, whose Unity 6000 RenderGraph overload expects `TextureHandle` inputs in raster pass context.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Visor crack/lens dirt/blue-noise/VR comfort mask textures and the deferred decal atlas now bind through `Material.SetTexture(int, Texture)`. Source and depth graph textures remain on `RasterCommandBuffer.SetGlobalTexture` because they are real `TextureHandle` values.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    No physical simulation added. The visor/decal lane remains a shader-material presentation fake with scalar quality controls; this patch only restores the correct binding route.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    Compile API repair only. No runtime speed claim; integer shader IDs preserve the existing allocation-free material binding style.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Build failed before the patch with ten CS1503 errors at the Visor texture binding sites. After the patch, targeted `git diff --check` passed for `HectonVisorUberPostFeature.cs` and `DeferredDecalPass.cs` with line-ending warnings only. Full rebuild is deferred until no compiler process is active.
+  </VERIFICATION>
+</SELF_AUDIT>
+
 <SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="FaunaRetinalBiolumPresentation">
   <WHAT_WAS_WRONG>
     `FaunaBrain` used `ScalabilityTierProfileByte` to hard-disable retinal-blind biolum presentation below tier 2. The blind state stayed authoritative, but the visual cue popped by hardware tier.

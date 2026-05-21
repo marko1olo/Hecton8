@@ -123,8 +123,7 @@ namespace Hecton8.AI
             if ((entity.StateFlags & ProceduralCrabLegIKRuntime.EntityFlagActive) == 0 ||
                 (entity.StateFlags & ProceduralCrabLegIKRuntime.EntityFlagCorpse) != 0 ||
                 entity.Health <= 0 ||
-                localLegIndex >= entity.LegCount ||
-                !ShouldRaycastLeg(in entity, localLegIndex))
+                localLegIndex >= entity.LegCount)
             {
                 WriteDisabledCommand(index);
                 return;
@@ -142,20 +141,6 @@ namespace Hecton8.AI
                 query,
                 math.max(0.01f, entity.RaycastDistance));
             RaycastLegMask[index] = 1;
-        }
-
-        private static bool ShouldRaycastLeg(in ProceduralCrabLegEntityState entity, int localLegIndex)
-        {
-            if (entity.RaycastBudgetMode != ProceduralCrabLegIKRuntime.RaycastBudgetLowTwoLegs)
-                return true;
-
-            int safeLegCount = math.clamp(entity.LegCount, ProceduralCrabLegIKRuntime.MinLegsPerEntity, ProceduralCrabLegIKRuntime.MaxLegsPerEntity);
-            int pairStart = ((entity.FrameIndex * 2) % safeLegCount);
-            int pairEnd = pairStart + 1;
-            if (pairEnd >= safeLegCount)
-                pairEnd = 0;
-
-            return localLegIndex == pairStart || localLegIndex == pairEnd;
         }
 
         private void WriteDisabledCommand(int commandIndex)
@@ -577,7 +562,6 @@ namespace Hecton8.AI
     {
         internal const int MinLegsPerEntity = 4;
         internal const int MaxLegsPerEntity = 6;
-        internal const int RaycastBudgetLowTwoLegs = 0;
         internal const int RaycastBudgetHighAllLegs = 1;
         internal const int EntityFlagActive = 1 << 0;
         internal const int EntityFlagCorpse = 1 << 1;
@@ -689,7 +673,6 @@ namespace Hecton8.AI
         private int _frameIndex;
         private int _lastActiveEntityCount;
         private int _telemetryCursor;
-        private HectonQualityTier _qualityTier = HectonQualityTier.High;
         private float3 _pendingOriginShiftOffset;
 
         internal NativeArray<float3> FootPositions =>
@@ -936,7 +919,6 @@ namespace Hecton8.AI
         private void RefreshColdDependencies()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _qualityTier = GlobalRegistry.ScalabilityTier;
         }
 
         private void ClearVaultHandles()
@@ -1101,10 +1083,7 @@ namespace Hecton8.AI
         private int CaptureFrameState(float deltaTime, CrabLegVaultBuffers buffers)
         {
             int activeCount = 0;
-            HectonQualityTier tier = _qualityTier;
-            int raycastBudgetMode = tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350
-                ? RaycastBudgetLowTwoLegs
-                : RaycastBudgetHighAllLegs;
+            const int raycastBudgetMode = RaycastBudgetHighAllLegs;
 
             float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
             int frameIndex = _frameIndex++;

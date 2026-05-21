@@ -89,6 +89,30 @@ Verification:
   <CompileStatus>BLOCKED_BY_CPU_GATE_100_PERCENT</CompileStatus>
 </SELF_AUDIT>
 
+## 2026-05-22 - AR Target Upload MemCpy Patch
+
+What was wrong:
+- The log claimed direct `UnsafeUtility.MemCpy` for mapped GPU uploads, but `ArPass.UpdateGpuPayload` still copied `VisorArTargetDTO` rows with bounded per-row C# loops.
+- This was not a gameplay truth bug, but it was an evidence mismatch in Task 11's upload route.
+
+What was done:
+- Replaced the target row copy/clear loops with `CopyTargetsToMappedBuffer`.
+- Active target rows copy through `UnsafeUtility.MemCpy`.
+- Unused mapped rows clear through `UnsafeUtility.MemClear`.
+- No DTO layout, BufferID, shader resource name, RenderGraph resource declaration, stencil lane, telemetry ABI, or rollback exclusion changed.
+
+Cinematic Cheats used:
+- Runtime route unchanged: stencil mask plus shader-side procedural digits, breath fog, scanlines, and compacted AR brackets. No Canvas/TMP layout, CPU particles, or per-target GameObjects were restored.
+
+Exact Microseconds saved:
+- Estimated 1-3 us CPU variance reduction on i3/MX350-class hardware pending profiler proof.
+- Primary gain is proof correctness: the code now matches the claimed mapped-buffer upload route.
+
+Verification:
+- Targeted visor/UI/shader forbidden scan returned no hits for `GlobalSignals`, `FromRuntimePosition`, shader global setters, `Canvas.ForceUpdateCanvases`, `TryGetLatestCreated`, Burst/job/tiny-run wrappers, `.Complete()`, persistent runtime `NativeArray`, or `_CameraDepthTexture`.
+- `git diff --check` on the changed renderer and SHINOBU_270 docs reported only Git LF-to-CRLF warning.
+- Build not launched: generated `Hecton8.Core.csproj` remains stale for new SHINOBU_270 script entries, and compile proof remains PENDING VERIFICATION until Unity regenerates/imports project files and the CPU/compiler gate is legal.
+
 ## VISOR_AR_STENCIL_RENDERER STATIC POLISH LOOP 7
 
 Date: 2026-05-21

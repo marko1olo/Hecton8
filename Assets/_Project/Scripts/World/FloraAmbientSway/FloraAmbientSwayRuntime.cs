@@ -204,6 +204,9 @@ namespace Hecton8.World.FloraAmbientSway
         public const int BiomeProfileCapacity = 64;
         public const int CsvScratchBytes = 64 * 1024;
         public const uint SystemHash = 0x53483236u;
+        private const int FloraAmbientFlowStateSizeBytes = 32;
+        private const int FloraSwayTuningSizeBytes = 32;
+        private const int FloraBiomeSwayProfileSizeBytes = 32;
 
         private const BufferID FloraAmbientSwayParamsBufferId = (BufferID)72900;
         private const BufferID FloraAmbientSwayFlowStateBufferId = (BufferID)72901;
@@ -579,12 +582,46 @@ namespace Hecton8.World.FloraAmbientSway
             paramsSize = UnsafeUtility.SizeOf<FloraSwayParamsDTO>();
             telemetrySize = UnsafeUtility.SizeOf<SwayTelemetryEntry>();
             profileSize = UnsafeUtility.SizeOf<FloraBiomeSwayProfileDTO>();
+            int flowSize = UnsafeUtility.SizeOf<FloraAmbientFlowStateDTO>();
+            int tuningSize = UnsafeUtility.SizeOf<FloraSwayTuningDTO>();
             return paramsSize == FloraSwayParamsSizeBytes &&
                    UnsafeUtility.AlignOf<FloraSwayParamsDTO>() >= 4 &&
+                   flowSize == FloraAmbientFlowStateSizeBytes &&
+                   UnsafeUtility.AlignOf<FloraAmbientFlowStateDTO>() >= 4 &&
+                   tuningSize == FloraSwayTuningSizeBytes &&
+                   UnsafeUtility.AlignOf<FloraSwayTuningDTO>() >= 4 &&
                    telemetrySize == (int)SwayTelemetryEntrySizeBytes &&
-                   profileSize == 32 &&
+                   UnsafeUtility.AlignOf<SwayTelemetryEntry>() >= 4 &&
+                   profileSize == FloraBiomeSwayProfileSizeBytes &&
+                   UnsafeUtility.AlignOf<FloraBiomeSwayProfileDTO>() >= 4 &&
                    GetFieldOffset<FloraSwayParamsDTO>(nameof(FloraSwayParamsDTO.GlobalFlowVector)) == 0 &&
-                   GetFieldOffset<FloraSwayParamsDTO>(nameof(FloraSwayParamsDTO.SwayMathParams)) == 16;
+                   GetFieldOffset<FloraSwayParamsDTO>(nameof(FloraSwayParamsDTO.SwayMathParams)) == 16 &&
+                   GetFieldOffset<FloraAmbientFlowStateDTO>(nameof(FloraAmbientFlowStateDTO.FlowDirectionSpeed)) == 0 &&
+                   GetFieldOffset<FloraAmbientFlowStateDTO>(nameof(FloraAmbientFlowStateDTO.SourceAndFrame)) == 16 &&
+                   GetFieldOffset<FloraSwayTuningDTO>(nameof(FloraSwayTuningDTO.GlobalAmplitudeMeters)) == 0 &&
+                   GetFieldOffset<FloraSwayTuningDTO>(nameof(FloraSwayTuningDTO.Frequency)) == 4 &&
+                   GetFieldOffset<FloraSwayTuningDTO>(nameof(FloraSwayTuningDTO.PhaseSpatialOffset)) == 8 &&
+                   GetFieldOffset<FloraSwayTuningDTO>(nameof(FloraSwayTuningDTO.AlphaClip)) == 12 &&
+                   GetFieldOffset<FloraSwayTuningDTO>(nameof(FloraSwayTuningDTO.MockFlowSpeed)) == 16 &&
+                   GetFieldOffset<FloraSwayTuningDTO>(nameof(FloraSwayTuningDTO.MockFlowIntensity)) == 20 &&
+                   GetFieldOffset<FloraSwayTuningDTO>(nameof(FloraSwayTuningDTO.Flags)) == 24 &&
+                   GetFieldOffset<FloraSwayTuningDTO>(nameof(FloraSwayTuningDTO.ProfileHash)) == 28 &&
+                   GetFieldOffset<FloraBiomeSwayProfileDTO>(nameof(FloraBiomeSwayProfileDTO.BiomeHash)) == 0 &&
+                   GetFieldOffset<FloraBiomeSwayProfileDTO>(nameof(FloraBiomeSwayProfileDTO.GlobalAmplitudeMeters)) == 4 &&
+                   GetFieldOffset<FloraBiomeSwayProfileDTO>(nameof(FloraBiomeSwayProfileDTO.Frequency)) == 8 &&
+                   GetFieldOffset<FloraBiomeSwayProfileDTO>(nameof(FloraBiomeSwayProfileDTO.PhaseSpatialOffset)) == 12 &&
+                   GetFieldOffset<FloraBiomeSwayProfileDTO>(nameof(FloraBiomeSwayProfileDTO.AlphaClip)) == 16 &&
+                   GetFieldOffset<FloraBiomeSwayProfileDTO>(nameof(FloraBiomeSwayProfileDTO.MockFlowIntensity)) == 20 &&
+                   GetFieldOffset<FloraBiomeSwayProfileDTO>(nameof(FloraBiomeSwayProfileDTO.Flags)) == 24 &&
+                   GetFieldOffset<FloraBiomeSwayProfileDTO>(nameof(FloraBiomeSwayProfileDTO.StateHash)) == 28 &&
+                   GetFieldOffset<SwayTelemetryEntry>(nameof(SwayTelemetryEntry.Frame)) == 0 &&
+                   GetFieldOffset<SwayTelemetryEntry>(nameof(SwayTelemetryEntry.Flags)) == 4 &&
+                   GetFieldOffset<SwayTelemetryEntry>(nameof(SwayTelemetryEntry.WrappedTime)) == 8 &&
+                   GetFieldOffset<SwayTelemetryEntry>(nameof(SwayTelemetryEntry.FlowMagnitude)) == 12 &&
+                   GetFieldOffset<SwayTelemetryEntry>(nameof(SwayTelemetryEntry.GlobalQualityWeight)) == 16 &&
+                   GetFieldOffset<SwayTelemetryEntry>(nameof(SwayTelemetryEntry.AmplitudeMeters)) == 20 &&
+                   GetFieldOffset<SwayTelemetryEntry>(nameof(SwayTelemetryEntry.StateHash)) == 24 &&
+                   GetFieldOffset<SwayTelemetryEntry>(nameof(SwayTelemetryEntry.SourceHash)) == 28;
         }
 
         private static int GetFieldOffset<T>(string fieldName) where T : struct

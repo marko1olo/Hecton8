@@ -1,5 +1,7 @@
 #if UNITY_EDITOR
+using System;
 using System.Globalization;
+using System.IO;
 using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEditor;
@@ -12,6 +14,11 @@ namespace Hecton8.Visor.Editor
     {
         private const double RefreshSeconds = 0.2d;
         private const string DefaultCsvPath = "Assets/_Project/Data/Decals/visor_decal_profiles.csv";
+        private const string CsvSchemaVersion = "H8_VISOR_DECAL_PROFILE_CSV_V1";
+        private const string CsvHeader = "source,atlasSlice,lifetimeSeconds,radiusMeters,projectionDepthMeters";
+        private const string DataMonolithOutputPath = "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin";
+        private const string RuntimeProfileVaultRoute = "GlobalDataVault BufferID 71495 MaterialProfiles / 71496 CsvScratch";
+        private static readonly uint CsvSchemaHash32 = ComputeFnv1a32(CsvHeader);
 
         private readonly VisualElement[] _histogramBars = new VisualElement[16];
         private Slider _qualitySlider;
@@ -24,6 +31,14 @@ namespace Hecton8.Visor.Editor
         private SliderInt _gizmoLimitSlider;
         private Label _statsLabel;
         private Label _csvLabel;
+        private Label _bridgeLabel;
+        private Label _layoutLabel;
+        private Label _validationLabel;
+        private string _lastCsvPath = DefaultCsvPath;
+        private int _lastCsvRows;
+        private uint _lastCsvHeaderHash32;
+        private bool _lastCsvAttempted;
+        private bool _lastCsvValid;
         private double _nextRefreshTime;
 
         [MenuItem("HECTON-8/Rendering/Screen-Space Visor Wound Tuner")]
@@ -66,6 +81,9 @@ namespace Hecton8.Visor.Editor
                 value = 64,
                 showInputField = true
             };
+            _bridgeLabel = new Label();
+            _layoutLabel = new Label();
+            _validationLabel = new Label();
             _statsLabel = new Label();
             _csvLabel = new Label();
 
@@ -79,6 +97,9 @@ namespace Hecton8.Visor.Editor
             rootVisualElement.Add(_gizmoLimitSlider);
             rootVisualElement.Add(new Button(GenerateMockLoad) { text = "Generate Mock Visor Wounds" });
             rootVisualElement.Add(new Button(LoadCsvProfiles) { text = "Load Visor Wound CSV" });
+            rootVisualElement.Add(_bridgeLabel);
+            rootVisualElement.Add(_layoutLabel);
+            rootVisualElement.Add(_validationLabel);
             rootVisualElement.Add(BuildHistogram());
             rootVisualElement.Add(_statsLabel);
             rootVisualElement.Add(_csvLabel);
@@ -93,6 +114,7 @@ namespace Hecton8.Visor.Editor
             _gizmoLimitSlider.RegisterValueChangedCallback(_ => SceneView.RepaintAll());
 
             PullTuning();
+            RefreshBridgeMetadata();
             RefreshStats();
         }
 
@@ -176,15 +198,22 @@ namespace Hecton8.Visor.Editor
         private void LoadCsvProfiles()
         {
             string projectPath = Application.dataPath;
-            string defaultPath = System.IO.Path.GetFullPath(System.IO.Path.Combine(projectPath, "..", DefaultCsvPath));
-            string selected = EditorUtility.OpenFilePanel("Load visor_decal_profiles.csv", System.IO.Path.GetDirectoryName(defaultPath), "csv");
+            string defaultPath = Path.GetFullPath(Path.Combine(projectPath, "..", DefaultCsvPath));
+            string selected = EditorUtility.OpenFilePanel("Load visor_decal_profiles.csv", Path.GetDirectoryName(defaultPath), "csv");
             if (string.IsNullOrEmpty(selected))
                 return;
 
-            bool loaded = DynamicDecalVaultRuntime.TryLoadMaterialProfilesCsv(selected, out int rowCount);
+            _lastCsvPath = selected;
+            _lastCsvAttempted = true;
+            _lastCsvHeaderHash32 = ComputeCsvHeaderHash32(selected);
+            bool schemaMatches = _lastCsvHeaderHash32 == CsvSchemaHash32;
+            bool loaded = schemaMatches && DynamicDecalVaultRuntime.TryLoadMaterialProfilesCsv(selected, out int rowCount);
+            _lastCsvRows = loaded ? rowCount : 0;
+            _lastCsvValid = loaded;
             _csvLabel.text = loaded
                 ? string.Concat("CSV profiles loaded: ", rowCount.ToString(CultureInfo.InvariantCulture))
-                : "CSV profiles rejected";
+                : schemaMatches ? "CSV profiles rejected" : "CSV schema hash mismatch";
+            RefreshBridgeMetadata();
         }
 
         private void RefreshStats()
@@ -192,6 +221,7 @@ namespace Hecton8.Visor.Editor
             if (_statsLabel == null)
                 return;
 
+            RefreshBridgeMetadata();
             DynamicDecalVaultRuntime.TryGetRuntimeState(out DecalRuntimeStateDTO state);
             DynamicDecalVaultRuntime.TryGetLatestTelemetry(out VisorWoundTelemetryEntry telemetry);
             float capacity = math.max(1f, state.MaxActiveThisFrame);
@@ -228,6 +258,107 @@ namespace Hecton8.Visor.Editor
                 DynamicDecalVaultRuntime.GetLoadedMaterialProfileCount().ToString(culture),
                 " | Last Hash 0x",
                 telemetry.StateHash.ToString("X8", culture));
+        }
+
+        private void RefreshBridgeMetadata()
+        {
+            CultureInfo culture = CultureInfo.InvariantCulture;
+            if (_bridgeLabel != null)
+            {
+                _bridgeLabel.text = string.Concat(
+                    "Source CSV: ",
+                    DefaultCsvPath,
+                    "\nSchema: ",
+                    CsvSchemaVersion,
+                    " 0x",
+                    CsvSchemaHash32.ToString("X8", culture),
+                    "\nRuntime route: ",
+                    RuntimeProfileVaultRoute,
+                    "\nBinary output: ",
+                    DataMonolithOutputPath,
+                    " (DataMonolith bake not claimed by this facade)");
+            }
+
+            if (_layoutLabel != null)
+            {
+                _layoutLabel.text =
+                    "ABI: VisorDecalDTO 80B [LocalToWorld@0:64, DecalTypeHash@64:4, Opacity01@68:4, BirthTime@72:4, Flags@76:4]; " +
+                    "DecalMaterialProfileDTO 32B [SourceHash@0:4, AtlasSlice@4:4, LifetimeSeconds@8:4, RadiusMeters@12:4, ProjectionDepthMeters@16:4, Flags@20:4, pad@24:8].";
+            }
+
+            if (_validationLabel != null)
+            {
+                string state = _lastCsvAttempted
+                    ? (_lastCsvValid ? "PASS" : "FAIL")
+                    : "PENDING";
+                uint headerHash = _lastCsvAttempted ? _lastCsvHeaderHash32 : CsvSchemaHash32;
+                _validationLabel.text = string.Concat(
+                    "Last validation: ",
+                    state,
+                    " | Path: ",
+                    _lastCsvPath,
+                    " | Rows: ",
+                    _lastCsvRows.ToString(culture),
+                    " | HeaderHash: 0x",
+                    headerHash.ToString("X8", culture));
+            }
+        }
+
+        private static uint ComputeCsvHeaderHash32(string path)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return 0u;
+
+            try
+            {
+                using FileStream stream = File.OpenRead(path);
+                Span<byte> buffer = stackalloc byte[128];
+                int read = stream.Read(buffer);
+                if (read <= 0)
+                    return 0u;
+
+                int length = 0;
+                while (length < read && buffer[length] != (byte)'\n' && buffer[length] != (byte)'\r')
+                    length++;
+
+                return ComputeFnv1a32(buffer.Slice(0, length));
+            }
+            catch
+            {
+                return 0u;
+            }
+        }
+
+        private static uint ComputeFnv1a32(string text)
+        {
+            const uint offset = 2166136261u;
+            const uint prime = 16777619u;
+            uint hash = offset;
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+                if (c >= 'A' && c <= 'Z')
+                    c = (char)(c + 32);
+                hash = (hash ^ (byte)c) * prime;
+            }
+
+            return hash != 0u ? hash : 1u;
+        }
+
+        private static uint ComputeFnv1a32(ReadOnlySpan<byte> text)
+        {
+            const uint offset = 2166136261u;
+            const uint prime = 16777619u;
+            uint hash = offset;
+            for (int i = 0; i < text.Length; i++)
+            {
+                byte value = text[i];
+                if (value >= (byte)'A' && value <= (byte)'Z')
+                    value = (byte)(value + 32);
+                hash = (hash ^ value) * prime;
+            }
+
+            return hash != 0u ? hash : 1u;
         }
 
         private void OnDrawGizmos(SceneView sceneView)

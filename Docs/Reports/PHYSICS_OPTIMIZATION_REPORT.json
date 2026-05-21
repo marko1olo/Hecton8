@@ -106,6 +106,10 @@
     "agent": "SHINOBU_261",
     "scanner": "Water_Interface_Scanner",
     "status": "OOP Water Queries Not Eradicated - legacy callers remain",
+    "generatedWithoutUnity": true,
+    "unityMenuRoute": "Hecton/Physics/Water Interface Scanner",
+    "scanScope": "Assets/_Project/Scripts excluding Plugins/Crest",
+    "scannedScripts": 2178,
     "dedicatedReport": "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_261.json",
     "runtimeRouteProof": {
       "adapter": "Crest4KinematicsAdapter",
@@ -123,6 +127,29 @@
       "Assets/_Project/Scripts/HectonPlayerMovement.cs",
       "Assets/_Project/Scripts/World/FloraInteractionManager.cs"
     ],
-    "compileProof": "not run: CPU sampled at 100 percent; no dotnet/csc/MSBuild/Unity process active; project gate forbids build above 50 percent CPU"
+    "findings": [
+      {
+        "path": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+        "line": 6924,
+        "pattern": ".GetWaterHeight("
+      },
+      {
+        "path": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+        "line": 6932,
+        "pattern": ".GetWaveNormal("
+      },
+      {
+        "path": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+        "line": 6984,
+        "pattern": ".GetSurfaceFlow("
+      },
+      {
+        "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+        "line": 7014,
+        "pattern": ".GetSurfaceFlow("
+      }
+    ],
+    "verificationLimit": "Unity AssetDatabase scanner was not executed because CPU load is above the project build/editor gate; shell rg fallback confirms zero direct OceanRenderer lookups and four legacy managed water-query call sites.",
+    "compileProof": "not run by Water_Interface_Scanner; SHINOBU_261 compile gate samples are recorded in Docs/Tasks/Status_SHINOBU_261.md and remain subject to CPU <=50 with no active dotnet/csc/MSBuild/Unity process"
   }
 }

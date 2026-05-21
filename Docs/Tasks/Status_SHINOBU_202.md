@@ -4024,3 +4024,20 @@ Mandates read before coding:
 - Brace counts are balanced: `QuestDagRuntimeTypes.cs` `18/18`, `QuestDagResolverRuntime.cs` `114/114`, `NarrativeDagInspectorWindow.cs` `29/29`.
 - `git diff --check` passed for the Quest DAG files; CRLF warnings only.
 - Build not relaunched under the explicit no-rebuild command discipline.
+
+## Loop 225 - Shinobu Metabolism Descriptor Route
+- [x] Replaced Shinobu Metabolism retained Vault handles with generation descriptors.
+  DOD practice: metabolism state, entity AUPs, exertion, species rules, rule indices, telemetry ring, tuning, toxin samples, CSV scratch, staged physiology signals, and staged combat signals now retain `VaultGenerationHandle<T>` descriptors and open through exact BufferID, `SystemID.GameplayPlayer`, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated` proof.
+  Rejected: keeping `VaultBufferHandle<T>`, `GetBufferHandle`, `.Resolve(vault)`, retained handle `.IsCreated`, retained handle `.Length`, and `GetElementAsRef` because this runtime crosses scheduled metabolism jobs, CSV ingestion, SignalBus staging, telemetry patching, blackbox dumps, editor reads, and DataVault replacement.
+  Estimate: descriptor proof runs at cold ensure, SlowTick scheduling, default/mock hydration, CSV reload, tuning read/write, telemetry finalization, signal publish, blackbox dump, and editor gizmo/read boundaries; `MetabolicStateDTO`, mirror chemical DTOs, BufferIDs, CSV byte schema, SignalBus payloads, shader globals, and GameplayPlayer authority are unchanged.
+- [x] Added GameplayPlayer-owned release and borrowed chemical readback descriptor proof.
+  DOD practice: disable, dispose, and DataVault hot-swap complete pending metabolism jobs, unlock active job/readback lanes, release eleven GameplayPlayer descriptors through `ReleaseBuffer(in handle)`, and tombstone route state before reacquisition. AISensory-owned chemical readback buffers are borrowed through phase-local `TryGetGenerationHandle` plus `TryReadHandle`; metabolism never releases those descriptors.
+  Rejected: resolving chemical readback through `ChemicalInfluenceGrid` runtime DTOs because that would add a direct sibling-runtime dependency from Physiology. Rewriting metabolism drain math, thermal/chemical sampling, CSV parser, shader CBuffer packing, mock generation, or blackbox schema was rejected as outside this stale pointer route loop.
+  Estimate: cold lifecycle, phase-boundary, and readback proof only; no DTO layout, save identity, binary payload format, shader property ID, SignalBus ABI, or gameplay truth route changed.
+
+## Compile State Update 219
+- Focused legacy route scan on `ShinobuMetabolismRuntime.cs` found no executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, `.ptr`, or `ChemicalInfluenceGrid.Chemical*` hits.
+- Descriptor route scan confirmed expected `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryGetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `TryReadChemicalVaultBuffer`, `ReleaseMetabolismVaultHandles`, `ReleaseMetabolismVaultHandle`, and `ReleaseBuffer(in handle)`.
+- Brace count is balanced: `ShinobuMetabolismRuntime.cs` `151/151`.
+- `git diff --check` passed for `ShinobuMetabolismRuntime.cs`; CRLF warning only.
+- Build not relaunched under the explicit no-rebuild command discipline.

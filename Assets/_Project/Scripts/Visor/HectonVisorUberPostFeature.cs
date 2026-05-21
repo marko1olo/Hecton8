@@ -578,10 +578,10 @@ namespace Hecton8.Visor
 
             private static void BindPostShaderParameters(RasterCommandBuffer cmd, PostPassData data)
             {
-                cmd.SetGlobalTexture(ShaderConstants.CrackTextureId, data.CrackTexture);
-                cmd.SetGlobalTexture(ShaderConstants.LensDirtTextureId, data.LensDirtTexture);
-                cmd.SetGlobalTexture(ShaderConstants.BlueNoiseTextureId, data.BlueNoiseTexture);
-                cmd.SetGlobalTexture(ShaderConstants.VrComfortMaskTextureId, data.VrComfortMaskTexture);
+                data.Material.SetTexture(ShaderConstants.CrackTextureName, data.CrackTexture);
+                data.Material.SetTexture(ShaderConstants.LensDirtTextureName, data.LensDirtTexture);
+                data.Material.SetTexture(ShaderConstants.BlueNoiseTextureName, data.BlueNoiseTexture);
+                data.Material.SetTexture(ShaderConstants.VrComfortMaskTextureName, data.VrComfortMaskTexture);
 
                 cmd.SetGlobalFloat(ShaderConstants.HealthFractionId, data.HealthFraction);
                 cmd.SetGlobalFloat(ShaderConstants.LocalTemperatureId, data.LocalTemperature);
@@ -632,9 +632,13 @@ namespace Hecton8.Visor
             internal static readonly int WaveParamsId = Shader.PropertyToID("_HectonUberWaveParams");
             internal static readonly int TextureFlagsId = Shader.PropertyToID("_HectonUberTextureFlags");
             internal static readonly int CrackTextureId = Shader.PropertyToID("_HectonVisorCrackTex");
+            internal const string CrackTextureName = "_HectonVisorCrackTex";
             internal static readonly int LensDirtTextureId = Shader.PropertyToID("_HectonLensDirtTex");
+            internal const string LensDirtTextureName = "_HectonLensDirtTex";
             internal static readonly int BlueNoiseTextureId = Shader.PropertyToID("_HectonBlueNoiseTex");
+            internal const string BlueNoiseTextureName = "_HectonBlueNoiseTex";
             internal static readonly int VrComfortMaskTextureId = Shader.PropertyToID("_HectonVRComfortMaskTex");
+            internal const string VrComfortMaskTextureName = "_HectonVRComfortMaskTex";
             internal static readonly int PlayerStressGlobalId = Shader.PropertyToID("_PlayerStress01");
             internal static readonly int HypoxiaSignalGlobalId = Shader.PropertyToID("_HypoxiaSignal");
             internal static readonly int LocalTemperatureGlobalId = Shader.PropertyToID("_LocalTemperature");

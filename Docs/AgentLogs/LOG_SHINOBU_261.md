@@ -675,3 +675,9 @@ Exact Microseconds saved: 0 runtime us for verification. Build not launched: CPU
   <residual_exact_deferred_schedule status="[PENDING_DISPATCHER_ROUTE]">Exact packed-count parallel scheduling would require deferred-list or dispatcher support outside this domain; no unsafe main-thread `NativeQueue.Count` read was introduced.</residual_exact_deferred_schedule>
   <compile status="[BLOCKED_BY_CPU_GATE]">Latest compile gate sample: CPU average 99 with active `csc` (`Id=39656`) and `dotnet` (`Id=22280`); no build launched.</compile>
 </SELF_AUDIT_REVISION>
+
+## Proof Patch: Shared Root Scanner Refresh
+What was wrong: `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json` had the SHINOBU_261 scanner block, but it omitted the sidecar's concrete `scannedScripts=2178` and finding array.
+What was done: mirrored the sidecar proof into the shared root: generation route, scan scope, script count, four explicit Player/Flora legacy managed water query findings, and a stable compile-proof pointer to `Status_SHINOBU_261.md`. Root and sidecar JSON parse after the patch.
+Cinematic Cheats used: none; this is proof-artifact hygiene for the water-query inquisition.
+Exact Microseconds saved: 0 runtime us. Build not launched: CPU average 99.

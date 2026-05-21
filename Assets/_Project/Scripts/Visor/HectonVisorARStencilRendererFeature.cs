@@ -367,11 +367,7 @@ namespace Hecton8.Visor
                 digitWrite.UnlockBufferAfterWrite<VisorHudDigitParamsDTO>(1);
 
                 NativeArray<VisorArTargetDTO> mappedTargets = targetWrite.LockBufferForWrite<VisorArTargetDTO>(0, VisorARStencilContracts.MaxTargets);
-                int count = targets.IsCreated ? math.min(targets.Length, VisorARStencilContracts.MaxTargets) : 0;
-                for (int i = 0; i < count; i++)
-                    mappedTargets[i] = targets[i];
-                for (int i = count; i < VisorARStencilContracts.MaxTargets; i++)
-                    mappedTargets[i] = default;
+                CopyTargetsToMappedBuffer(targets, mappedTargets);
                 targetWrite.UnlockBufferAfterWrite<VisorArTargetDTO>(VisorARStencilContracts.MaxTargets);
 
                 _activeHudBuffer = hudWrite;
@@ -1428,6 +1424,30 @@ namespace Hecton8.Visor
             void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(sourceBuffer);
             void* destination = NativeArrayUnsafeUtility.GetUnsafePtr(destinationBuffer);
             UnsafeUtility.MemCpy(destination, source, VisorARStencilContracts.DigitParamsStrideBytes);
+        }
+
+        private static unsafe void CopyTargetsToMappedBuffer(
+            NativeArray<VisorArTargetDTO> sourceBuffer,
+            NativeArray<VisorArTargetDTO> destinationBuffer)
+        {
+            if (!destinationBuffer.IsCreated || destinationBuffer.Length <= 0)
+                return;
+
+            int targetCapacity = math.min(destinationBuffer.Length, VisorARStencilContracts.MaxTargets);
+            void* destination = NativeArrayUnsafeUtility.GetUnsafePtr(destinationBuffer);
+            int copyCount = sourceBuffer.IsCreated ? math.min(sourceBuffer.Length, targetCapacity) : 0;
+            if (copyCount > 0)
+            {
+                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(sourceBuffer);
+                UnsafeUtility.MemCpy(destination, source, copyCount * VisorARStencilContracts.TargetStrideBytes);
+            }
+
+            if (copyCount < targetCapacity)
+            {
+                byte* clearStart = (byte*)destination + (copyCount * VisorARStencilContracts.TargetStrideBytes);
+                int clearBytes = (targetCapacity - copyCount) * VisorARStencilContracts.TargetStrideBytes;
+                UnsafeUtility.MemClear(clearStart, clearBytes);
+            }
         }
 
         private static VisorHudParamsDTO GenerateMockHudData(float timeSeconds, in VisorHudParamsDTO input)
