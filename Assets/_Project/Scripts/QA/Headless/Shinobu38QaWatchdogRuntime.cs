@@ -337,22 +337,22 @@ namespace Hecton8.QA.Headless
         };
 
         private IDataVault _dataVault;
-        private VaultBufferHandle<WatchdogStateDTO> _stateHandle;
-        private VaultBufferHandle<TelemetrySnapshotDTO> _snapshotHandle;
-        private VaultBufferHandle<InputStateDTO> _agent36InputHandle;
-        private VaultBufferHandle<Shinobu38RouteWaypointDTO> _waypointsHandle;
-        private VaultBufferHandle<MockRebaseSignal> _mockRebaseSignalsHandle;
-        private VaultBufferHandle<Shinobu38TuningDTO> _tuningHandle;
-        private VaultBufferHandle<Shinobu38MockVaultDTO> _mockVaultHandle;
-        private VaultBufferHandle<Shinobu38WatchdogTelemetryEntry> _telemetryRingHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
-        private VaultBufferHandle<byte> _waypointScratchHandle;
-        private VaultBufferHandle<byte> _dumpScratchHandle;
-        private VaultBufferHandle<Shinobu38FileWriteCommand> _fileWriteCommandsHandle;
-        private VaultBufferHandle<byte> _fileWritePayloadHandle;
-        private VaultBufferHandle<Shinobu38FileWriterStateDTO> _fileWriterStateHandle;
-        private VaultBufferHandle<Shinobu38FileWriterCursorDTO> _fileWriterCursorHandle;
-        private VaultBufferHandle<Shinobu38WaypointIngestStateDTO> _waypointIngestStateHandle;
+        private VaultGenerationHandle<WatchdogStateDTO> _stateHandle;
+        private VaultGenerationHandle<TelemetrySnapshotDTO> _snapshotHandle;
+        private VaultGenerationHandle<InputStateDTO> _agent36InputHandle;
+        private VaultGenerationHandle<Shinobu38RouteWaypointDTO> _waypointsHandle;
+        private VaultGenerationHandle<MockRebaseSignal> _mockRebaseSignalsHandle;
+        private VaultGenerationHandle<Shinobu38TuningDTO> _tuningHandle;
+        private VaultGenerationHandle<Shinobu38MockVaultDTO> _mockVaultHandle;
+        private VaultGenerationHandle<Shinobu38WatchdogTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<byte> _waypointScratchHandle;
+        private VaultGenerationHandle<byte> _dumpScratchHandle;
+        private VaultGenerationHandle<Shinobu38FileWriteCommand> _fileWriteCommandsHandle;
+        private VaultGenerationHandle<byte> _fileWritePayloadHandle;
+        private VaultGenerationHandle<Shinobu38FileWriterStateDTO> _fileWriterStateHandle;
+        private VaultGenerationHandle<Shinobu38FileWriterCursorDTO> _fileWriterCursorHandle;
+        private VaultGenerationHandle<Shinobu38WaypointIngestStateDTO> _waypointIngestStateHandle;
         private JobHandle _navigationHandle;
         private ProfilerRecorder _gcUsedRecorder;
         private ProfilerRecorder _totalReservedRecorder;
@@ -451,10 +451,18 @@ namespace Hecton8.QA.Headless
             _pendingTuning.ObstacleAvoidanceStrength = math.max(0f, avoidanceStrength);
             _pendingTuning.TelemetryWriteFrequency = math.max(0.1f, telemetryHz);
             Shinobu38QaWatchdogRuntime active = _instance;
-            if (active == null || active._dataVault == null || !active._tuningHandle.IsCreated)
+            if (active == null ||
+                !TryResolveWatchdogVaultBuffer(
+                    active._dataVault,
+                    in active._tuningHandle,
+                    TuningBufferId,
+                    1,
+                    out NativeArray<Shinobu38TuningDTO> tuningBuffer))
+            {
                 return false;
+            }
 
-            ref Shinobu38TuningDTO tuning = ref active._tuningHandle.GetElementAsRef(active._dataVault, 0);
+            ref Shinobu38TuningDTO tuning = ref ElementRef(tuningBuffer, 0);
             tuning.SwimSpeed = _pendingTuning.SwimSpeed;
             tuning.ObstacleAvoidanceStrength = _pendingTuning.ObstacleAvoidanceStrength;
             tuning.TelemetryWriteFrequency = _pendingTuning.TelemetryWriteFrequency;
@@ -467,11 +475,25 @@ namespace Hecton8.QA.Headless
             target = double3.zero;
             avoidanceNormal = float3.zero;
             Shinobu38QaWatchdogRuntime active = _instance;
-            if (active == null || active._dataVault == null || !active._stateHandle.IsCreated || !active._mockVaultHandle.IsCreated)
+            if (active == null ||
+                !TryReadWatchdogVaultBuffer(
+                    active._dataVault,
+                    in active._stateHandle,
+                    StateBufferId,
+                    1,
+                    out NativeArray<WatchdogStateDTO> stateBuffer) ||
+                !TryReadWatchdogVaultBuffer(
+                    active._dataVault,
+                    in active._mockVaultHandle,
+                    MockVaultBufferId,
+                    1,
+                    out NativeArray<Shinobu38MockVaultDTO> mockVault))
+            {
                 return false;
+            }
 
-            ref readonly Shinobu38MockVaultDTO vault = ref active._mockVaultHandle.GetElementAsReadOnlyRef(active._dataVault, 0);
-            ref readonly WatchdogStateDTO state = ref active._stateHandle.GetElementAsReadOnlyRef(active._dataVault, 0);
+            Shinobu38MockVaultDTO vault = mockVault[0];
+            WatchdogStateDTO state = stateBuffer[0];
             current = vault.CurrentAUP;
             target = state.CurrentTargetAUP;
             double3 localToTarget = current - target;
@@ -544,6 +566,7 @@ namespace Hecton8.QA.Headless
             RestoreRuntimePolicy();
             DisposeRecorders();
             UnlockRuntimeBuffers();
+            ReleaseWatchdogVaultHandles(_dataVault);
             if (_instance == this)
                 _instance = null;
         }
@@ -561,20 +584,13 @@ namespace Hecton8.QA.Headless
             SampleQualityWallClock();
             float forcedQualityWeight = ApplyQualityWeightModulation(_qualityWallSeconds);
             IDataVault vault = _dataVault;
-            NativeArray<WatchdogStateDTO> stateBuffer = _stateHandle.Resolve(vault);
-            NativeArray<TelemetrySnapshotDTO> snapshotBuffer = _snapshotHandle.Resolve(vault);
-            NativeArray<InputStateDTO> inputBuffer = _agent36InputHandle.Resolve(vault);
-            NativeArray<Shinobu38RouteWaypointDTO> waypoints = _waypointsHandle.Resolve(vault);
-            NativeArray<MockRebaseSignal> rebaseSignals = _mockRebaseSignalsHandle.Resolve(vault);
-            NativeArray<Shinobu38TuningDTO> tuningBuffer = _tuningHandle.Resolve(vault);
-            NativeArray<Shinobu38MockVaultDTO> mockVault = _mockVaultHandle.Resolve(vault);
-            if (!stateBuffer.IsCreated ||
-                !snapshotBuffer.IsCreated ||
-                !inputBuffer.IsCreated ||
-                !waypoints.IsCreated ||
-                !rebaseSignals.IsCreated ||
-                !tuningBuffer.IsCreated ||
-                !mockVault.IsCreated)
+            if (!TryResolveWatchdogVaultBuffer(vault, in _stateHandle, StateBufferId, 1, out NativeArray<WatchdogStateDTO> stateBuffer) ||
+                !TryResolveWatchdogVaultBuffer(vault, in _snapshotHandle, SnapshotBufferId, 1, out NativeArray<TelemetrySnapshotDTO> snapshotBuffer) ||
+                !TryResolveWatchdogVaultBuffer(vault, in _agent36InputHandle, BufferID.ShinobuInputCurrentDto, InputBufferCapacity, out NativeArray<InputStateDTO> inputBuffer) ||
+                !TryResolveWatchdogVaultBuffer(vault, in _waypointsHandle, WaypointsBufferId, RouteCapacity, out NativeArray<Shinobu38RouteWaypointDTO> waypoints) ||
+                !TryResolveWatchdogVaultBuffer(vault, in _mockRebaseSignalsHandle, RebaseSignalsBufferId, 1, out NativeArray<MockRebaseSignal> rebaseSignals) ||
+                !TryResolveWatchdogVaultBuffer(vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<Shinobu38TuningDTO> tuningBuffer) ||
+                !TryResolveWatchdogVaultBuffer(vault, in _mockVaultHandle, MockVaultBufferId, 1, out NativeArray<Shinobu38MockVaultDTO> mockVault))
             {
                 Finish(ResultStatusFault, EventHashCrash);
                 return;

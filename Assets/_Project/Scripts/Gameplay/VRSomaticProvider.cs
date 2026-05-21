@@ -11,6 +11,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Hecton8.Gameplay
 {
@@ -19,7 +20,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/VR Somatic Provider")]
-    public sealed partial class VRSomaticProvider : MonoBehaviour, IVRSomaticProvider, IUpdatable, ILateFrameTickable, IOriginShiftListener, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener
+    public sealed partial class VRSomaticProvider : MonoBehaviour, IVRSomaticProvider, IUpdatable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const int HeadCollisionCommandCount = 6;
         private const int HeadCollisionMaxHitsPerCommand = 1;
@@ -94,7 +95,6 @@ namespace Hecton8.Gameplay
         private const ushort BlackBoxFlagHandJobScheduled = 1 << 5;
         private const ushort BlackBoxFlagNearCollision = 1 << 6;
         private const ushort BlackBoxFlagAupShiftSeen = 1 << 7;
-        private const ushort BlackBoxFlagLowTier = 1 << 8;
         private const ushort BlackBoxFlagFramePressure = 1 << 9;
         private const ushort BlackBoxFlagProtectiveFallback = 1 << 10;
         private const ushort BlackBoxFlagAccelerationTunnel = 1 << 11;
@@ -328,7 +328,7 @@ namespace Hecton8.Gameplay
         [Header("Physical Hands")]
         [SerializeField, Range(2f, 80f)] private float handSpringForce = 24f;
         [SerializeField, Range(0.08f, 0.5f)] private float ghostHandDistanceMeters = 0.2f;
-        [SerializeField] private bool disableGhostHandsOnLowTier = true;
+        [SerializeField, FormerlySerializedAs("disableGhostHandsOnLowTier")] private bool reduceGhostHandsAtLowQuality = true;
 
         [Header("Breathing Audio")]
         [SerializeField] private AudioSource breathingSource;
@@ -366,7 +366,6 @@ namespace Hecton8.Gameplay
         private Transform _fallbackHmdTransform;
         private Transform _decoupledRootTransform;
         private Camera _cachedPlayerCamera;
-        private HectonQualityTier _cachedQualityTier = HectonQualityTier.Unknown;
         private float _headLinearSpeedMetersPerSecond;
         private float _headAngularSpeedRadiansPerSecond;
         private float _headAngularAccelerationRadiansPerSecondSq;
@@ -421,8 +420,6 @@ namespace Hecton8.Gameplay
         private bool _blackBoxDumped;
         private bool _comfortFramePressureActive;
         private float _comfortPressureFallbackWeight01;
-        private bool _cachedLowMemoryProfile;
-        private bool _registeredScalability;
         private VRSomaticChestSocketPose _pdaSocketPose;
         private VRSomaticChestSocketPose _flareSocketPose;
         private VRSomaticCollisionState _collisionState;
@@ -668,7 +665,6 @@ namespace Hecton8.Gameplay
             RefreshCachedGlobalState();
             TrySubscribeXRRuntime();
             HectonFloatingOrigin.RegisterListener(this);
-            TryRegisterScalability();
             TryRegisterHotSwap();
             RefreshRuntimeRegistration(IsVRSomaticRuntimeActive());
         }
@@ -695,7 +691,6 @@ namespace Hecton8.Gameplay
             bool hadRuntimeState = HasRuntimeRegistrationOrActiveSnapshot();
             TryUnsubscribeXRRuntime();
             HectonFloatingOrigin.UnregisterListener(this);
-            TryUnregisterScalability();
             TryUnregisterLateFrame();
             TryUnregisterUpdate();
             TryUnregisterService();
@@ -722,16 +717,8 @@ namespace Hecton8.Gameplay
             CacheSocketRotations();
         }
 
-        public void OnScalabilityChanged(in Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent payload)
-        {
-            _cachedQualityTier = payload.CurrentQualityTier;
-            RefreshComfortProfileSelection();
-        }
-
         private void RefreshCachedGlobalState()
         {
-            _cachedQualityTier = GlobalRegistry.ScalabilityTier;
-            _cachedLowMemoryProfile = GlobalRegistry.H8_LOW_MEMORY_PROFILE;
             _globalQualityWeight01 = ResolveGlobalQualityWeight01();
             RefreshComfortProfileSelection();
             _cachedPlayerCamera = null;
@@ -742,24 +729,6 @@ namespace Hecton8.Gameplay
                 IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
                 _cachedPlayerCamera = playerContext != null ? playerContext.PlayerCamera : null;
             }
-        }
-
-        private void TryRegisterScalability()
-        {
-            if (_registeredScalability || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _registeredScalability = true;
-        }
-
-        private void TryUnregisterScalability()
-        {
-            if (!_registeredScalability)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _registeredScalability = false;
         }
 
         private void TrySubscribeXRRuntime()
@@ -1851,10 +1820,10 @@ namespace Hecton8.Gameplay
             if (!HandTargets.IsCreated || !HandPhysicalPositions.IsCreated)
                 return 0u;
 
-            if (disableGhostHandsOnLowTier && IsLowTier(_cachedQualityTier, _cachedLowMemoryProfile))
-                return 0u;
-
-            float threshold = SanitizeMinimum(ghostHandDistanceMeters, 0.01f);
+            float qualityCurve = Smoothstep01(_globalQualityWeight01);
+            float qualitySuppression = reduceGhostHandsAtLowQuality ? 1f - qualityCurve : 0f;
+            float threshold = SanitizeMinimum(ghostHandDistanceMeters, 0.01f) * math.lerp(2.5f, 1f, qualityCurve);
+            threshold = math.lerp(threshold, SanitizeMinimum(ghostHandDistanceMeters, 0.01f), 1f - qualitySuppression);
             float thresholdSq = threshold * threshold;
             uint mask = 0u;
             for (int i = 0; i < HandCount; i++)
@@ -2348,8 +2317,6 @@ namespace Hecton8.Gameplay
                 flags |= BlackBoxFlagNearCollision;
             if (_lastObservedAupShiftSequence != 0u)
                 flags |= BlackBoxFlagAupShiftSeen;
-            if (IsLowTier(_cachedQualityTier, _cachedLowMemoryProfile))
-                flags |= BlackBoxFlagLowTier;
             if (_comfortFramePressureActive)
                 flags |= BlackBoxFlagFramePressure;
             if (_comfortPressureFallbackWeight01 > 0.001f)
@@ -2588,14 +2555,6 @@ namespace Hecton8.Gameplay
         private static Vector3 ToVector3(float3 value)
         {
             return new Vector3(value.x, value.y, value.z);
-        }
-
-        private static bool IsLowTier(HectonQualityTier tier, bool lowMemoryProfile)
-        {
-            return tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350 ||
-                   tier == HectonQualityTier.Unknown ||
-                   lowMemoryProfile;
         }
 
         private static void RebaseHandArray(NativeArray<float3> array, float3 shift)
