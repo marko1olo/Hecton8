@@ -33,7 +33,6 @@ namespace Hecton8.AI.Ecosystem
         private const float ColdTickDeltaSeconds = HectonEcologyContract.ColdTickDeltaSeconds;
         private const float DefaultBiomassPerEntity = HectonEcologyContract.DefaultBiomassPerEntity;
         private const int DefaultMaxActivePreyPerSector = HectonEcologyContract.DefaultMaxActivePreyPerSector;
-        private const float DefaultStressCullFraction01 = HectonEcologyContract.DefaultStressCullFraction01;
         private const uint EcologySourceHash = 0x45434F4Cu; // ECOL
         private const byte EcologyDeathSignalFlag = 1;
         private const uint TelemetryInvalidMathFlag = 1u << 0;
@@ -58,7 +57,6 @@ namespace Hecton8.AI.Ecosystem
         [SerializeField, Min(1)] private int freeRingCapacity = DefaultFreeRingCapacity;
         [SerializeField, Min(1f)] private float biomassPerEntity = DefaultBiomassPerEntity;
         [SerializeField, Min(1)] private int maxActivePreyPerSector = DefaultMaxActivePreyPerSector;
-        [SerializeField, Range(0f, 1f)] private float stressCullFraction01 = DefaultStressCullFraction01;
         [SerializeField] private bool enableTier1FleeDown = true;
 
         private VaultGenerationHandle<EcosystemPopulationCoefficient> _coefficientHandle;
@@ -211,8 +209,6 @@ namespace Hecton8.AI.Ecosystem
             freeRingCapacity = math.max(1, freeRingCapacity);
             biomassPerEntity = math.max(1f, biomassPerEntity);
             maxActivePreyPerSector = math.max(1, maxActivePreyPerSector);
-            stressCullFraction01 = math.saturate(stressCullFraction01);
-
             bool hasEntityHandles = EnsureEntityHandles(vault);
 
             bool hasOwnedBuffers =
@@ -1145,7 +1141,6 @@ namespace Hecton8.AI.Ecosystem
                         math.max(1, MaxActivePreyPerSector));
                     int currentPrey = math.max(0, state.ActivePreyCount);
                     int cullNeeded = math.max(0, currentPrey - desiredPrey);
-                    const int stressCullTarget = 0;
 
                     int preyCull = CullTier2EntitiesInSector(
                         state.SectorHash,
@@ -1158,20 +1153,7 @@ namespace Hecton8.AI.Ecosystem
                         culledTotal: ref culled,
                         eventLimit: eventLimit,
                         eventOverflow: ref eventOverflow);
-                    int stressCull = stressCullTarget > preyCull
-                        ? CullTier2EntitiesInSector(
-                            state.SectorHash,
-                            stressCullTarget - preyCull,
-                            entityCount,
-                            requiredKindMask: 0u,
-                            requireAnyEcologyKind: true,
-                            freeWriteCursor: ref freeWriteCursor,
-                            freeCount: ref freeCount,
-                            culledTotal: ref culled,
-                            eventLimit: eventLimit,
-                            eventOverflow: ref eventOverflow)
-                        : 0;
-                    int sectorCull = preyCull + stressCull;
+                    int sectorCull = preyCull;
                     int remainingCull = cullNeeded - preyCull;
                     int sectorFleeDown = remainingCull > 0 && EnableTier1FleeDown != 0
                         ? RequestTier1FleeDownInSector(state.SectorHash, remainingCull, entityCount)
