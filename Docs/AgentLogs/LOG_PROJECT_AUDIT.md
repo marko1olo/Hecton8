@@ -156,3 +156,15 @@ Cinematic Cheats used: The existing half-resolution raymarch/composite remains t
 Exact Microseconds saved: 0 us measured. Static debt reduction: `binaryHardwareSwitch` dropped from `12 files=5` to `8 files=3`.
 
 Evidence: Focused `rg` finds no `HardwareTier.Low`, `HardwareTier.High`, `ShouldUseLowTierSteps`, or `ShouldUseHighTierSteps` control-flow in the touched files. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_vfx_quality_after.json --report-path Docs\Reports\PROJECT_AUDIT_polish_vfx_quality_after.md` returned `PASS_WITH_WARNINGS` with `binaryHardwareSwitch=8 files=3`. `git diff --check` reported only LF-to-CRLF warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-21 23:08:02 +04:00 - Binary Hardware Switch Audit Closed
+
+What was wrong: After VFX cleanup, the audit still counted pure `QualityTier` read accessors and four real `GameBootstrapper` quality-tier switches. The accessor rows were evidence noise; the bootstrap rows were real boot-budget snaps for LOD, mip memory, async upload buffer, and async upload timeslice.
+
+What was done: Refined `PolishMandateStaticAudit.py` to ignore pure tier accessors while preserving `switch/case` and direct tier-comparison findings. Added a pure-accessor regression test. Replaced the four `GameBootstrapper` `switch (hardwareProfile.QualityTier)` blocks with `ResolveBootQualityWeight01` and `ResolveBootQualityCurve`, using smoothstep interpolation and hardware score when available. `HectonHardwareProfile` binary layout was not changed.
+
+Cinematic Cheats used: None directly. This is boot scalability policy. The practical effect is preserving lower LOD/mip/upload pressure on weak devices while letting high/ultra boot budgets rise smoothly.
+
+Exact Microseconds saved: 0 us measured. Static debt reduction: `binaryHardwareSwitch` is now `0 files=0`.
+
+Evidence: `python Tools\test_polish_mandate_static_audit.py` ran 5 tests OK. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_boot_quality_after.json --report-path Docs\Reports\PROJECT_AUDIT_polish_boot_quality_after.md` returned `PASS_WITH_WARNINGS` with `binaryHardwareSwitch=0 files=0`. Focused `rg` finds no `switch (hardwareProfile.QualityTier)` in `GameBootstrapper`. `git diff --check` for `GameBootstrapper.cs` returned clean. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
