@@ -27,9 +27,9 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `nativeApiRiskCoreVaultOrAllocatorSurface` | 21 | 3 |
 | `nativeApiRiskEditorOrProofSurface` | 14 | 6 |
 | `nativeApiRiskRuntimeAmbiguousMutableView` | 0 | 0 |
-| `nativeApiRiskRuntimeDiagnosticNamedMutableView` | 19 | 13 |
-| `nativeApiRiskRuntimeOutRefMutableView` | 143 | 66 |
-| `nativeApiRiskRuntimeReturnMutableView` | 71 | 29 |
+| `nativeApiRiskRuntimeDiagnosticNamedMutableView` | 61 | 36 |
+| `nativeApiRiskRuntimeOutRefMutableView` | 114 | 50 |
+| `nativeApiRiskRuntimeReturnMutableView` | 58 | 24 |
 | `nativeCollectionPublicMutableApiExposure` | 268 | 97 |
 | `noAlias` | 2136 | 215 |
 | `packOne` | 0 | 0 |
@@ -159,10 +159,10 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | Path | Count |
 |---|---:|
 | `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs` | 4 |
-| `Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs` | 2 |
-| `Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs` | 2 |
-| `Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs` | 2 |
-| `Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs` | 1 |
+| `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` | 4 |
+| `Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs` | 3 |
+| `Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs` | 3 |
+| `Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs` | 3 |
 
 ### nativeApiRiskRuntimeOutRefMutableView
 
@@ -178,11 +178,11 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 
 | Path | Count |
 |---|---:|
-| `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` | 27 |
+| `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` | 23 |
 | `Assets/_Project/Scripts/Core/GlobalSignals.cs` | 4 |
-| `Assets/_Project/Scripts/World/EcosystemDirector.cs` | 4 |
 | `Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs` | 3 |
-| `Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs` | 3 |
+| `Assets/_Project/Scripts/Core/ThreadSafeCommandQueue.cs` | 2 |
+| `Assets/_Project/Scripts/Fauna/ProceduralCrabLegIKRuntime.cs` | 2 |
 
 ### nativeCollectionPublicMutableApiExposure
 
