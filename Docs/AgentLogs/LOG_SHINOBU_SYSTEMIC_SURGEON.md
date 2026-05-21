@@ -67,6 +67,24 @@ Remaining blocked/pending:
   <QUALITY status="DRS shader uses continuous scale-deficit curve; no binary low-tier switch added" />
 </SELF_AUDIT>
 
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="BulkheadBatteryFinalCadenceSinks">
+  <WHAT_WAS_WRONG>
+    Bulkhead closure progression and battery charger cadence still had stale quality-shaped authority paths after the broader power/construction detachment. Bulkhead used a quality-derived cadence scale inside the Burst job, and charger scheduling locked tuning state to sample quality before cadence resolution.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    `UpdateBulkheadClosureJob` now uses a canonical literal cadence multiplier. `BatteryChargerLogisticsRuntime` now assigns canonical authority quality directly, resolves cadence to 60Hz, and removes unused quality sampling helpers that could reintroduce editor override cadence thinning.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Charger/bulkhead presentation can still scale through shader globals, telemetry/UI refresh, and VFX density. The charge transfer and containment closure facts no longer scale with hardware quality.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No measured speed claim. Static effect: one hot DataVault tuning lock/read was removed from charger scheduling, and bulkhead closure no longer branches through quality math.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scan found no `SampleQualityWeightUnderTuningLock`, `ResolvePendingQualityWeight`, `ResolveQualityWeight`, or `ResolveGlobalQualityWeight` in `BatteryChargerLogisticsRuntime.cs`. Targeted scan confirms `UpdateBulkheadClosureJob` uses a literal cadence scale. `git diff --check` passed for the touched bulkhead and charger files. Build was not launched because CPU load was 54%, above the AGENTS.md threshold.
+  </VERIFICATION>
+</SELF_AUDIT>
+
 <SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="PowerConstructionAuthorityDetachment">
   <WHAT_WAS_WRONG>
     Power and construction systems used hardware/global quality to change solver convergence, thermal cadence, adaptive solve slices, drone steering/A* cadence, docking obstacle raycast segmentation, repair signal quality tier, and bulkhead authority cadence. Those paths mutate power, heat, repair, and containment facts.
