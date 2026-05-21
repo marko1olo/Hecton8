@@ -553,3 +553,15 @@ Route impact: Editor validation output now reflects actual DTO sizes when artist
 Proof required: Static source scan now; Unity Editor menu invocation remains pending.
 Parked work rejected: Build launch under CPU/dotnet/csc gate and DTO size changes.
 Static verification: Editor scan reports no hardcoded `Params=32`, `Telemetry=32`, or `Profile=32` success strings; owned forbidden scan is clean; editor brace/preprocessor balance is zero; `git diff --check` reported no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 72.8%, dotnet=1, csc=1.
+
+## Polish Pass 50 Decisions
+Problem: `ValidateFloraSwayLayouts()` still used `Marshal.OffsetOf` for the primary DTO offset proof. The runtime layout mandate names `UnsafeUtility.SizeOf` and `UnsafeUtility.GetFieldOffset` as the required verifier surface, and interop-offset calls in a runtime assembly are a weaker proof than Unity's native layout API.
+Solution: Replaced the `FloraSwayParamsDTO` offset checks with `GetFieldOffset<FloraSwayParamsDTO>()` backed by `UnsafeUtility.GetFieldOffset(field)`. Extended `FloraAmbientSwaySelfAudit` with `layoutOffsetApi`, requiring both DTO offset checks to use the helper and rejecting any `Marshal.OffsetOf` regression in owned runtime source.
+Rejected Alternatives: Leaving `Marshal.OffsetOf` was rejected because it violates the selected ARM64 layout mandate style. Moving all layout validation into chat/log prose was rejected because Task 20 requires a runnable editor proof hook.
+Scalability potential: No Low/Middle/High/Ultra visual behavior changes. The route still scales through continuous shader quality gates and one 32-byte CBuffer; this pass only hardens the binary-layout proof.
+Hardware Impact: 0 hot runtime us. Editor/static validator only; runtime frame path is unchanged.
+First 20 Minutes moment: World load and swim readability on the selected Copper Wire route biome.
+Route impact: Keeps the early-route flora CBuffer ABI auditable through the same Unity native layout API used by the wider ARM64 verifier surface.
+Proof required: Static source/self-audit now; Unity import/Console, editor menu invocation, route run, profiler/GC, Frame Debugger, screenshot/clip, and save/load diff remain pending.
+Parked work rejected: Build launch under CPU/dotnet gate, unrelated `Marshal.OffsetOf` cleanup in other agents' domains, and DTO ABI changes.
+Static verification: SHINOBU_267 XML extraction remains 15929 chars with 20 task labels; owned forbidden scan reports no `Marshal.OffsetOf`, `BinaryWriter`, `FloatMode.Fast`, `parameters[0]`, `.Run()`, `.Complete()`, direct scalar-kernel `Execute()`, vector upload, random, `foreach`, `Pack=1`, hot vector constructors, or hardcoded layout success strings; runtime/editor brace and preprocessor balances are zero; `git diff --check` reported no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=1, csc=0.

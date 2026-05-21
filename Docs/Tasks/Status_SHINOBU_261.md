@@ -166,3 +166,4 @@ Status: PENDING VERIFICATION
 - [ ] Compile check after batch evaluator patch | BLOCKED BY CPU GATE: latest `Win32_Processor.LoadPercentage` average was 99 with active `csc` (`Id=38028`) and `dotnet` (`Id=22280`) processes; no build launched.
 - [x] Post-batch documentation recheck | DOD: after status/rationale/log edits, scoped brace scan, runtime forbidden scan, stale-token scan, JSON parse, and batch-schedule scan remained green; scoped `git diff --check` still reported only LF-to-CRLF repository warnings. Estimate: proof-artifact verification only.
 - [ ] Compile check after post-batch documentation recheck | BLOCKED BY CPU GATE: latest `Win32_Processor.LoadPercentage` average was 99 with active `csc` (`Id=39656`) and `dotnet` (`Id=22280`) processes; no build launched.
+- [ ] Compile gate resample after project-file probe | BLOCKED BY CPU GATE: latest `Win32_Processor.LoadPercentage` average was 59 with active `dotnet` (`Id=38408`); no build launched.
