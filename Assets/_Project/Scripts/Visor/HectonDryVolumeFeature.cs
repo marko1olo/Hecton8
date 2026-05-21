@@ -121,6 +121,7 @@ namespace Hecton8.Visor
             {
                 internal Material restoreMaterial;
                 internal Material clearMaterial;
+                internal Texture oceanCameraColorTexture;
                 internal int stencilRef;
             }
 
@@ -159,7 +160,7 @@ namespace Hecton8.Visor
                     _clearMaterial == null ||
                     HectonDryVolumeStencilSource.ActiveSources.Count <= 0 ||
                     IsUnsupportedCamera(frameData) ||
-                    !TryReadOceanCameraColorTexture())
+                    !TryReadOceanCameraColorTexture(out Texture oceanCameraColorTexture))
                 {
                     return;
                 }
@@ -209,6 +210,7 @@ namespace Hecton8.Visor
                 {
                     passData.restoreMaterial = _restoreMaterial;
                     passData.clearMaterial = _clearMaterial;
+                    passData.oceanCameraColorTexture = oceanCameraColorTexture;
                     passData.stencilRef = _settings.stencilRef;
 
                     builder.SetRenderAttachment(compositeTexture, 0, AccessFlags.ReadWrite);
@@ -217,6 +219,7 @@ namespace Hecton8.Visor
                     builder.SetRenderFunc((RestorePassData data, RasterGraphContext context) =>
                     {
                         data.restoreMaterial.SetFloat(ShaderConstants.StencilRefId, data.stencilRef);
+                        context.cmd.SetGlobalTexture(ShaderConstants.OceanCameraColorTextureId, data.oceanCameraColorTexture);
                         CoreUtils.DrawFullScreen(context.cmd, data.restoreMaterial, null, 0);
                         CoreUtils.DrawFullScreen(context.cmd, data.clearMaterial);
                     });
@@ -359,12 +362,14 @@ namespace Hecton8.Visor
         {
             internal static readonly int StencilRefId = Shader.PropertyToID("_StencilRef");
             internal static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
+            internal static readonly int OceanCameraColorTextureId = Shader.PropertyToID("_OceanCameraColorTexture");
         }
 
-        private static bool TryReadOceanCameraColorTexture()
+        private static bool TryReadOceanCameraColorTexture(out Texture texture)
         {
             IOceanVisualBridge bridge = OceanVisualBridgeRegistry.Active;
-            return bridge != null && Shader.GetGlobalTexture(bridge.CameraColorTextureId) != null;
+            texture = bridge != null ? Shader.GetGlobalTexture(bridge.CameraColorTextureId) : null;
+            return texture != null;
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();

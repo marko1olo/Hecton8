@@ -28,7 +28,7 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
             float _StencilRef;
         CBUFFER_END
 
-        TEXTURE2D_X(_Crest_CameraColorTexture);
+        TEXTURE2D_X(_OceanCameraColorTexture);
         TEXTURE2D_X(_BlitTexture);
 
         float4 _HectonNoirResolveSettings;
@@ -152,7 +152,7 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
 
         half4 FragRestore(Varyings input) : SV_Target
         {
-            return SAMPLE_TEXTURE2D_X(_Crest_CameraColorTexture, sampler_LinearClamp, input.screenUV);
+            return SAMPLE_TEXTURE2D_X(_OceanCameraColorTexture, sampler_LinearClamp, input.screenUV);
         }
 
         half4 FragCopy(Varyings input) : SV_Target

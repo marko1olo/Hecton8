@@ -5663,3 +5663,26 @@ Static verification:
 - Descriptor scan confirms `TryEnsurePoiVaultBuffer`, `TryReadPoiVaultBuffer`, `TryResolveExistingPoiVaultBuffer`, `TryResolvePoiVaultBuffer`, `IsPoiVaultHandle`, `GetGenerationHandle`, `TryGetGenerationHandle`, `TryResolveHandle`, `TryReadHandle`, and `SystemID.WorldStreaming`.
 - Brace/preprocessor counts are balanced: braces `95/95`, `#if/#endif` `1/1`. `git diff --check` passed with CRLF warning only.
 - Build was not relaunched because no narrow `*ShinobuBiomimetic*.csproj` exists and full `Hecton8.slnx` remains blocked by the external Visor RenderGraph texture-binding errors recorded after Loop 238.
+
+## 2026-05-22 - Loop 240 - Propwash GPU Editor Facade Descriptor Route
+
+What was wrong:
+- `Assets/_Project/Editor/PropwashGpuTunerWindow.cs` used `TryGetBufferHandle` / `GetBufferHandle` for `PropwashGpuTuning`, stored `VaultBufferHandle<PropwashTelemetryEntry>` in a UI Toolkit visual element, and called `.Resolve(vault)` during graph repaint.
+- The route is editor-only, but it touches VFX-owned live DataVault rows and therefore still needed generation/owner proof.
+
+What was done:
+- Added `TryAcquirePropwashWriteBuffer`, `TryReadPropwashVaultBuffer`, and `IsPropwashVaultHandle`.
+- Tuning writes now acquire `PropwashGpuTuning` through `VaultGenerationHandle<PropwashGpuTuningDTO>` and mutate under `TryAcquireWriteLock` / `ReleaseWriteLock`.
+- Telemetry graph binding now persists only a pointer-free `VaultGenerationHandle<PropwashTelemetryEntry>` and resolves a pure `TryReadHandle` view per repaint.
+
+Cinematic cheats used:
+- No new visual fake. Existing propwash remains the intended Dear Lie: GPU particle/silt/curl response driven by scalar tuning and telemetry instead of CPU fluid simulation.
+
+Exact microseconds saved:
+- No runtime speedup claimed; player-frame cost is zero because this is an Editor facade. Editor overhead is one O(1) descriptor proof per slider write or graph refresh.
+
+Static verification:
+- Focused scan found zero `TryGetBuffer`, `GetBuffer<`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, or `.Resolve(` hits in `PropwashGpuTunerWindow.cs`.
+- Descriptor scan confirms `VaultGenerationHandle<T>`, `TryGetGenerationHandle`, `GetGenerationHandle`, `TryAcquireWriteLock`, `ReleaseWriteLock`, `TryReadHandle`, and `SystemID.Vfx`.
+- Brace/preprocessor counts are balanced: braces `30/30`, `#if/#endif` `1/1`. `git diff --check` passed with CRLF warning only.
+- Build was not relaunched because `VBCSCompiler.exe` is active and full `Hecton8.slnx` remains blocked by the external Visor RenderGraph texture-binding errors recorded after Loop 238.

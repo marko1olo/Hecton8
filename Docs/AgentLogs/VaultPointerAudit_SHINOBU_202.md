@@ -943,3 +943,10 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - Editor sync/import/bake/gizmo/dump/counter paths use `VaultGenerationHandle<T>` descriptors validated against exact BufferID, `SystemID.WorldStreaming`, nonzero generation, required length, and compaction-fence state.
 - Mutable editor/bake setup views resolve through `TryResolveHandle`; telemetry, gizmo, config/rules/bounds, and counter readbacks use pure `TryReadHandle` where the facade does not write.
 - This entry does not change `PoiTransformDTO`, `PoiPlacementRuleDTO`, `StructuralBoundsDTO`, `PoiOfflineBakeConfigDTO`, `MockGeologySignal`, `PoiPlacementTelemetryEntry`, `VisualAnchorSampleDTO`, BufferIDs `70420..70438`, CSV parser bytes, emergency mock rules, HZB/indirect draw route, or WorldStreaming authority.
+
+## 2026-05-22 Propwash GPU Editor Facade Descriptor Route
+
+- `Assets/_Project/Editor/PropwashGpuTunerWindow.cs` no longer has direct `TryGetBuffer`, `GetBuffer<`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<`, `.Resolve(`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` routes.
+- Tuning mutation uses `VaultGenerationHandle<PropwashGpuTuningDTO>` with exact BufferID `PropwashGpuTuning`, `SystemID.Vfx`, nonzero generation, required length, compaction-fence rejection, and `TryAcquireWriteLock`.
+- Telemetry graph readback stores only `VaultGenerationHandle<PropwashTelemetryEntry>` and resolves a pure `TryReadHandle` view per repaint.
+- This entry does not change `PropwashGpuTuningDTO`, `PropwashTelemetryEntry`, BufferIDs `PropwashGpuTuning` / `PropwashGpuTelemetryRing`, telemetry capacity, shader property IDs, CSV parser bytes, GPU propwash fake math, or VFX authority.

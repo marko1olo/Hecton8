@@ -14,6 +14,7 @@ using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
 
 #if UNITY_EDITOR
+using System.Reflection;
 using UnityEditor;
 #endif
 
@@ -107,7 +108,13 @@ namespace Hecton8.Visor
                 UnsafeUtility.SizeOf<ARWaypointOverlay.StencilTargetSourceDTO>() == 80 &&
                 UnsafeUtility.SizeOf<VisorHudProfileDTO>() == 64;
 #if UNITY_EDITOR
-            return sizeMatch && ValidateHudParamsOffsetsEditor() && ValidateTargetSourceOffsetsEditor();
+            return sizeMatch &&
+                   ValidateHudParamsOffsetsEditor() &&
+                   ValidateArTargetOffsetsEditor() &&
+                   ValidateDigitParamsOffsetsEditor() &&
+                   ValidateTelemetryOffsetsEditor() &&
+                   ValidateProfileOffsetsEditor() &&
+                   ValidateTargetSourceOffsetsEditor();
 #else
             return sizeMatch;
 #endif
@@ -122,17 +129,67 @@ namespace Hecton8.Visor
                    OffsetOf<VisorHudParamsDTO>(nameof(VisorHudParamsDTO.QualityAndTime)) == 48;
         }
 
+        private static bool ValidateArTargetOffsetsEditor()
+        {
+            return OffsetOf<VisorArTargetDTO>(nameof(VisorArTargetDTO.ScreenAndFlags)) == 0 &&
+                   OffsetOf<VisorArTargetDTO>(nameof(VisorArTargetDTO.ColorAndPulse)) == 16 &&
+                   OffsetOf<VisorArTargetDTO>(nameof(VisorArTargetDTO.LocalMetersAndDistance)) == 32 &&
+                   OffsetOf<VisorArTargetDTO>(nameof(VisorArTargetDTO.ShapeParams)) == 48;
+        }
+
+        private static bool ValidateDigitParamsOffsetsEditor()
+        {
+            return OffsetOf<VisorHudDigitParamsDTO>(nameof(VisorHudDigitParamsDTO.OxygenDigits)) == 0 &&
+                   OffsetOf<VisorHudDigitParamsDTO>(nameof(VisorHudDigitParamsDTO.DepthDigits)) == 16 &&
+                   OffsetOf<VisorHudDigitParamsDTO>(nameof(VisorHudDigitParamsDTO.PressureDigits)) == 32 &&
+                   OffsetOf<VisorHudDigitParamsDTO>(nameof(VisorHudDigitParamsDTO.WarningDigits)) == 48;
+        }
+
+        private static bool ValidateTelemetryOffsetsEditor()
+        {
+            return OffsetOf<VisorTelemetryEntry>(nameof(VisorTelemetryEntry.FrameIndex)) == 0 &&
+                   OffsetOf<VisorTelemetryEntry>(nameof(VisorTelemetryEntry.Flags)) == 4 &&
+                   OffsetOf<VisorTelemetryEntry>(nameof(VisorTelemetryEntry.TargetCount)) == 8 &&
+                   OffsetOf<VisorTelemetryEntry>(nameof(VisorTelemetryEntry.QualityWeight)) == 12 &&
+                   OffsetOf<VisorTelemetryEntry>(nameof(VisorTelemetryEntry.ProjectionMicroseconds)) == 16 &&
+                   OffsetOf<VisorTelemetryEntry>(nameof(VisorTelemetryEntry.EstimatedGpuMicroseconds)) == 20 &&
+                   OffsetOf<VisorTelemetryEntry>(nameof(VisorTelemetryEntry.FirstTargetDepthMeters)) == 24 &&
+                   OffsetOf<VisorTelemetryEntry>(nameof(VisorTelemetryEntry.StateHash)) == 28 &&
+                   OffsetOf<VisorTelemetryEntry>(nameof(VisorTelemetryEntry.Oxygen01)) == 32 &&
+                   OffsetOf<VisorTelemetryEntry>(nameof(VisorTelemetryEntry.Co201)) == 36 &&
+                   OffsetOf<VisorTelemetryEntry>(nameof(VisorTelemetryEntry.FogIntensity01)) == 40 &&
+                   OffsetOf<VisorTelemetryEntry>(nameof(VisorTelemetryEntry.StencilScale)) == 44 &&
+                   OffsetOf<VisorTelemetryEntry>(nameof(VisorTelemetryEntry.LayoutHash)) == 48 &&
+                   OffsetOf<VisorTelemetryEntry>(nameof(VisorTelemetryEntry.VaultGeneration)) == 52 &&
+                   OffsetOf<VisorTelemetryEntry>(nameof(VisorTelemetryEntry.CameraPixelWidth)) == 56 &&
+                   OffsetOf<VisorTelemetryEntry>(nameof(VisorTelemetryEntry.CameraPixelHeight)) == 60;
+        }
+
+        private static bool ValidateProfileOffsetsEditor()
+        {
+            return OffsetOf<VisorHudProfileDTO>(nameof(VisorHudProfileDTO.NameHash)) == 0 &&
+                   OffsetOf<VisorHudProfileDTO>(nameof(VisorHudProfileDTO.FontAtlasScale)) == 4 &&
+                   OffsetOf<VisorHudProfileDTO>(nameof(VisorHudProfileDTO.Curvature)) == 8 &&
+                   OffsetOf<VisorHudProfileDTO>(nameof(VisorHudProfileDTO.FogEdgeStrength)) == 12 &&
+                   OffsetOf<VisorHudProfileDTO>(nameof(VisorHudProfileDTO.PrimaryColor)) == 16 &&
+                   OffsetOf<VisorHudProfileDTO>(nameof(VisorHudProfileDTO.WarningColor)) == 32 &&
+                   OffsetOf<VisorHudProfileDTO>(nameof(VisorHudProfileDTO.LayoutOffsetScale)) == 48;
+        }
+
         private static bool ValidateTargetSourceOffsetsEditor()
         {
             return OffsetOf<ARWaypointOverlay.StencilTargetSourceDTO>(nameof(ARWaypointOverlay.StencilTargetSourceDTO.PositionAup)) == 0 &&
                    OffsetOf<ARWaypointOverlay.StencilTargetSourceDTO>(nameof(ARWaypointOverlay.StencilTargetSourceDTO.Color)) == 48 &&
                    OffsetOf<ARWaypointOverlay.StencilTargetSourceDTO>(nameof(ARWaypointOverlay.StencilTargetSourceDTO.Flags)) == 64 &&
-                   OffsetOf<ARWaypointOverlay.StencilTargetSourceDTO>(nameof(ARWaypointOverlay.StencilTargetSourceDTO.StableId)) == 68;
+                   OffsetOf<ARWaypointOverlay.StencilTargetSourceDTO>(nameof(ARWaypointOverlay.StencilTargetSourceDTO.StableId)) == 68 &&
+                   OffsetOf<ARWaypointOverlay.StencilTargetSourceDTO>(nameof(ARWaypointOverlay.StencilTargetSourceDTO.Reserved0)) == 72 &&
+                   OffsetOf<ARWaypointOverlay.StencilTargetSourceDTO>(nameof(ARWaypointOverlay.StencilTargetSourceDTO.Reserved1)) == 76;
         }
 
         private static int OffsetOf<T>(string fieldName) where T : struct
         {
-            return (int)Marshal.OffsetOf<T>(fieldName);
+            FieldInfo field = typeof(T).GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            return field == null ? -1 : UnsafeUtility.GetFieldOffset(field);
         }
 
         [MenuItem("Hecton8/Visor/Validate AR Stencil DTO Layouts")]
@@ -141,7 +198,7 @@ namespace Hecton8.Visor
             if (!ValidateLayouts())
                 throw new InvalidOperationException("VISOR_AR_STENCIL DTO layout validation failed.");
 
-            Debug.Log("VISOR_AR_STENCIL DTO layouts valid: Hud=64, Target=64, Digits=64, Telemetry=64.");
+            Debug.Log("VISOR_AR_STENCIL DTO layouts valid: Hud=64, Source=80, Target=64, Digits=64, Telemetry=64, Profile=64.");
         }
 #endif
     }

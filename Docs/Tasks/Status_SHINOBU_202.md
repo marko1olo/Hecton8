@@ -4281,3 +4281,20 @@ Mandates read before coding:
 - Brace/preprocessor counts are balanced: `ShinobuPoiTopologyTunerWindow.cs` braces `95/95`, preprocessor `#if/#endif` `1/1`.
 - `git diff --check` passed for `ShinobuPoiTopologyTunerWindow.cs`; CRLF warning only.
 - Build not relaunched: no narrow `*ShinobuBiomimetic*.csproj` exists in the repository root, and full `Hecton8.slnx` is already blocked by the external Visor RenderGraph binding errors recorded in Compile State Update 232.
+
+## Loop 240 - Propwash GPU Editor Facade Descriptor Route
+- [x] Replaced Propwash editor facade legacy `VaultBufferHandle<T>` routes.
+  DOD practice: `PropwashGpuTunerWindow.cs` now opens `PropwashGpuTuning` through `VaultGenerationHandle<T>` and `TryAcquireWriteLock`, and binds `PropwashGpuTelemetryRing` through a generation descriptor plus pure `TryReadHandle`. Every route validates exact BufferID, `SystemID.Vfx`, nonzero generation, required length, compaction-fence absence, and created phase-local `NativeArray<T>` views.
+  Rejected: retaining `handle.Resolve(vault)` inside UI Toolkit repaint because it persists a pointer-bearing handle in a visual element and resolves on paint without owner proof. Rewriting `HectonMarineSnowRenderer`, propwash shader math, DTOs, BufferIDs, telemetry capacity, or CSV tuning schema was rejected as outside this editor facade route.
+  Estimate: editor-only O(1) descriptor proof per slider write or graph refresh; no runtime gameplay frame cost.
+- [x] Preserved VFX runtime ownership.
+  DOD practice: the editor facade mutates only under the VFX write lock and reads telemetry through a pure descriptor read; the VFX runtime remains the owner of propwash telemetry/tuning publication.
+  Rejected: allocating telemetry from the editor when absent because telemetry is runtime-owned evidence, not editor-owned scratch.
+  Estimate: 0 DTO/ABI/shader change.
+
+## Compile State Update 235
+- Focused direct/legacy route scan on `PropwashGpuTunerWindow.cs` found zero `TryGetBuffer`, `GetBuffer<`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, or `.Resolve(` hits.
+- Descriptor route scan confirmed `VaultGenerationHandle<T>`, `TryGetGenerationHandle`, `GetGenerationHandle`, `TryAcquireWriteLock`, `ReleaseWriteLock`, `TryReadHandle`, and `SystemID.Vfx`.
+- Brace/preprocessor counts are balanced: `PropwashGpuTunerWindow.cs` braces `30/30`, preprocessor `#if/#endif` `1/1`.
+- `git diff --check` passed for `PropwashGpuTunerWindow.cs`; CRLF warning only.
+- Build not relaunched: `VBCSCompiler.exe` is active, and full `Hecton8.slnx` is already blocked by the external Visor RenderGraph binding errors recorded in Compile State Update 232.

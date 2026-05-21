@@ -1621,12 +1621,12 @@ namespace Hecton8.World
             IDataVault vault = _dataVault;
             if (vault != null)
             {
-                NativeArray<T> vaultArray = vault.GetBuffer<T>(
+                VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
                     bufferId,
                     length,
                     SystemID.WorldStreaming,
                     options);
-                if (vaultArray.IsCreated)
+                if (TryResolveWorldStreamingVaultBuffer(vault, in handle, bufferId, length, out NativeArray<T> vaultArray))
                 {
                     _worldStreamingVaultArrayMask |= vaultBit;
                     return vaultArray;

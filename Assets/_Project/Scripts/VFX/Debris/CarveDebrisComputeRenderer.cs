@@ -28,8 +28,7 @@ namespace Hecton8.VFX.Debris
         IGlobalRegistryHotSwapRefListener
     {
         private const int MaxCarveDebrisCount = ShinobuDeltaCrusher.UltraTierDebrisCap;
-        private const int MinQualityActiveCarveDebrisCount = ShinobuDeltaCrusher.LowTierDebrisCap;
-        private const int MiddleQualityActiveCarveDebrisCount = 4096;
+        private static readonly int MinQualityActiveCarveDebrisCount = ShinobuDeltaCrusher.ResolveDebrisCap(0f, MaxCarveDebrisCount);
         private const int ThreadGroupFallbackSize = 64;
         private const int ThreadGroupPortableMaxSize = 512;
         private const int BlackBoxCapacity = 300;
@@ -162,8 +161,6 @@ namespace Hecton8.VFX.Debris
         private int _clearArgsKernel = -1;
         private int _cullKernel = -1;
         private int _threadGroupSize = ThreadGroupFallbackSize;
-        private int _maxDispatchGroups = MaxCarveDebrisCount >> 6;
-        private int _minQualityDispatchGroups = MinQualityActiveCarveDebrisCount >> 6;
         private int _lastActiveCapacity = MaxCarveDebrisCount;
         private int _nextGlobalSdfRefreshFrame;
         private int _nextMissingRegistryRefreshFrame;
@@ -456,8 +453,6 @@ namespace Hecton8.VFX.Debris
 
             fluidAdvectionCompute.GetKernelThreadGroupSizes(_advectKernel, out uint kernelThreads, out _, out _);
             _threadGroupSize = kernelThreads > 0u ? (int)math.min(kernelThreads, ThreadGroupPortableMaxSize) : ThreadGroupFallbackSize;
-            _maxDispatchGroups = ResolveDispatchGroups(MaxCarveDebrisCount, _threadGroupSize);
-            _minQualityDispatchGroups = ResolveDispatchGroups(MinQualityActiveCarveDebrisCount, _threadGroupSize);
 
             _dataVault = vault;
             if (!EnsureCarveDebrisVaultBuffer(
@@ -1251,12 +1246,13 @@ namespace Hecton8.VFX.Debris
                    math.isfinite(textureParams.w);
         }
 
-        private Texture ResolveSdfTexture(bool lowTier, out Matrix4x4 sdfWorldToLocal, out Vector4 sdfInvDoubleHalfExtents, out float sdfActive)
+        private Texture ResolveSdfTexture(float sdfInfluence01, out Matrix4x4 sdfWorldToLocal, out Vector4 sdfInvDoubleHalfExtents, out float sdfActive)
         {
+            float clampedSdfInfluence01 = math.saturate(sdfInfluence01);
             sdfWorldToLocal = Matrix4x4.identity;
             sdfInvDoubleHalfExtents = Vector4.zero;
             sdfActive = 0f;
-            if (lowTier)
+            if (clampedSdfInfluence01 <= 0.0001f)
                 return _emptyTexture3D;
 
             if (voxelSdfTexture3D != null &&
@@ -1265,7 +1261,7 @@ namespace Hecton8.VFX.Debris
             {
                 sdfWorldToLocal = voxelSdfWorldToLocal;
                 sdfInvDoubleHalfExtents = voxelSdfInvDoubleHalfExtents;
-                sdfActive = 1f;
+                sdfActive = clampedSdfInfluence01;
                 return voxelSdfTexture3D;
             }
 
@@ -1274,7 +1270,7 @@ namespace Hecton8.VFX.Debris
             {
                 sdfWorldToLocal = _cachedGlobalSdfWorldToLocal;
                 sdfInvDoubleHalfExtents = _cachedGlobalSdfInvDoubleHalfExtents;
-                sdfActive = 1f;
+                sdfActive = clampedSdfInfluence01;
                 return _cachedGlobalSdfTexture;
             }
 
@@ -1348,7 +1344,7 @@ namespace Hecton8.VFX.Debris
         private static int ResolveActiveCapacity(float globalQualityWeight01, int configuredCap)
         {
             int cap = ShinobuDeltaCrusher.ResolveDebrisCap(globalQualityWeight01, configuredCap);
-            return math.clamp(cap, LowTierActiveCarveDebrisCount, MaxCarveDebrisCount);
+            return math.clamp(cap, MinQualityActiveCarveDebrisCount, MaxCarveDebrisCount);
         }
 
         private void RefreshDebrisTuningFromVault(NativeArray<int> jobState)
@@ -1370,7 +1366,7 @@ namespace Hecton8.VFX.Debris
 
             _configuredMaxActiveDebris = math.clamp(
                 dto.MaxActiveDebris > 0 ? dto.MaxActiveDebris : MaxCarveDebrisCount,
-                LowTierActiveCarveDebrisCount,
+                MinQualityActiveCarveDebrisCount,
                 MaxCarveDebrisCount);
         }
 
@@ -1388,15 +1384,22 @@ namespace Hecton8.VFX.Debris
             float quality = ShinobuDeltaCrusher.SmoothQuality01(globalQualityWeight01);
             float midBlend = math.saturate(quality * 2f);
             float highBlend = math.saturate((quality - 0.5f) * 2f);
-            float middle = math.lerp(LowTierParticlesPerCarve, MidTierParticlesPerCarve, midBlend);
-            float high = math.lerp(middle, HighTierParticlesPerCarve, highBlend);
-            return math.clamp((int)math.round(high), LowTierParticlesPerCarve, HighTierParticlesPerCarve);
+            float middle = math.lerp(MinQualityParticlesPerCarve, MiddleQualityParticlesPerCarve, midBlend);
+            float high = math.lerp(middle, MaxQualityParticlesPerCarve, highBlend);
+            return math.clamp((int)math.round(high), MinQualityParticlesPerCarve, MaxQualityParticlesPerCarve);
         }
 
         private static float ResolveGlobalQualityWeight01()
         {
             float quality = SignalBusRegistry.GlobalQualityWeight01;
             return math.isfinite(quality) ? math.saturate(quality) : 0f;
+        }
+
+        private void RefreshQualityPolicy(float globalQualityWeight01)
+        {
+            float visualQuality01 = ShinobuDeltaCrusher.SmoothQuality01(globalQualityWeight01);
+            _visualOverkill01 = math.saturate(visualQuality01);
+            _qualityPressure01 = 1f - _visualOverkill01;
         }
 
         private float ResolveLifetimeRcp()
@@ -1417,14 +1420,9 @@ namespace Hecton8.VFX.Debris
             return math.isfinite(stress01) ? stress01 : 1f;
         }
 
-        private static bool IsHighEndPayload(HectonQualityTier tier)
-        {
-            return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra;
-        }
-
         private void ApplyCapacityShed(int activeCapacity, NativeArray<float4> debrisPositions, NativeArray<float4> debrisVelocities)
         {
-            int safeCapacity = math.clamp(activeCapacity, LowTierActiveCarveDebrisCount, MaxCarveDebrisCount);
+            int safeCapacity = math.clamp(activeCapacity, MinQualityActiveCarveDebrisCount, MaxCarveDebrisCount);
             if (safeCapacity >= _lastActiveCapacity)
             {
                 _lastActiveCapacity = safeCapacity;
@@ -1465,14 +1463,15 @@ namespace Hecton8.VFX.Debris
 
             GraphicsBuffer currentPositionBuffer = (_bufferParity & 1) == 0 ? _positionBufferA : _positionBufferB;
             GraphicsBuffer currentVelocityBuffer = (_bufferParity & 1) == 0 ? _velocityBufferA : _velocityBufferB;
-            bool highEndTier = _cachedHighEndTier;
+            float visualOverkill01 = _visualOverkill01;
             material.SetBuffer(CarveDebrisReadId, currentPositionBuffer);
             material.SetBuffer(CarveDebrisVelocityReadId, currentVelocityBuffer);
             material.SetBuffer(DebrisBufferId, currentPositionBuffer);
             material.SetBuffer(DebrisPhysicsBufferId, currentVelocityBuffer);
-            BindStaticRenderMaterialState(material, highEndTier);
+            BindStaticRenderMaterialState(material, visualOverkill01);
 
-            ShadowCastingMode resolvedShadowCastingMode = highEndTier && shadowCastingMode == ShadowCastingMode.Off
+            bool visualOverkillShadows = visualOverkill01 >= 0.95f;
+            ShadowCastingMode resolvedShadowCastingMode = visualOverkillShadows && shadowCastingMode == ShadowCastingMode.Off
                 ? ShadowCastingMode.On
                 : shadowCastingMode;
 
@@ -1482,14 +1481,15 @@ namespace Hecton8.VFX.Debris
                 worldBounds = drawBounds,
                 layer = renderLayer,
                 shadowCastingMode = resolvedShadowCastingMode,
-                receiveShadows = highEndTier,
+                receiveShadows = visualOverkillShadows,
                 motionVectorMode = MotionVectorGenerationMode.Object
             };
             UnityEngine.Graphics.RenderMeshIndirect(renderParams, mesh, _indirectArgsBuffer, 1, 0);
         }
 
-        private void BindStaticRenderMaterialState(Material material, bool highEndTier)
+        private void BindStaticRenderMaterialState(Material material, float visualOverkill01)
         {
+            float clampedVisualOverkill01 = math.saturate(visualOverkill01);
             bool materialChanged = !ReferenceEquals(_boundRenderMaterial, material);
             if (materialChanged || !ReferenceEquals(_boundVisibleIndicesBuffer, _visibleIndicesBuffer))
             {
@@ -1504,7 +1504,7 @@ namespace Hecton8.VFX.Debris
                 minRockScale,
                 math.max(minRockScale, maxRockScale),
                 particleLifetimeSeconds,
-                highEndTier ? 1f : 0f);
+                clampedVisualOverkill01);
             if (!_boundMaterialParamsValid || !AreVector4ExactlyEqual(_boundMaterialParams, materialParams))
             {
                 material.SetVector(CarveDebrisMaterialParamsId, materialParams);
@@ -1515,8 +1515,8 @@ namespace Hecton8.VFX.Debris
             Vector4 motionParams = new Vector4(
                 math.max(0.0001f, _lastDeltaTime),
                 _cachedSystemStress01,
-                _cachedLowTier ? 1f : 0f,
-                highEndTier ? 1f : 0f);
+                _qualityPressure01,
+                clampedVisualOverkill01);
             if (!_boundMotionParamsValid || !AreVector4ExactlyEqual(_boundMotionParams, motionParams))
             {
                 material.SetVector(CarveDebrisMotionParamsId, motionParams);
@@ -1686,57 +1686,6 @@ namespace Hecton8.VFX.Debris
 
             if (_activeMirrorCount <= 0)
                 _pendingAupShift = default;
-        }
-
-        private bool IsLowTier()
-        {
-            if (!_tierCacheInitialized)
-            {
-                _cachedLowTier = _sampledLowTier;
-                _pendingLowTier = _sampledLowTier;
-                _cachedHighEndTier = _sampledHighEndTier;
-                _pendingHighEndTier = _sampledHighEndTier;
-                _pendingTierFrames = 0;
-                _tierCacheInitialized = true;
-                return _cachedLowTier;
-            }
-
-            if (_sampledLowTier == _cachedLowTier && _sampledHighEndTier == _cachedHighEndTier)
-            {
-                _pendingLowTier = _sampledLowTier;
-                _pendingHighEndTier = _sampledHighEndTier;
-                _pendingTierFrames = 0;
-                return _cachedLowTier;
-            }
-
-            if (_sampledLowTier != _pendingLowTier || _sampledHighEndTier != _pendingHighEndTier)
-            {
-                _pendingLowTier = _sampledLowTier;
-                _pendingHighEndTier = _sampledHighEndTier;
-                _pendingTierFrames = 0;
-                return _cachedLowTier;
-            }
-
-            _pendingTierFrames++;
-            if (_pendingTierFrames >= TierSwitchConfirmFrames)
-            {
-                _cachedLowTier = _sampledLowTier;
-                _cachedHighEndTier = _sampledHighEndTier;
-                _pendingTierFrames = 0;
-            }
-
-            return _cachedLowTier;
-        }
-
-        private static bool IsLowTierPayload(byte tierProfile, HectonQualityTier qualityTier)
-        {
-            if (qualityTier == HectonQualityTier.Low || qualityTier == HectonQualityTier.Mx350)
-                return true;
-
-            if (qualityTier == HectonQualityTier.Unknown)
-                return tierProfile == ScalabilityTierProfiles.LowMx350;
-
-            return false;
         }
 
         private bool TryBuildComputeShardRequest(
@@ -1935,7 +1884,7 @@ namespace Hecton8.VFX.Debris
         private void WriteBlackBox(
             int queuedCarves,
             int injectedParticles,
-            bool lowTier,
+            float qualityPressure01,
             NativeArray<int> jobState,
             NativeArray<CarveDebrisTelemetryEntry> blackBox)
         {
@@ -1948,7 +1897,7 @@ namespace Hecton8.VFX.Debris
 
             _lastTelemetryFrame = frame;
             uint flags = (uint)math.max(0, jobState[JobStateFlagsIndex]);
-            flags |= lowTier ? LowTierFlag : 0u;
+            flags |= qualityPressure01 >= 0.75f ? QualityPressureTelemetryFlag : 0u;
             flags |= _lastSdfActive ? SdfActiveFlag : 0u;
             flags |= _lastFlowActive ? FlowActiveFlag : 0u;
             flags |= _lastWakeActive ? WakeActiveFlag : 0u;
@@ -2051,15 +2000,8 @@ namespace Hecton8.VFX.Debris
             _cachedGlobalSdfActive = 0f;
             _nextGlobalSdfRefreshFrame = 0;
             _nextMissingRegistryRefreshFrame = 0;
-            _pendingTierFrames = 0;
-            _cachedLowTier = true;
-            _pendingLowTier = true;
-            _sampledLowTier = true;
-            _cachedHighEndTier = false;
-            _pendingHighEndTier = false;
-            _sampledHighEndTier = false;
-            _forceLowMemoryProfile = false;
-            _tierCacheInitialized = false;
+            _qualityPressure01 = 0f;
+            _visualOverkill01 = 1f;
             InvalidateDrawMeshCache();
             _lastAppliedAupShift = default;
             _registryDataVault = null;

@@ -4972,3 +4972,10 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Binary payload impact: none. No DTO, BufferID, shader property ID, SignalBus payload, telemetry row, atlas payload bit, or blackbox byte changed.
 - Authority impact: shader-only visual fake. Falloff tuning remains presentation-owned shader math and does not alter gameplay truth.
 - Verification: focused scan clean for the old falloff `step(2.0, e)` selector, `crackReveal = step`, `cameraSubmerged = step`, `comfortEdgeLowTier = step(0.42...)`, and active owned `Material.SetTexture` target calls; `Tools/Decal_Projector_Inquisition.py` PASS at `2026-05-21T23:42:38Z` with 0 active GameObject/URP decal violations; `git diff --check` passed with CRLF warning only. Build was not launched because CPU sampled 51% with active `csc` and `dotnet`.
+
+## 2026-05-22 - SHINOBU_202 Propwash GPU Editor Facade Descriptor Route
+
+- `Assets/_Project/Editor/PropwashGpuTunerWindow.cs` replaced editor live-tuning and telemetry graph pointer-bearing Vault handles with `VaultGenerationHandle<T>` descriptor routes.
+- Binary payload impact: none. `PropwashGpuTuningDTO`, `PropwashTelemetryEntry`, BufferIDs `PropwashGpuTuning` / `PropwashGpuTelemetryRing`, telemetry capacity, CSV tuning bytes, shader property IDs, and GPU propwash scalar contract are unchanged.
+- Authority impact: VFX remains the owner. The editor writes tuning only under `TryAcquireWriteLock` / `ReleaseWriteLock` and reads telemetry through pure `TryReadHandle`; it does not allocate telemetry or change runtime publication.
+- Verification: focused scan clean for `TryGetBuffer`, `GetBuffer<`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<`, `.Resolve(`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, and `.ptr` in `PropwashGpuTunerWindow.cs`; brace/preprocessor counts `30/30` and `1/1`; `git diff --check` passed with CRLF warning only. Build was not launched because `VBCSCompiler.exe` is active and full `Hecton8.slnx` remains blocked by external Visor RenderGraph texture-binding errors.

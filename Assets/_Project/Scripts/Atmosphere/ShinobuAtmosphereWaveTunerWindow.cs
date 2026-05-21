@@ -160,8 +160,7 @@ namespace Hecton8.Atmosphere.Editor
             if (!ShinobuOceanSurfaceAtmosphereRuntime.TryGetReadbackDebugSnapshot(
                     out _,
                     out _,
-                    out NativeArray<OceanSurfaceTelemetryEntry> telemetry) ||
-                !telemetry.IsCreated ||
+                    out NativeArray<OceanSurfaceTelemetryEntry>.ReadOnly telemetry) ||
                 telemetry.Length <= 0)
             {
                 return "GlobalDataVault ocean buffers active. Readback telemetry pending.";
@@ -181,31 +180,31 @@ namespace Hecton8.Atmosphere.Editor
                 return;
 
             if (!ShinobuOceanSurfaceAtmosphereRuntime.TryGetVaultSnapshot(
-                    out NativeArray<WaveParametersDTO> waves,
-                    out NativeArray<WeatherStateDTO> weather,
-                    out NativeArray<AtmosphereDTO> atmosphere))
+                    out NativeArray<WaveParametersDTO>.ReadOnly waves,
+                    out NativeArray<WeatherStateDTO>.ReadOnly weather,
+                    out NativeArray<AtmosphereDTO>.ReadOnly atmosphere))
             {
                 return;
             }
 
-            if (weather.IsCreated && weather.Length > 0)
+            if (weather.Length > 0)
             {
                 WeatherStateDTO state = weather[0];
                 _windSpeed = state.WindDirectionSpeedStorm.z;
                 _foamThreshold = state.SurfaceScalars.z;
             }
 
-            if (waves.IsCreated && waves.Length > 0)
+            if (waves.Length > 0)
                 _waveSteepness = HectonOceanSurfaceMath.WaveLaneSteepness(waves[0].Wave1);
 
-            if (atmosphere.IsCreated && atmosphere.Length > 0)
+            if (atmosphere.Length > 0)
                 _gasGiantGlow = atmosphere[0].ScatteringParams.y;
         }
 
-        private static OceanSurfaceTelemetryEntry ResolveLatestTelemetry(NativeArray<OceanSurfaceTelemetryEntry> telemetry)
+        private static OceanSurfaceTelemetryEntry ResolveLatestTelemetry(NativeArray<OceanSurfaceTelemetryEntry>.ReadOnly telemetry)
         {
             OceanSurfaceTelemetryEntry latest = default;
-            if (!telemetry.IsCreated)
+            if (telemetry.Length <= 0)
                 return latest;
 
             for (int i = 0; i < telemetry.Length; i++)
@@ -221,26 +220,26 @@ namespace Hecton8.Atmosphere.Editor
         {
             if (!_drawGizmo ||
                 !ShinobuOceanSurfaceAtmosphereRuntime.TryGetVaultSnapshot(
-                    out NativeArray<WaveParametersDTO> waves,
-                    out NativeArray<WeatherStateDTO> weather,
+                    out NativeArray<WaveParametersDTO>.ReadOnly waves,
+                    out NativeArray<WeatherStateDTO>.ReadOnly weather,
                     out _))
             {
                 return;
             }
 
             Camera camera = sceneView.camera;
-            if (camera == null || !waves.IsCreated || waves.Length == 0 || !weather.IsCreated || weather.Length == 0)
+            if (camera == null || waves.Length == 0 || weather.Length == 0)
                 return;
 
             WeatherStateDTO state = weather[0];
             Handles.color = new Color(0.1f, 0.45f, 1f, 0.7f);
             float baseY = state.SurfaceScalars.x;
             if (ShinobuOceanSurfaceAtmosphereRuntime.TryGetReadbackDebugSnapshot(
-                    out NativeArray<float4> queries,
-                    out NativeArray<float4> results,
-                    out NativeArray<OceanSurfaceTelemetryEntry> telemetry) &&
-                queries.IsCreated &&
-                results.IsCreated)
+                    out NativeArray<float4>.ReadOnly queries,
+                    out NativeArray<float4>.ReadOnly results,
+                    out NativeArray<OceanSurfaceTelemetryEntry>.ReadOnly telemetry) &&
+                queries.Length > 0 &&
+                results.Length > 0)
             {
                 int sampleCount = math.min(ResolveLatestTelemetry(telemetry).ReadbackSampleCount, math.min(queries.Length, results.Length));
                 for (int i = 0; i < sampleCount; i++)

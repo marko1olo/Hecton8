@@ -130,9 +130,13 @@ def main() -> int:
         "stale_profiler_markers_outside_unity_visibility",
         not (ROOT / "Assets/profilermarkers.csv").exists()
         and not (ROOT / "Assets/profilermarkers.csv.meta").exists()
+        and not (ROOT / "Assets/profilermarkers.tvc").exists()
+        and not (ROOT / "Assets/profilermarkers.tvc.meta").exists()
         and (ROOT / "Docs/Archive/Crest_Version_Quarantine/Assets/profilermarkers.csv").exists()
-        and (ROOT / "Docs/Archive/Crest_Version_Quarantine/Assets/profilermarkers.csv.meta").exists(),
-        "Stale Unity profiler marker CSV with Crest assembly rows is archived outside active Assets with its meta.",
+        and (ROOT / "Docs/Archive/Crest_Version_Quarantine/Assets/profilermarkers.csv.meta").exists()
+        and (ROOT / "Docs/Archive/Crest_Version_Quarantine/Assets/profilermarkers.tvc").exists()
+        and (ROOT / "Docs/Archive/Crest_Version_Quarantine/Assets/profilermarkers.tvc.meta").exists(),
+        "Stale Unity profiler marker payloads are archived outside active Assets with their metas.",
     )
     active_waveharmonic_projects = sorted(path.name for path in ROOT.glob("WaveHarmonic.Crest*.csproj"))
     archived_waveharmonic_projects = sorted(
@@ -144,6 +148,17 @@ def main() -> int:
         "waveharmonic_generated_projects_outside_root",
         not active_waveharmonic_projects and len(archived_waveharmonic_projects) >= 7,
         "Root generated WaveHarmonic Crest projects are archived outside active MSBuild visibility.",
+    )
+    active_waveharmonic_lscache = sorted(path.name for path in ROOT.glob("WaveHarmonic.Crest*.csproj.lscache"))
+    archived_waveharmonic_lscache = sorted(
+        path.name
+        for path in (ROOT / "Docs/Archive/Crest_Version_Quarantine/GeneratedProject").glob("WaveHarmonic.Crest*.csproj.lscache")
+    )
+    add_check(
+        checks,
+        "stale_csharp_devkit_lscache_no_waveharmonic_crest",
+        not active_waveharmonic_lscache and len(archived_waveharmonic_lscache) >= 7,
+        "Root C# Dev Kit lscache files for quarantined WaveHarmonic Crest projects are archived outside active MSBuild/IDE visibility.",
     )
     generated_project_text = "\n".join(
         path.read_text(encoding="utf-8-sig", errors="replace")
@@ -168,6 +183,16 @@ def main() -> int:
         and '<Reference Include="WaveHarmonic.Crest' not in directory_build_targets
         and "HectonPruneMissingWaveHarmonicCrestPackageItems" in directory_build_targets,
         "Directory.Build.targets no longer injects Crest into Hecton8.Core; only the missing-package prune target remains.",
+    )
+    add_check(
+        checks,
+        "active_crest_migration_payload_outside_unity_visibility",
+        not (ROOT / "Assets/_Project/Data/CrestMigration").exists()
+        and not (ROOT / "Assets/_Project/Data/CrestMigration.meta").exists()
+        and (ROOT / "Docs/Archive/Crest_Version_Quarantine/Assets/_Project/Data/CrestMigration/Crest4SettingsDump.json").exists()
+        and (ROOT / "Docs/Archive/Crest_Version_Quarantine/Assets/_Project/Data/CrestMigration/Crest4SettingsDump.json.meta").exists()
+        and (ROOT / "Docs/Archive/Crest_Version_Quarantine/Assets/_Project/Data/CrestMigration.meta").exists(),
+        "Crest migration dumps and folder meta are archived outside active Assets.",
     )
     quarantine_report_path = ROOT / "Docs/Reports/CREST_QUARANTINE_REPORT.json"
     quarantine_report = {}
@@ -250,6 +275,7 @@ def main() -> int:
     )
 
     dry_volume_feature = read_text("Assets/_Project/Scripts/Visor/HectonDryVolumeFeature.cs")
+    dry_volume_restore_shader = read_text("Assets/_Project/Art/Shaders/Hecton_DryVolumeRestore.shader")
     add_check(
         checks,
         "dry_volume_reads_vendor_texture_id_through_bridge",
@@ -258,6 +284,15 @@ def main() -> int:
         and "TryReadOceanCameraColorTexture" in dry_volume_feature
         and "bridge.CameraColorTextureId" in dry_volume_feature,
         "Dry-volume render pass no longer hard-codes the Crest camera color global; it reads the active ocean visual bridge ID.",
+    )
+    add_check(
+        checks,
+        "active_shader_no_crest_globals_outside_bridge",
+        "_Crest_" not in dry_volume_restore_shader
+        and "_OceanCameraColorTexture" in dry_volume_restore_shader
+        and "OceanCameraColorTextureId" in dry_volume_feature
+        and "SetGlobalTexture(ShaderConstants.OceanCameraColorTextureId" in dry_volume_feature,
+        "Non-bridge dry-volume shader samples a vendor-neutral ocean camera texture global supplied by the render pass.",
     )
 
     scooter_shafts_feature = read_text("Assets/_Project/Scripts/Visor/HectonScooterVolumetricShaftsFeature.cs")
@@ -617,6 +652,15 @@ def main() -> int:
         and "generated_project_crest_route" in dependency_scanner_source
         and "active_waveharmonic_generated_project_file" in dependency_scanner_source,
         "Dependency scanner hard-fails active generated project and MSBuild routes into Crest/WaveHarmonic outside the donor/helper boundary.",
+    )
+    add_check(
+        checks,
+        "dependency_scanner_blocks_shader_globals_migration_and_profiler_payloads",
+        "active_shader_crest_global" in dependency_scanner_source
+        and "scan_active_crest_migration_payloads" in dependency_scanner_source
+        and "scan_generated_profiler_payload_visibility" in dependency_scanner_source
+        and "generated_profiler_payload_visible" in dependency_scanner_source,
+        "Dependency scanner hard-fails non-bridge Crest shader globals, active Crest migration payloads, and active profiler marker payloads.",
     )
     add_check(
         checks,

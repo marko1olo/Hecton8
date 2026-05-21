@@ -4,7 +4,7 @@ Agent: SHINOBU_270
 Domain: ECHELON 8 Presentation & UX / Visor AR (HUD)
 Prompt role: VISOR_AR_STENCIL_RENDERER
 Task count: 20
-Status: RENDERGRAPH FAIL-OPEN WATCHDOG PATCHED / STALE SUPPRESSION WINDOW CLOSED / HOT REGISTRY RETRY GUARDED / OVERLAY SNAPSHOT NO-GROWTH / GENERATED CSPROJ STALE / COMPILE BLOCKED BY ACTIVE COMPILER AND CPU GATE
+Status: RENDERGRAPH FAIL-OPEN WATCHDOG PATCHED / STALE SUPPRESSION WINDOW CLOSED / HOT REGISTRY RETRY GUARDED / OVERLAY SNAPSHOT NO-GROWTH / LAYOUT OFFSET VALIDATOR WIDENED / GENERATED CSPROJ STALE / FULL SOLUTION RED IN EXTERNAL VISOR BINDING / SHINOBU_270 COMPILE PENDING
 
 ## Mandates Read
 
@@ -208,3 +208,10 @@ Status: RENDERGRAPH FAIL-OPEN WATCHDOG PATCHED / STALE SUPPRESSION WINDOW CLOSED
 - [x] HUDCanvasInquisition section retention fixed | Justification: editor-generated `shinobu_270_visor_ar_stencil` sections now include evidence class, generated-project evidence, fail-open resolve proof, fixed stencil bit proof, Vault IDs, and compile-gate status instead of replacing the rich forensic section with a thin metric object | Alternatives Rejected: relying on a manual JSON patch that the next editor menu run would erase | Estimated impact: editor-only 0 runtime us; prevents false evidence regression
 - [x] Editor report builder capacity widened | Justification: `BuildReportObject` now starts with a 2048-char `StringBuilder` because the generated section contains forensic proof fields | Alternatives Rejected: predictable editor-side `StringBuilder` growth on every report refresh | Estimated impact: editor-only allocation churn reduction; runtime 0 us
 - [x] Architecture/report docs refreshed | Justification: `VISOR_AR_STENCIL_RENDERER.md`, `BINARY_PAYLOAD_INTEGRATION_LEDGER.md`, and `RENDERING_OPTIMIZATION_REPORT.json` now describe the report-facade retention guard | Alternatives Rejected: letting docs claim a stronger artifact than the menu generator can reproduce | Estimated impact: proof only
+
+## Iteration 27: Evidence Reconciliation / Layout Validator Widening
+
+- [x] SHINOBU_270 DTO offset proof widened | Justification: `VisorARStencilContracts.ValidateLayouts()` now keeps runtime `UnsafeUtility.SizeOf<T>()` checks for all route DTOs and adds editor `UnsafeUtility.GetFieldOffset` checks for HUD, projected target, digit, telemetry, profile, and target-source fields | Alternatives Rejected: claiming full field-offset proof while only HUD/source offsets were editor-checked | Estimated impact: runtime 0 us; import/editor proof only
+- [x] Report evidence class normalized | Justification: `HUDCanvasInquisition` and `RENDERING_OPTIMIZATION_REPORT.json` now use `evidenceClass=STATIC_SOURCE` plus `scope=TARGETED_REFRESH`, matching the shared report vocabulary | Alternatives Rejected: inventing `STATIC_SOURCE_TARGETED_REFRESH` as a non-standard evidence class | Estimated impact: report/parser hygiene only
+- [x] Build status wording reconciled with ledger | Justification: report and generated report text now state that SHINOBU_270 new scripts remain unproven because generated `Hecton8.Core.csproj` is stale, while the latest recorded full `Hecton8.slnx` build is RED outside this route in Visor RenderGraph texture binding | Alternatives Rejected: saying only "pending" after ledger recorded a red full-solution build, or blaming SHINOBU_270 without source evidence | Estimated impact: proof honesty only
+- [x] Shader warmup proof narrowed | Justification: docs now say the variant collection is configured for bootstrap prewarm, but actual Unity import/player first-use stutter proof remains pending | Alternatives Rejected: claiming player warmup proof from static serialized references alone | Estimated impact: proof honesty only

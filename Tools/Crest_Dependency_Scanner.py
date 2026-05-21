@@ -44,8 +44,10 @@ COMPLIANCE_DENYLIST_PATH = Path("Assets/_Project/Scripts/Editor/HectonCompliance
 GENERATED_REPORT_PATHS = (
     Path("Assets/profilermarkers.csv"),
 )
+GENERATED_PROFILER_PAYLOAD_GLOB = "profilermarkers.*"
 GENERATED_PROJECT_EXTENSIONS = {
     ".csproj",
+    ".lscache",
     ".sln",
     ".slnx",
     ".props",
@@ -90,6 +92,7 @@ ACTIVE_ASSET_BREACH_RE = re.compile(
 )
 CREST_SHADER_INCLUDE_RE = re.compile(r'#include\s+"[^"\n]*Crest/Crest/Shaders/')
 CREST_SHADER_NAME_RE = re.compile(r'Shader\s+"Crest/')
+CREST_SHADER_GLOBAL_RE = re.compile(r"\b_Crest_[A-Za-z0-9_]*\b")
 GENERATED_PROJECT_HARD_ROUTE_RE = re.compile(
     r'(<ProjectReference\s+Include="(?:Crest|Crest\.Helpers\.Editor|WaveHarmonic\.Crest[^"]*)\.csproj"\s*/>|'
     r'<Project\s+Path="WaveHarmonic\.Crest[^"]*\.csproj"\s*/>|'
@@ -100,6 +103,7 @@ RG_ACTIVE_PATTERNS = (
     rf"WaveHarmonic\.Crest::|WaveHarmonic\.Crest|382a5d8b1147b4e78a31353c022b8e15|03aa24b56404b45a190a2cfc0c7cc100|{QUARANTINED_ASSET_GUID_RE}|Crest5KinematicsAdapter|com\.waveharmonic\.crest|Crest::Crest\.UnderwaterRenderer|^\s*-\s+Crest\s*$",
     r'#include\s+"[^"\n]*Crest/Crest/Shaders/',
     r'Shader\s+"Crest/',
+    r'\b_Crest_[A-Za-z0-9_]*\b',
 )
 ASSET_SCAN_EXTENSIONS = {".prefab", ".unity", ".asset", ".mat"}
 SHADER_SCAN_EXTENSIONS = {".shader", ".hlsl", ".compute"}
@@ -495,6 +499,16 @@ def scan_active_assets_with_rg() -> list[dict] | None:
                         "text": line_text.strip(),
                     }
                 )
+                continue
+            if CREST_SHADER_GLOBAL_RE.search(line_text):
+                breaches.append(
+                    {
+                        "kind": "active_shader_crest_global",
+                        "path": str(rel(path)),
+                        "line": line_number,
+                        "text": line_text.strip(),
+                    }
+                )
     return breaches
 
 
@@ -558,6 +572,16 @@ def scan_active_assets_with_python() -> list[dict]:
                             "text": line.strip(),
                         }
                     )
+                    continue
+                if CREST_SHADER_GLOBAL_RE.search(line):
+                    breaches.append(
+                        {
+                            "kind": "active_shader_crest_global",
+                            "path": str(rel(path)),
+                            "line": line_number,
+                            "text": line.strip(),
+                        }
+                    )
     return breaches
 
 
@@ -601,6 +625,48 @@ def scan_generated_report_crest_rows() -> list[dict]:
     return breaches
 
 
+def scan_generated_profiler_payload_visibility() -> list[dict]:
+    """Fail active Unity-visible profiler payloads regardless of extension."""
+    breaches: list[dict] = []
+    assets_root = PROJECT_ROOT / "Assets"
+    if not assets_root.exists():
+        return breaches
+    for path in sorted(assets_root.glob(GENERATED_PROFILER_PAYLOAD_GLOB)):
+        if path.is_file():
+            breaches.append(
+                {
+                    "kind": "generated_profiler_payload_visible",
+                    "path": str(rel(path)),
+                    "detail": "Profiler marker payloads are generated reports and must stay outside Unity-visible Assets.",
+                }
+            )
+    return breaches
+
+
+def scan_active_crest_migration_payloads() -> list[dict]:
+    """Fail active migration dumps; they are forensic payloads, not Unity-visible source."""
+    migration_root = PROJECT_ROOT / "Assets" / "_Project" / "Data" / "CrestMigration"
+    migration_meta = PROJECT_ROOT / "Assets" / "_Project" / "Data" / "CrestMigration.meta"
+    breaches: list[dict] = []
+    if migration_root.exists():
+        breaches.append(
+            {
+                "kind": "active_crest_migration_payload",
+                "path": str(rel(migration_root)),
+                "detail": "Crest migration payloads must stay in Docs/Archive, not active Assets/_Project/Data.",
+            }
+        )
+    if migration_meta.exists():
+        breaches.append(
+            {
+                "kind": "active_crest_migration_payload_meta",
+                "path": str(rel(migration_meta)),
+                "detail": "CrestMigration folder meta must stay archived with the payload.",
+            }
+        )
+    return breaches
+
+
 def collect_generated_project_paths() -> list[Path]:
     paths: list[Path] = []
     for path in PROJECT_ROOT.iterdir():
@@ -617,7 +683,9 @@ def scan_generated_project_crest_routes() -> tuple[list[dict], list[dict], list[
 
     for path in collect_generated_project_paths():
         relative = rel(path)
-        if path.name.startswith("WaveHarmonic.Crest") and path.suffix.lower() == ".csproj":
+        if path.name.startswith("WaveHarmonic.Crest") and (
+            path.name.endswith(".csproj") or path.name.endswith(".csproj.lscache")
+        ):
             breaches.append(
                 {
                     "kind": "active_waveharmonic_generated_project_file",
@@ -790,6 +858,8 @@ def main() -> int:
     donor_autoreference_breaches = scan_crest_donor_autoreference()
     donor_missing_reference_breaches = scan_crest_donor_missing_optional_references()
     generated_report_breaches = scan_generated_report_crest_rows()
+    generated_profiler_payload_breaches = scan_generated_profiler_payload_visibility()
+    active_migration_payload_breaches = scan_active_crest_migration_payloads()
     generated_project_breaches, generated_project_define_hits, generated_project_prune_rule_hits = scan_generated_project_crest_routes()
     global_define_hits = scan_global_scripting_defines()
     compliance_denylist_hits = scan_compliance_denylist_strings()
@@ -803,6 +873,8 @@ def main() -> int:
         + donor_autoreference_breaches
         + donor_missing_reference_breaches
         + generated_report_breaches
+        + generated_profiler_payload_breaches
+        + active_migration_payload_breaches
         + generated_project_breaches
     )
     allowed_hits = asmdef_allowed + csharp_allowed + define_allowed

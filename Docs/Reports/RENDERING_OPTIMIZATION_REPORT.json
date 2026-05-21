@@ -2,7 +2,8 @@
   "shinobu_270_visor_ar_stencil": {
     "agent": "SHINOBU_270",
     "domain": "ECHELON 8 Presentation & UX / Visor AR (HUD)",
-    "evidenceClass": "STATIC_SOURCE_TARGETED_REFRESH",
+    "evidenceClass": "STATIC_SOURCE",
+    "scope": "TARGETED_REFRESH",
     "takeoverPath": "HectonVisorARStencilRendererFeature + Hecton_VisorAR.shader",
     "runtimeForceUpdateCanvasesCalls": 0,
     "runtimeGraphicRaycasterTokenCount": 48,
@@ -14,7 +15,7 @@
     "renderGraphSuppressionProof": "Canvas suppression flips true only after ArPass.RecordRenderGraph creates the resolve target, assigns resourceData.cameraColor, and marks the player-camera frame as resolved; endCameraRendering clears renderer-owned suppression on authorized player-camera frames without same-frame resolve proof.",
     "stencilLaneProof": "Hecton_VisorStencilMask and Hidden/Hecton8/VisorAR hard-code reserved stencil bit 0 (Ref 1, WriteMask 1, ReadMask 1); AddRenderPasses does not mutate Material stencil properties.",
     "vaultBufferIds": "73180..73186 visual-only UI lanes, rollback/Merkle/save excluded",
-    "compileStatus": "PENDING_VERIFICATION: build not launched while CPU/compiler/project-file gates are closed.",
+    "compileStatus": "PENDING_SHINOBU_270_SOURCE_VERIFICATION: generated Hecton8.Core.csproj is stale for new SHINOBU_270 scripts; latest recorded full Hecton8.slnx build is RED outside this route in Visor RenderGraph texture binding.",
     "notes": "This section preserves neighboring report objects and exposes the generated-project stale gate even when the Unity editor menu has not regenerated the report."
   },
   "agent": "SHINOBU_270",
@@ -49,8 +50,8 @@
     "cameraOwnershipPolish": "HectonVisorARStencilRendererFeature now accepts only the cached player runtime camera reference for runtime stencil takeover; unrelated Game/Base cameras cannot suppress the HUD Canvas fallback.",
     "renderGraphAbortFailOpen": "Stencil and AR RecordRenderGraph early exits for backbuffer or invalid source/depth resources clear renderer-owned stencil suppression instead of leaving Canvas fallback hidden after a previous good frame.",
     "stencilLanePolish": "Stencil read/write now reserve bit 0 only. Stencil ref/mask material properties were removed; both visor shaders hard-code Ref 1 with WriteMask/ReadMask 1 until a wider stencil-lane reservation is documented.",
-    "shaderWarmupPolish": "Added Assets/_Project/Art/Shaders/Variants/Hecton_VisorAR_Stencil.shadervariants and routes it through BootstrapController shaderVariantCollections for cold bootstrap prewarm; renderer Create() does not own shader warmup.",
-    "compileStatus": "Blocked by latest build gate: no compiler process output was returned, but CPU stayed 100% by CIM and 98.84%, 99.81%, 100% by counter samples; SHINOBU_270 did not launch dotnet build."
+    "shaderWarmupPolish": "Added Assets/_Project/Art/Shaders/Variants/Hecton_VisorAR_Stencil.shadervariants and routes it through BootstrapController shaderVariantCollections for cold bootstrap prewarm; renderer Create() does not own shader warmup. Actual Unity import/player first-use stutter proof remains pending.",
+    "compileStatus": "SHINOBU_270 new scripts remain unproven because generated Hecton8.Core.csproj is stale; latest recorded full Hecton8.slnx build is RED outside this route in Visor RenderGraph texture binding."
   },
   "jacobianFoam": {
     "agentId": "SHINOBU_266",
