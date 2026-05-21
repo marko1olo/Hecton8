@@ -1,7 +1,7 @@
 {
   "agent": "SHINOBU_260",
   "role": "CREST_VERSION_QUARANTINE_DIRECTOR",
-  "timestamp_utc": "20260521_234957",
+  "timestamp_utc": "20260521_235622",
   "allowed_bridge_prefixes": [
     "Assets/_Project/Scripts/Plugins/Crest"
   ],

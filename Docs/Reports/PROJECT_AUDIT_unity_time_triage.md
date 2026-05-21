@@ -475,6 +475,33 @@ Updated static counts from that artifact:
 
 This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
 
+## 2026-05-22 Atmosphere Snapshot Native API Follow-Up
+
+Additional native API narrowing after the Data Monolith resident blob pass:
+
+- `ShinobuOceanSurfaceAtmosphereRuntime.TryGetVaultSnapshot` now returns read-only wave/weather/atmosphere DTO views.
+- `ShinobuOceanSurfaceAtmosphereRuntime.TryGetReadbackDebugSnapshot` now returns read-only completed query/result/telemetry views.
+- `ShinobuAtmosphereWaveTunerWindow` consumes these as read-only views and uses length-based validation.
+
+Rejected:
+
+- `TryAcquireTunerWriteView`, CSV hydration, wave/readback compute buffers, telemetry recording, and owner resolve helpers, because these are legitimate write paths.
+- Acoustic radar ring narrowing in this pass, because the HUD route uploads through `Texture2D.SetPixelData(NativeArray<T>)` and needs separate upload API proof.
+
+Focused proof:
+
+- Focused scans found no stale mutable declarations for the narrowed public atmosphere snapshot APIs.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_atmosphere_readonly_snapshots.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 211, down from 213.
+- `nativeApiExposureBuildPlayerRuntime`: 198, down from 200.
+- `nativeApiExposureOutRefMutable`: 160, down from 162.
+- `nativeApiRiskRuntimeOutRefMutableView`: 89, unchanged.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
 ## 2026-05-22 Data Monolith Resident Blob Follow-Up
 
 Additional native API narrowing after catalog/ecosystem snapshots:

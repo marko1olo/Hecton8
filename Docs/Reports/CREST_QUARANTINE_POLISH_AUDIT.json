@@ -42,13 +42,18 @@
       "status": "PASS"
     },
     {
-      "detail": "Stale Unity profiler marker CSV with Crest assembly rows is archived outside active Assets with its meta.",
+      "detail": "Stale Unity profiler marker payloads are archived outside active Assets with their metas.",
       "name": "stale_profiler_markers_outside_unity_visibility",
       "status": "PASS"
     },
     {
       "detail": "Root generated WaveHarmonic Crest projects are archived outside active MSBuild visibility.",
       "name": "waveharmonic_generated_projects_outside_root",
+      "status": "PASS"
+    },
+    {
+      "detail": "Root C# Dev Kit lscache files for quarantined WaveHarmonic Crest projects are archived outside active MSBuild/IDE visibility.",
+      "name": "stale_csharp_devkit_lscache_no_waveharmonic_crest",
       "status": "PASS"
     },
     {
@@ -59,6 +64,11 @@
     {
       "detail": "Directory.Build.targets no longer injects Crest into Hecton8.Core; only the missing-package prune target remains.",
       "name": "directory_build_no_core_crest_reference_shim",
+      "status": "PASS"
+    },
+    {
+      "detail": "Crest migration dumps and folder meta are archived outside active Assets.",
+      "name": "active_crest_migration_payload_outside_unity_visibility",
       "status": "PASS"
     },
     {
@@ -89,6 +99,11 @@
     {
       "detail": "Dry-volume render pass no longer hard-codes the Crest camera color global; it reads the active ocean visual bridge ID.",
       "name": "dry_volume_reads_vendor_texture_id_through_bridge",
+      "status": "PASS"
+    },
+    {
+      "detail": "Non-bridge dry-volume shader samples a vendor-neutral ocean camera texture global supplied by the render pass.",
+      "name": "active_shader_no_crest_globals_outside_bridge",
       "status": "PASS"
     },
     {
@@ -274,6 +289,11 @@
     {
       "detail": "Dependency scanner hard-fails active generated project and MSBuild routes into Crest/WaveHarmonic outside the donor/helper boundary.",
       "name": "dependency_scanner_blocks_generated_project_crest_routes",
+      "status": "PASS"
+    },
+    {
+      "detail": "Dependency scanner hard-fails non-bridge Crest shader globals, active Crest migration payloads, and active profiler marker payloads.",
+      "name": "dependency_scanner_blocks_shader_globals_migration_and_profiler_payloads",
       "status": "PASS"
     },
     {

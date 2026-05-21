@@ -564,3 +564,15 @@ Cinematic Cheats used: None added. This protects static-data ownership; runtime 
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `215` to `213`, and `nativeApiExposureOutRefMutable` from `164` to `162`.
 
 Evidence: Focused scan shows only `TryGetArena(out NativeArray<byte>.ReadOnly ...)` and `TryGetResidentBlob(out NativeArray<byte>.ReadOnly ...)` as public resident blob accessors; remaining mutable arena views are private/internal owner paths. `python Tools\PolishMandateStaticAudit.py --source-root Assets/_Project/Scripts --report-path Docs/Reports/PROJECT_AUDIT_polish_after_datamonolith_readonly_blob.md --json-path Docs/Reports/PROJECT_AUDIT_polish_after_datamonolith_readonly_blob.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=213`, `nativeApiExposureBuildPlayerRuntime=200`, `nativeApiExposureOutRefMutable=162`, and `nativeApiRiskRuntimeOutRefMutableView=89`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Atmosphere Snapshot Read-Only Narrowing
+
+What was wrong: `ShinobuOceanSurfaceAtmosphereRuntime.TryGetVaultSnapshot` and `TryGetReadbackDebugSnapshot` exposed atmosphere/wave/readback Vault snapshots as mutable native arrays to editor-side readers.
+
+What was done: Converted both public snapshot APIs, the private existing-Vault read helper, the seed-ship quest mask reader, and `ShinobuAtmosphereWaveTunerWindow` consumers to `NativeArray<T>.ReadOnly`. Tuner write-lock, CSV hydration, wave/readback compute, and telemetry writer routes remain mutable.
+
+Cinematic Cheats used: No simulation was added. The ocean surface debug path remains a compact Vault/readback snapshot and gizmo projection instead of copied managed arrays or per-sample scene objects.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `213` to `211`, and `nativeApiExposureOutRefMutable` from `162` to `160`.
+
+Evidence: Focused scans found no stale mutable declarations for the two public atmosphere snapshot APIs. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_atmosphere_readonly_snapshots.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=211`, `nativeApiExposureBuildPlayerRuntime=198`, `nativeApiExposureOutRefMutable=160`, and `nativeApiRiskRuntimeOutRefMutableView=89`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

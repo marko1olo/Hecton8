@@ -1397,9 +1397,9 @@ namespace Hecton8.VFX.Debris
 
         private void RefreshQualityPolicy(float globalQualityWeight01)
         {
-            float visualQuality01 = ShinobuDeltaCrusher.SmoothQuality01(globalQualityWeight01);
-            _visualOverkill01 = math.saturate(visualQuality01);
-            _qualityPressure01 = 1f - _visualOverkill01;
+            float qualityCurve01 = ShinobuDeltaCrusher.SmoothQuality01(globalQualityWeight01);
+            _qualityPressure01 = 1f - math.saturate(qualityCurve01);
+            _visualOverkill01 = math.smoothstep(0.55f, 1f, math.saturate(globalQualityWeight01));
         }
 
         private float ResolveLifetimeRcp()
