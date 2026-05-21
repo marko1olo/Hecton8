@@ -352,11 +352,11 @@ Exact Microseconds saved: No measured frame claim. Cost is one authority branch 
 
 ## 2026-05-21 Polish Pass: Live Global Quality Route
 
-What was wrong: Avicenna found the low/middle quality path was unreachable. `ExosuitMathGuards.AuthoritativeQualityWeight` forced `1f`, runtime staged `1f` into input, and job sanitizers overwrote tuning quality. The docs claimed continuous quality scaling, but executable code always ran the high/ultra branch.
+What was wrong: Avicenna found the low/middle quality path was unreachable. The old exosuit quality constant forced `1f`, runtime staged `1f` into input, and job sanitizers overwrote tuning quality. The docs claimed continuous quality scaling, but executable code always ran the high/ultra branch.
 
 What was done: Removed the hardwired authority constant. Runtime now stages frame input quality as `min(HomeostasisBrain.GlobalQualityWeight, ExosuitTuningDTO.GlobalQualityWeight)`. Burst jobs resolve quality from `min(input.GlobalQualityWeight, tuning.GlobalQualityWeight)`, and standalone SDF jobs use their explicit quality parameter capped by tuning. `DefaultQualityWeight` remains only invalid-data fallback.
 
-Verification: Targeted scan finds no `AuthoritativeQualityWeight` token in SHINOBU exosuit source/proof scope. Source scan finds `HomeostasisBrain.GlobalQualityWeight`, `ResolveFrameQualityWeight01`, and `ExosuitMathGuards.ResolveQualityWeight` in the expected runtime/job routes. Jobs raw brace scan is `110/110`; runtime raw brace scan is `146/146`. No rebuild was launched.
+Verification: Targeted scan finds no old hardwired quality token in SHINOBU exosuit source. Source scan finds `HomeostasisBrain.GlobalQualityWeight`, `ResolveFrameQualityWeight01`, and `ExosuitMathGuards.ResolveQualityWeight` in the expected runtime/job routes. Jobs raw brace scan is `110/110`; runtime raw brace scan is `146/146`. No rebuild was launched.
 
 Cinematic Cheats used: The low-quality byte-SDF lie is now executable: nearest SDF lookup and cheap normal path can run when global quality drops instead of always paying high-quality trilinear/finite-difference cost.
 

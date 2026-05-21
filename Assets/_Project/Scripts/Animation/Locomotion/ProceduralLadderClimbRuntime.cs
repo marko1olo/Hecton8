@@ -66,7 +66,7 @@ namespace Hecton8.Animation.Locomotion
         private bool _pendingSlip;
         private bool _matchRotation;
         private bool _vrGripRequired;
-        private bool _lowTierCameraSlide;
+        private bool _cameraSlidePresentationActive;
         private Transform _playerRoot;
         private Transform _ladderTransform;
         private Transform _entryPoint;
@@ -94,7 +94,6 @@ namespace Hecton8.Animation.Locomotion
         private bool _currentInputGripHeld;
         private bool _hasPublishedClimbState;
         private bool _blackBoxDumpDirectoryReady;
-        private byte _qualityTier;
         private byte _lastPublishedClimbState;
         private byte _lastPublishedClimbFlags;
         private bool _headStabilizationInitialized;
@@ -332,9 +331,8 @@ namespace Hecton8.Animation.Locomotion
             _matchRotation = matchRotation;
             _movementForceSink = GlobalRegistry.PlayerMovementContracts;
             _playerContext = GlobalRegistry.Player;
-            _qualityTier = GlobalRegistry.ScalabilityTierProfileByte;
             _vrGripRequired = forceVrGripPullMode || UnityEngine.XR.XRSettings.enabled;
-            _lowTierCameraSlide = !_vrGripRequired || _qualityTier == 0;
+            _cameraSlidePresentationActive = !_vrGripRequired;
             _climbDirection = goingUp ? 1f : -1f;
             _stamina01 = 1f;
             _pendingGripPullMeters = 0f;
@@ -672,8 +670,8 @@ namespace Hecton8.Animation.Locomotion
             float3 playerRoot = SanitizeFinite(ToFloat3(_playerRoot.position), float3.zero);
             BuildShoulders(playerRoot, out float3 leftShoulder, out float3 rightShoulder, out float3 leftPole, out float3 rightPole);
             uint flags = LadderClimbIkConstants.FlagActive;
-            if (_lowTierCameraSlide)
-                flags |= LadderClimbIkConstants.FlagLowTier;
+            if (_cameraSlidePresentationActive)
+                flags |= LadderClimbIkConstants.FlagCameraSlideFake;
             if (_vrGripRequired)
                 flags |= LadderClimbIkConstants.FlagVrGrip;
             if (_pendingSlip)
@@ -788,14 +786,14 @@ namespace Hecton8.Animation.Locomotion
             if (_movementForceSink != null)
             {
                 _movementForceSink.QueueExternalVelocityChange(velocityDelta);
-                if (_lowTierCameraSlide)
-                    ApplyLowTierCameraSlide(deltaTime);
+                if (_cameraSlidePresentationActive)
+                    ApplyCameraSlidePresentationFake(deltaTime);
                 return;
             }
 
-            if (_lowTierCameraSlide)
+            if (_cameraSlidePresentationActive)
             {
-                ApplyLowTierCameraSlide(deltaTime);
+                ApplyCameraSlidePresentationFake(deltaTime);
                 return;
             }
 
@@ -803,7 +801,7 @@ namespace Hecton8.Animation.Locomotion
                 cameraSlideTarget.Translate(ToVector3(delta), Space.World);
         }
 
-        private void ApplyLowTierCameraSlide(float deltaTime)
+        private void ApplyCameraSlidePresentationFake(float deltaTime)
         {
             if (cameraSlideTarget == null)
                 return;
@@ -982,7 +980,7 @@ namespace Hecton8.Animation.Locomotion
             {
                 if (_vrGripRequired)
                     flags |= PlayerStateSignal.FlagVrGrip;
-                if (_lowTierCameraSlide)
+                if (_cameraSlidePresentationActive)
                     flags |= PlayerStateSignal.FlagLowTierCameraSlide;
             }
 

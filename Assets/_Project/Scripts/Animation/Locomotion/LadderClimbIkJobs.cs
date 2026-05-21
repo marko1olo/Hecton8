@@ -23,7 +23,7 @@ namespace Hecton8.Animation.Locomotion
         public const uint SourceHash = 0x4C43494Bu; // LCIK
 
         public const uint FlagActive = 1u << 0;
-        public const uint FlagLowTier = 1u << 1;
+        public const uint FlagCameraSlideFake = 1u << 1;
         public const uint FlagVrGrip = 1u << 2;
         public const uint FlagSlip = 1u << 3;
         public const uint FlagInvalidInput = 1u << 4;
@@ -181,7 +181,7 @@ namespace Hecton8.Animation.Locomotion
                 leftPole,
                 upperArm,
                 lowerArm,
-                (flags & LadderClimbIkConstants.FlagLowTier) != 0,
+                (flags & LadderClimbIkConstants.FlagCameraSlideFake) != 0,
                 ref flags);
 
             float3 rightElbow = SolveElbow(
@@ -190,7 +190,7 @@ namespace Hecton8.Animation.Locomotion
                 rightPole,
                 upperArm,
                 lowerArm,
-                (flags & LadderClimbIkConstants.FlagLowTier) != 0,
+                (flags & LadderClimbIkConstants.FlagCameraSlideFake) != 0,
                 ref flags);
 
             output.LeftHandTarget = leftHand;
@@ -225,7 +225,7 @@ namespace Hecton8.Animation.Locomotion
             float3 pole,
             float upperArm,
             float lowerArm,
-            bool lowTier,
+            bool useCameraSlideFake,
             ref uint flags)
         {
             float3 shoulderToHand = handTarget - shoulder;
@@ -242,7 +242,7 @@ namespace Hecton8.Animation.Locomotion
             float3 bendDirection = poleDirection - handDirection * math.dot(poleDirection, handDirection);
             bendDirection = NormalizeSafe(bendDirection, ResolvePerpendicular(handDirection));
 
-            if (lowTier)
+            if (useCameraSlideFake)
             {
                 float3 fakeElbow = math.lerp(shoulder, handTarget, 0.5f) + bendDirection * 0.08f;
                 return SanitizeFinite(fakeElbow, shoulder + handDirection * (upperArm * 0.5f));
