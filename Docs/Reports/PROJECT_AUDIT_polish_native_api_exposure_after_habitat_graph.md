@@ -20,17 +20,16 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `linqSurface` | 0 | 0 |
 | `nativeApiExposureAmbiguousMutable` | 0 | 0 |
 | `nativeApiExposureBuildEditorOnly` | 5 | 4 |
-| `nativeApiExposureBuildPlayerRuntime` | 254 | 91 |
+| `nativeApiExposureBuildPlayerRuntime` | 252 | 91 |
 | `nativeApiExposureBuildQaDevProof` | 9 | 2 |
 | `nativeApiExposureMutableReturn` | 79 | 34 |
-| `nativeApiExposureOutRefMutable` | 189 | 78 |
+| `nativeApiExposureOutRefMutable` | 187 | 77 |
 | `nativeApiRiskCoreVaultOrAllocatorSurface` | 21 | 3 |
 | `nativeApiRiskEditorOrProofSurface` | 14 | 6 |
 | `nativeApiRiskRuntimeAmbiguousMutableView` | 0 | 0 |
-| `nativeApiRiskRuntimeDiagnosticNamedMutableView` | 19 | 13 |
-| `nativeApiRiskRuntimeOutRefMutableView` | 143 | 66 |
+| `nativeApiRiskRuntimeOutRefMutableView` | 160 | 69 |
 | `nativeApiRiskRuntimeReturnMutableView` | 71 | 29 |
-| `nativeCollectionPublicMutableApiExposure` | 268 | 97 |
+| `nativeCollectionPublicMutableApiExposure` | 266 | 97 |
 | `noAlias` | 2136 | 215 |
 | `packOne` | 0 | 0 |
 | `privateNativeBuildEditorOnly` | 48 | 18 |
@@ -154,25 +153,15 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `Assets/_Project/Scripts/Editor/ConstructionSocketEditorTools.cs` | 1 |
 | `Assets/_Project/Scripts/Editor/GeographySanity/GeographySanityProfileCsv.cs` | 1 |
 
-### nativeApiRiskRuntimeDiagnosticNamedMutableView
-
-| Path | Count |
-|---|---:|
-| `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs` | 4 |
-| `Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs` | 2 |
-| `Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs` | 2 |
-| `Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs` | 2 |
-| `Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs` | 1 |
-
 ### nativeApiRiskRuntimeOutRefMutableView
 
 | Path | Count |
 |---|---:|
 | `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` | 21 |
-| `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs` | 7 |
+| `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs` | 8 |
+| `Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs` | 6 |
+| `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs` | 5 |
 | `Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs` | 4 |
-| `Assets/_Project/Scripts/HectonVoxelVolume.cs` | 4 |
-| `Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs` | 4 |
 
 ### nativeApiRiskRuntimeReturnMutableView
 

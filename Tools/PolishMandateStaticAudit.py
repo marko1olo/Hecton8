@@ -146,9 +146,14 @@ NATIVE_API_EXPOSURE_BUILD_SURFACE_KEYS = (
 NATIVE_API_EXPOSURE_RISK_BUCKET_KEYS = (
     "nativeApiRiskCoreVaultOrAllocatorSurface",
     "nativeApiRiskEditorOrProofSurface",
+    "nativeApiRiskRuntimeDiagnosticNamedMutableView",
     "nativeApiRiskRuntimeOutRefMutableView",
     "nativeApiRiskRuntimeReturnMutableView",
     "nativeApiRiskRuntimeAmbiguousMutableView",
+)
+NATIVE_API_DIAGNOSTIC_NAME_RE = re.compile(
+    r"\b(?:ForEditor|Debug|Diagnostic|Readback|Tuner|Snapshot|Telemetry|Inspector|Gizmo)\b",
+    re.IGNORECASE,
 )
 STRING_LITERAL_RE = re.compile(
     r"""
@@ -396,6 +401,9 @@ def classify_native_api_primary_risk(rel: str, signature: str, kind: str, build_
         or normalized.endswith("/Core/Memory/GlobalDataVault.cs")
     ):
         return "nativeApiRiskCoreVaultOrAllocatorSurface"
+
+    if NATIVE_API_DIAGNOSTIC_NAME_RE.search(signature) is not None:
+        return "nativeApiRiskRuntimeDiagnosticNamedMutableView"
 
     if kind == "nativeApiExposureOutRefMutable":
         return "nativeApiRiskRuntimeOutRefMutableView"

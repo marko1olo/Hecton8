@@ -1903,11 +1903,7 @@ namespace Hecton8.Visor
                 Directory.CreateDirectory(directory);
                 string dumpPath = Path.Combine(directory, DumpFileName);
                 using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(DumpMagic);
-                writer.Write(reasonFlags);
-                writer.Write(TelemetryCapacity);
-                writer.Write(_telemetryCursor);
+                WriteBlackBoxDumpHeader(stream, reasonFlags, _telemetryCursor);
                 int count = math.min(telemetry.Length, TelemetryCapacity);
                 for (int i = 0; i < count; i++)
                 {
@@ -1916,20 +1912,7 @@ namespace Hecton8.Visor
                         index -= count;
 
                     VisorWoundTelemetryEntry entry = telemetry[index];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.ActiveDecals);
-                    writer.Write(entry.NewDecals);
-                    writer.Write(entry.UploadCount);
-                    writer.Write(entry.GpuUploadMicroseconds);
-                    writer.Write(entry.CpuMicroseconds);
-                    writer.Write(entry.GlobalQualityWeight);
-                    writer.Write(entry.ThermalPressure01);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.DroppedThisFrame);
-                    writer.Write(entry.TotalWritten);
-                    writer.Write(entry.MaxActiveThisFrame);
-                    writer.Write(entry.LastBallisticFrame);
+                    WriteBlackBoxTelemetryRow(stream, in entry);
                 }
             }
             catch (Exception)
@@ -1940,6 +1923,49 @@ namespace Hecton8.Visor
             {
                 UnlockTelemetryBuffer();
             }
+        }
+
+        private static void WriteBlackBoxDumpHeader(FileStream stream, uint reasonFlags, int telemetryCursor)
+        {
+            Span<byte> header = stackalloc byte[16];
+            WriteUInt32LittleEndian(header, 0, DumpMagic);
+            WriteUInt32LittleEndian(header, 4, reasonFlags);
+            WriteUInt32LittleEndian(header, 8, (uint)TelemetryCapacity);
+            WriteUInt32LittleEndian(header, 12, (uint)math.max(0, telemetryCursor));
+            stream.Write(header);
+        }
+
+        private static void WriteBlackBoxTelemetryRow(FileStream stream, in VisorWoundTelemetryEntry entry)
+        {
+            Span<byte> row = stackalloc byte[64];
+            WriteUInt32LittleEndian(row, 0, entry.Frame);
+            WriteUInt32LittleEndian(row, 4, entry.ActiveDecals);
+            WriteUInt32LittleEndian(row, 8, entry.NewDecals);
+            WriteUInt32LittleEndian(row, 12, entry.UploadCount);
+            WriteSingleLittleEndian(row, 16, entry.GpuUploadMicroseconds);
+            WriteSingleLittleEndian(row, 20, entry.CpuMicroseconds);
+            WriteSingleLittleEndian(row, 24, entry.GlobalQualityWeight);
+            WriteSingleLittleEndian(row, 28, entry.ThermalPressure01);
+            WriteUInt32LittleEndian(row, 32, entry.Flags);
+            WriteUInt32LittleEndian(row, 36, entry.StateHash);
+            WriteUInt32LittleEndian(row, 40, entry.DroppedThisFrame);
+            WriteUInt32LittleEndian(row, 44, entry.TotalWritten);
+            WriteUInt32LittleEndian(row, 48, entry.MaxActiveThisFrame);
+            WriteUInt32LittleEndian(row, 52, entry.LastBallisticFrame);
+            stream.Write(row);
+        }
+
+        private static void WriteSingleLittleEndian(Span<byte> bytes, int offset, float value)
+        {
+            WriteUInt32LittleEndian(bytes, offset, math.asuint(value));
+        }
+
+        private static void WriteUInt32LittleEndian(Span<byte> bytes, int offset, uint value)
+        {
+            bytes[offset] = (byte)value;
+            bytes[offset + 1] = (byte)(value >> 8);
+            bytes[offset + 2] = (byte)(value >> 16);
+            bytes[offset + 3] = (byte)(value >> 24);
         }
 
         private static bool TryReadLine(ReadOnlySpan<byte> text, ref int cursor, out ReadOnlySpan<byte> line)

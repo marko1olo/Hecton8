@@ -898,3 +898,30 @@ Exact Microseconds saved:
   <PARKED_WORK_REJECTED>Removing self-audit coverage, runtime behavior changes, and build launch under CPU gate.</PARKED_WORK_REJECTED>
   <STATIC_VERIFICATION>Owned P40 forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; `git diff --check` found no whitespace errors. Build not launched because CPU preflight reported 65%, dotnet=0, csc=0.</STATIC_VERIFICATION>
 </SELF_AUDIT_DELTA>
+
+## 2026-05-21 - Polish Pass 41
+
+What was wrong:
+- Hot parameter reads had source-level pointer helper coverage, but the self-audit did not explicitly fail future `parameters[0]` regressions.
+- Cold black-box dump telemetry entry reads used pointer index syntax instead of the same byte-offset `UnsafeUtility.AsRef<T>` proof pattern used by hot DTO lanes.
+
+What was done:
+- Added self-audit enforcement for `ReadFirstParamsReadonly(parameters)` and a split forbidden `parameters[0]` runtime scan.
+- Reworked `ReadTelemetryEntryReadonly` to compute byte offsets and return `UnsafeUtility.AsRef<SwayTelemetryEntry>(entry)`.
+
+Cinematic Cheats used:
+- No simulation was added. The flora route remains one visual-only CBuffer feeding shader displacement and alpha-tested fake motion.
+
+Exact Microseconds saved:
+- 0 measurable hot us. This is audit and fault-path native-read hardening; the runtime visual route remains O(1) CPU.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-21-P41_READ_POINTER_AUDIT_HARDENING">
+  <TASK id="03" status="PASS">Runtime self-audit now rejects `parameters[0]` read regressions and requires the direct read-pointer helper.</TASK>
+  <TASK id="15" status="PASS">Black-box dump reads telemetry entries through byte-offset native memory, not NativeArray indexers.</TASK>
+  <TASK id="20" status="PASS">Runnable self-audit covers the hot read-pointer route.</TASK>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Early-route flora presentation keeps fixed native DTO reads and avoids hidden indexer-copy regressions.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static source scan now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, and save/load diff remain pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Build launch under CPU gate, gameplay flora expansion, and managed dump copies.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>Owned forbidden scan reports no `parameters[0]`, `cursorArray[0]`, `ring[i]`, `.Run()`, `.Complete()`, same-frame `Schedule().Complete()`, direct kernel `Execute()`, vector upload, `UnityEngine.Random`, `foreach`, or `Pack=1`; runtime/editor/shader brace and full preprocessor balances are zero; Cdecl delegate count is 2 and both MonoPInvokeCallback attributes are present; asmdef/report JSON parse passed; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=0, csc=0.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>

@@ -115,6 +115,82 @@ Verification:
   </DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>
 
+## 2026-05-21T23:41:14+04:00 - LOOP 17 DISPATCHER FRAME AND VAULT COUNT CLOSURE
+
+What was wrong:
+- Subagent audit found a live determinism leak: when `SystemDispatcher.CurrentFrameId` was zero, `Time.frameCount` could still flow into the decryption schedule and then into `TerminalUnlockedSignal.Frame`.
+- Local review found a second memory-safety hole: the fused solver count was clamped to puzzle rows only, while the job also reads decryption terminal rows and knob input.
+- Cold buffer validation opened Vault handles but did not reject short buffers before legacy `_terminalCount` loops could run.
+
+What was done:
+- `LateFrameTick()` now separates `ownerFrame` from `simulationFrame`.
+- `TryScheduleDecryptionPipeline(int simulationFrame)` is called only when `SystemDispatcher.CurrentFrameId` resolves.
+- A pending decryption job finalizes against `_decryptionScheduleFrame` if dispatcher frame is temporarily unavailable; Unity frame fallback is not used.
+- Solver row count is clamped by `_terminalCount`, `TerminalDecryptionPuzzles.Length`, and `TerminalDecryptionTerminals.Length`.
+- Zero-length `TerminalDecryptionKnobInput` fails closed before scheduling.
+- `ValidateNativeBuffers()` now requires all terminal and decryption Vault buffers to meet requested capacities before `_nativeResourcesReady`.
+- Updated Status, Rationale, route card, binary payload ledger, scanner-generated proof text, and JSON report.
+
+Cinematic Cheats used:
+- The oscilloscope remains shader-side sine/noise from unmanaged DTO scalars.
+- The repair protects authority and memory bounds without adding Canvas, LineRenderer, TMP waveform, CPU polyline generation, or runtime mesh simulation.
+
+Exact Microseconds saved:
+- Measured profiler savings: unavailable; Unity import/build/profiler proof remains blocked by CPU/compiler gate.
+- Static safety gain: removes Unity-frame rollback/desync leakage and prevents raw solver writes/reads when Vault row capacity is shorter than terminal capacity.
+
+Verification:
+- Prompt extraction: `16061` chars, `20` tasks from the exact SHINOBU_273 XML block.
+- Focused source scan: no `ResolveSimulationFrame`, no decryption schedule from owner frame, no `PuzzleCount = _terminalCount`, no `.Run(_terminalCount)`, no `_GlobalDecryptionPuzzleCount` from blind terminal capacity.
+- Runtime/shader forbidden scan: 0 `SetData`, 0 shader variant/keyword tokens, 0 banned sqrt/length/random/normalization tokens.
+- Brace/preprocessor counts: `TerminalOsRuntime.cs` `378/378`, `#if=3/#endif=3`; `TerminalOsTypes.cs` `92/92`; shader `18/18`; editor tools balanced.
+- `RENDERING_OPTIMIZATION_REPORT.json` parses.
+- `git diff --check` on touched scope reported LF-to-CRLF warnings only.
+- Build: NOT RUN. Gate sample after Loop 17: CPU `100,74,55`; compiler processes `dotnet,VBCSCompiler`. Project policy forbids a new dotnet build under these conditions.
+
+<SELF_AUDIT agent_id="SHINOBU_273" pass="loop_17">
+  <TASK_RECONCILIATION>
+    <Task id="01" status="PASS">Existing terminal route remains `UI/TerminalOS`; no legacy `UI/Terminals` dependency added.</Task>
+    <Task id="02" status="PASS">No Canvas/GraphicRaycaster/LineRenderer path added.</Task>
+    <Task id="03" status="PASS">Decryption authority remains unmanaged DTO state; no managed puzzle object added.</Task>
+    <Task id="04" status="PASS">DTO layouts unchanged; capacity validation is cold owner logic.</Task>
+    <Task id="05" status="PASS">Mock generation remains deterministic and bounded by available Vault rows.</Task>
+    <Task id="06" status="PASS">Fused Burst solver now receives dispatcher simulation frame and bounded row count.</Task>
+    <Task id="07" status="PASS">Unlock signal frame no longer receives Unity frame fallback.</Task>
+    <Task id="08" status="PASS">Shader oscilloscope route unchanged and still bounded by upload count.</Task>
+    <Task id="09" status="PASS">Knob input route fails closed on missing input row.</Task>
+    <Task id="10" status="PASS">GlobalQualityWeight cadence remains continuous; authority frame identity is not quality-scaled.</Task>
+    <Task id="11" status="PASS">Shader static/noise route unchanged.</Task>
+    <Task id="12" status="PASS">AUP/local distance route unchanged.</Task>
+    <Task id="13" status="PASS">Rollback-facing frame identity now rejects Unity fallback.</Task>
+    <Task id="14" status="PASS">Vault boot validates requested capacities before native readiness.</Task>
+    <Task id="15" status="PASS">Telemetry records dispatcher/scheduled simulation frame, not Unity fallback.</Task>
+    <Task id="16" status="PASS">Editor tuner route unchanged.</Task>
+    <Task id="17" status="PASS">CSV fallback route unchanged.</Task>
+    <Task id="18" status="PASS">Editor gizmo route unchanged.</Task>
+    <Task id="19" status="PASS">Report, route card, and ledger include dispatcher-frame/Vault-count closure.</Task>
+    <Task id="20" status="PASS">Loop 17 report appended to disk; build remains gated, not claimed.</Task>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    `DecryptionPuzzleDTO` remains 32 bytes: `PlayerFrequency@0`, `PlayerPhase@4`, `TargetFrequency@8`, `TargetPhase@12`, `AlignmentAccuracy01@16`, `PuzzleID@20`, `Flags@24`, `_pad0@28`. Loop 17 adds no DTO field and no signal ABI change.
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>
+    Low quality still stretches idle solver stride toward 6 frames and reduces shader density/noise; Middle interpolates cadence and visual density; High/Ultra keep active evaluation at stride 1 and spend saved CPU on shader presentation. Dispatcher frame identity and Vault capacity checks are invariants, not binary quality switches.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    Handles remain 71376 `TerminalDecryptionPuzzles`, 71377 `TerminalDecryptionTerminals`, 71378 `TerminalDecryptionKnobInput`, and 71379 `TerminalDecryptionTelemetryRing`. No private persistent NativeArray/List/HashMap was added.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    Decryption job still consumes the owner-phase dependency state and outputs a scheduled `JobHandle` finalized by `LateFrameTick()`. `[NoAlias]` remains on non-overlapping puzzle/terminal/input job fields. Row count now proves both mutable puzzle and read-only terminal ranges before scheduling.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    No sibling runtime assembly reference was added. The TerminalOS editor asmdef remains Editor-only. Build/import proof remains pending under CPU/compiler gate.
+  </COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>
+    Before: managed/Canvas hacking would be O(terminals*segments) CPU/UI work. After: O(valid puzzle rows) scalar upload plus O(visible terminal pixels) shader sine distance fields. Loop 17 keeps the fake's authority frame and row ownership deterministic.
+  </DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>
+
 ## 2026-05-21T21:50:33+04:00 - FORENSIC HARDENING PASS
 
 What was wrong:

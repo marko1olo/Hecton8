@@ -30,6 +30,7 @@ namespace Hecton8.Core
                 s_vault = null;
                 s_inputHandle = default;
                 s_pendingInput = default;
+                s_pendingSequence = 0u;
                 s_bound = false;
                 s_hasPendingInput = false;
                 return;
@@ -37,6 +38,9 @@ namespace Hecton8.Core
 
             s_vault = vault;
             s_inputHandle = inputHandle;
+            s_pendingInput = default;
+            s_pendingSequence = 0u;
+            s_hasPendingInput = false;
             s_bound = true;
         }
 
@@ -49,6 +53,7 @@ namespace Hecton8.Core
             s_vault = null;
             s_inputHandle = default;
             s_pendingInput = default;
+            s_pendingSequence = 0u;
             s_bound = false;
             s_hasPendingInput = false;
         }
@@ -56,7 +61,7 @@ namespace Hecton8.Core
         public static bool TryConsumePendingFrameInput(out ExosuitFrameInputDTO input)
         {
             input = default;
-            if (!s_hasPendingInput)
+            if (!HasActiveAuthority() || !s_hasPendingInput)
                 return false;
 
             input = s_pendingInput;
@@ -72,7 +77,7 @@ namespace Hecton8.Core
             uint actionMask,
             float globalQualityWeight)
         {
-            if (!s_bound)
+            if (!HasActiveAuthority())
                 return false;
 
             ExosuitFrameInputDTO input = default;

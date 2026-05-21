@@ -64,4 +64,4 @@ The codebase has many systems that partially adopted Vault patterns while keepin
 
 The next real engineering step is not a broad refactor. It is route-by-route ownership reduction: one file, one fact family, one owner, one proof artifact.
 
-Companion API exposure scan now shows `nativeCollectionPublicMutableApiExposure=274` across 97 files. This is a separate but related smell: many read-looking methods return mutable native views. Private ownership cleanup should not be considered sufficient until public/internal native view exports are migrated to read-only adapters or explicit writer-lock routes.
+Companion API exposure scan now shows `nativeCollectionPublicMutableApiExposure=266` across 97 files after migrating `HabitatGraphManager` graph SoA accessors to read-only views. This is a separate but related smell: many read-looking methods still return mutable native views. Private ownership cleanup should not be considered sufficient until public/internal native view exports are migrated to read-only adapters or explicit writer-lock routes.

@@ -3953,3 +3953,21 @@ Mandates read before coding:
 - `git diff --check --no-index -- NUL HectonMarineSnowRenderer.cs` emitted only the expected LF/CRLF warning; no whitespace errors were reported.
 - Build not relaunched under the explicit no-rebuild command discipline.
 - Note: `git status --short` reports `HectonMarineSnowRenderer.cs` as untracked in this workspace. This loop still updates the on-disk runtime file and claims only the retained Vault descriptor route, VFX-owned release/tombstone policy, borrowed wake-source proof, compaction-fence guard, and legacy `.Resolve` removal.
+
+## Loop 221 - Somatic Kinematics GameplayPlayer Descriptor Route
+- [x] Replaced Somatic retained Vault handles with generation descriptors.
+  DOD practice: kinematic state, bounding sphere, hand stroke history, tuning, drag LUT, signal scratch, 300-frame blackbox ring, blackbox cursor, and CSV scratch now retain `VaultGenerationHandle<T>` descriptors and open through exact BufferID, `SystemID.GameplayPlayer`, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated` proof.
+  Rejected: keeping `VaultBufferHandle<T>`, `GetBufferHandle`, retained handle `.IsCreated`, retained handle `.Length`, `.Resolve(vault)`, and `GetElementAsRef` because somatic kinematics schedules deterministic player motion jobs, writes blackbox state, hot-loads CSV/binary tuning, and can cross DataVault replacement while buffers are locked.
+  Estimate: descriptor proof runs at native-state ensure, deterministic job schedule, origin-shift patch, tuning write, CSV reload, exertion/velocity publish, blackbox dump, and mutable state-ref boundaries; player DTO strides, BufferIDs, SignalBus payloads, binary tuning probe, CSV byte parser, and kinematics math are unchanged.
+- [x] Added GameplayPlayer-owned release and aliasing proof.
+  DOD practice: disable, destroy, DataVault replacement, and cold service rebind complete pending somatic jobs, unlock active GameplayPlayer lanes, release all nine nonzero descriptors through `ReleaseBuffer(in handle)`, and tombstone route state before reacquisition. `SomaticKinematicsJob` NativeArray fields now carry `[NoAlias]` so Burst can prove the SOA lanes do not overlap.
+  Rejected: acquiring owned lanes with `TryGetGenerationHandle` fallback because it makes release/refcount ownership ambiguous. Rewriting swimming thrust, SDF pushout, surface buoyancy, VR hand sampling, acoustic/haptic signal content, legacy binary scan, or continuous quality behavior was rejected as outside this stale pointer route loop.
+  Estimate: cold lifecycle and phase-boundary only; no BufferID, DTO layout, save identity, signal route, telemetry stride, binary payload format, or gameplay authority change.
+
+## Compile State Update 215
+- Focused scan on `SomaticKinematicsRuntime.cs` found no executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `GetBuffer<T>`, direct `TryGetBuffer(...)`, `TryGetLatestCreated`, word-boundary `ResolveBuffer`, `ResolvePointer`, `.Resolve(...)`, `TryGetBufferGeneration`, `VaultGenerationID`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, retained handle `.IsCreated`, or retained handle `.Length` hits.
+- Descriptor route scan confirmed expected `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `AreSomaticVaultBuffersReady`, `EnsureSomaticVaultBuffer`, `TryResolveSomaticVaultBuffer`, `HasSomaticVaultBuffer`, `ReleaseSomaticVaultHandle`, `ReleaseBuffer(in handle)`, and `[NoAlias]`.
+- Brace count is balanced: `SomaticKinematicsRuntime.cs` `180/180`; EOF check passed.
+- `git diff --check` passed for `SomaticKinematicsRuntime.cs`.
+- Build not relaunched under the explicit no-rebuild command discipline.
+- Note: `SomaticKinematicsRuntime.cs` was tracked and clean before this loop; this loop claims only the retained Vault descriptor route, GameplayPlayer-owned release/tombstone policy, DataVault rebind release path, byref helper removal, and job field `[NoAlias]` proof.

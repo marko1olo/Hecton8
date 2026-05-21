@@ -337,3 +337,15 @@ Verification: Dedicated JSON parses with `ConvertFrom-Json`; shared JSON also pa
 Cinematic Cheats used: None. Proof artifact only.
 
 Exact Microseconds saved: No runtime claim.
+
+## 2026-05-21 Polish Pass: Core Pending Intent Rebind Fence
+
+What was wrong: A valid `ExosuitKinematicAuthority.Bind` transition could keep a pending DTO and sequence from the previous input handle. `TrySubmitFrameInput` and `TryConsumePendingFrameInput` also needed to prove the full active Physics-owned authority at the submit/consume boundary, not just trust local pending/bound flags.
+
+What was done: Valid binds now clear pending DTO, pending sequence, and pending flag before accepting the new handle. Invalid binds and unbinds reset sequence too. Submit and consume now call `HasActiveAuthority()` and fail closed if the cached handle is not the active Physics-owned authority. The Core facade still owns no Vault memory and performs no Vault writes.
+
+Verification: Targeted scan shows `s_pendingInput = default`, `s_pendingSequence = 0u`, and `s_hasPendingInput = false` in bind/unbind transitions, plus `HasActiveAuthority()` guards in submit and consume. XML and dedicated JSON proof artifacts were updated for the rebind fence. No rebuild was launched.
+
+Cinematic Cheats used: None in this pass. It preserves the existing heavy-suit movement cheat: one pending unmanaged intent row feeding byte-SDF kinematic depenetration instead of Rigidbody/joint authority.
+
+Exact Microseconds saved: No measured frame claim. Cost is one authority branch per submit/consume boundary; Burst solver math is unchanged.

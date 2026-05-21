@@ -1,7 +1,7 @@
 # SHINOBU_276 Rationale
 
 Date: 2026-05-21
-Status: LOOP 28 JOB WRITER LOCK FENCE / COMPILE BLOCKED BY EXTERNAL MISSING SOURCE
+Status: LOOP 29 CORE PENDING INTENT REBIND FENCE / COMPILE BLOCKED BY EXTERNAL MISSING SOURCE
 Domain: Echelon 4 Player, Kinematics & Tools / Exosuit 6DoF Kinematics
 
 ## Decision 00: Authority And Scope Gate
@@ -283,3 +283,11 @@ Solution: Add `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_276.json` as the
 Rejected Alternatives: Manually injecting a synthetic aggregate node was rejected because it would pretend the editor scanner ran. Leaving only the shared JSON was rejected because Copernicus correctly identified the missing dedicated proof surface.
 Scalability potential: No runtime quality change. The proof artifact documents the same continuous quality route across weak, middle, high, and ultra devices.
 Hardware Impact: Documentation/proof only. No frame-time claim and no Unity import/profiler proof implied.
+
+## Decision 35: Core Pending Intent Rebind Fence
+
+Problem: The Core pending bridge cleared stale data on invalid bind and unbind, but a valid rebind could preserve a pending DTO and sequence from the previous input handle. `TryConsumePendingFrameInput` and `TrySubmitFrameInput` also relied on local pending/bound flags instead of rechecking the full Physics-owned authority proof.
+Solution: Clear pending DTO, pending sequence, and pending flag on every valid bind transition; reset sequence on invalid bind and unbind; gate both submit and consume through `HasActiveAuthority()`. The facade remains a pending unmanaged DTO bridge and still performs no Vault read/write.
+Rejected Alternatives: Preserving queued input across rebind was rejected because a handle transition is an authority boundary, not a gameplay continuity guarantee. Adding Vault validation in the facade was rejected because player hot input submission must stay allocation-free and must not poll global state.
+Scalability potential: Low, Middle, High, and Ultra behavior is unchanged. `GlobalQualityWeight` still scales only solver fidelity and presentation cadence; pending intent authority does not affect DTO layout, save identity, or fact ownership.
+Hardware Impact: One owner-proof branch per submit/consume boundary and no Burst/job cost. No measured frame claim.

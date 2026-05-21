@@ -35,7 +35,7 @@ Consumer phase: downstream systems consume `SignalBus<TerminalUnlockedSignal>` b
 
 ## Timing
 
-Puzzle mutation uses `HectonPhysicsContract.FixedDeltaTimeSeconds`, not Unity frame delta. Idle evaluation cadence is continuously derived from `GlobalQualityWeight` as a non-binary stride from 1 to 6 frames; active knob input forces stride 1 so interaction truth does not degrade under low quality.
+Puzzle mutation uses `HectonPhysicsContract.FixedDeltaTimeSeconds`, not Unity frame delta. Decryption scheduling requires a nonzero `SystemDispatcher.CurrentFrameId`; if dispatcher frame identity is unavailable, the unlock-producing solver is not scheduled. A pending decryption job finalizes against its stored simulation frame, never a Unity `Time.frameCount` fallback. Idle evaluation cadence is continuously derived from `GlobalQualityWeight` as a non-binary stride from 1 to 6 frames; active knob input forces stride 1 so interaction truth does not degrade under low quality.
 
 ## Cold Registry Boundary
 
@@ -68,3 +68,5 @@ Loop 11 public mutation surface closure: `OpenTerminalStateRefForOwner`, `ForceD
 Loop 13 shader variant closure: `Assets/_Project/Art/Shaders/Hecton_DiegeticTerminal.shader` no longer declares `shader_feature_local HECTON_TERMINAL_INSTANCED`, and `TerminalOsRuntime` no longer toggles the `HECTON_TERMINAL_INSTANCED` material keyword. Instanced/non-instanced selection is driven by `_HectonTerminalInstancedMode`, while the existing `_TerminalPanelInstances` buffer remains material-bound. This preserves one shader variant for the terminal material path and reduces first-use runtime shader warmup risk.
 
 Loop 16 shader read-bounds closure: `_GlobalDecryptionPuzzles` upload count is bounded by `_terminalCount`, Vault row count, and GPU buffer capacity. `TerminalOsRuntime` stores `_decryptionPuzzleUploadCount` only after a successful copy, binds `_GlobalDecryptionPuzzleCount` from that value, and clears the material count to zero on upload failure. This keeps the Dear Lie oscilloscope from sampling stale or never-uploaded rows when Vault relocation or reduced capacity changes the available source length.
+
+Loop 17 dispatcher-frame and Vault-count closure: `TerminalOsRuntime` no longer passes Unity `Time.frameCount` into decryption schedule, knob input, telemetry, or `TerminalUnlockedSignal`. `TryScheduleDecryptionPipeline(int simulationFrame)` is only called after `SystemDispatcher.CurrentFrameId` resolves, while `TryFinalizeDecryptionJob` uses `_decryptionScheduleFrame` for an already scheduled job if the dispatcher frame is temporarily unavailable. The fused solver row count is clamped by puzzle and terminal Vault lengths, zero-length knob input fails closed, and `ValidateNativeBuffers()` refuses `_nativeResourcesReady` unless terminal/decryption buffers meet their requested capacities.

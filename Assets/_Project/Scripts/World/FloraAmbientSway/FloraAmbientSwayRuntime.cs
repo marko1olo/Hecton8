@@ -87,15 +87,15 @@ namespace Hecton8.World.FloraAmbientSway
             float speed = math.max(0.001f, SanitizeFinite(MockSpeed, 0.18f));
             float intensity = math.max(0f, SanitizeFinite(MockIntensity, 0.75f));
             float phase = WrappedTime * speed;
-            float3 rawDirection = new float3(math.sin(phase), 0.08f * math.sin(phase * 0.37f), math.cos(phase * 0.73f));
+            float3 rawDirection = math.float3(math.sin(phase), 0.08f * math.sin(phase * 0.37f), math.cos(phase * 0.73f));
             float lengthSq = math.lengthsq(rawDirection);
             float3 direction = rawDirection * math.rsqrt(math.max(lengthSq, 0.0001f));
             if (!math.all(math.isfinite(direction)) || lengthSq < 0.0001f)
-                direction = new float3(1f, 0f, 0f);
+                direction = math.float3(1f, 0f, 0f);
 
             FloraAmbientFlowStateDTO state = default;
-            state.FlowDirectionSpeed = new float4(direction, speed * intensity);
-            state.SourceAndFrame = new float4(Frame, 0x4D4F434Bu, intensity, 0f);
+            state.FlowDirectionSpeed = math.float4(direction, speed * intensity);
+            state.SourceAndFrame = math.float4((float)Frame, (float)0x4D4F434Bu, intensity, 0f);
             void* flowPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(FlowState);
             UnsafeUtility.AsRef<FloraAmbientFlowStateDTO>(flowPtr) = state;
         }
@@ -129,7 +129,7 @@ namespace Hecton8.World.FloraAmbientSway
             float amplitude = math.max(0f, SanitizeFinite(tuning.GlobalAmplitudeMeters, 0.42f));
             float frequency = math.max(0.001f, SanitizeFinite(tuning.Frequency, 1.1f));
             float phaseSpatialOffset = SanitizeFinite(tuning.PhaseSpatialOffset, 0.85f);
-            float3 flow = new float3(1f, 0f, 0f);
+            float3 flow = math.float3(1f, 0f, 0f);
             float flowSpeed = math.max(0.001f, SanitizeFinite(tuning.MockFlowSpeed, 0.18f));
 
             if (FlowState.IsCreated && FlowState.Length > 0)
@@ -138,7 +138,7 @@ namespace Hecton8.World.FloraAmbientSway
                 float4 state = UnsafeUtility.AsRef<FloraAmbientFlowStateDTO>(flowPtr).FlowDirectionSpeed;
                 if (math.all(math.isfinite(state)))
                 {
-                    float3 stateDirection = new float3(state.x, state.y, state.z);
+                    float3 stateDirection = math.float3(state.x, state.y, state.z);
                     float lengthSq = math.lengthsq(stateDirection);
                     if (lengthSq > 0.0001f)
                         flow = stateDirection * math.rsqrt(math.max(lengthSq, 0.0001f));
@@ -152,8 +152,8 @@ namespace Hecton8.World.FloraAmbientSway
 
             float effectiveSpatialFrequency = frequency * math.max(0f, phaseSpatialOffset);
             FloraSwayParamsDTO next = default;
-            next.GlobalFlowVector = new float4(flow, flowSpeed);
-            next.SwayMathParams = new float4(wrapped, amplitude, effectiveSpatialFrequency, quality);
+            next.GlobalFlowVector = math.float4(flow, flowSpeed);
+            next.SwayMathParams = math.float4(wrapped, amplitude, effectiveSpatialFrequency, quality);
             UnsafeUtility.AsRef<FloraSwayParamsDTO>(paramsPtr) = next;
         }
 
@@ -455,14 +455,12 @@ namespace Hecton8.World.FloraAmbientSway
             float currentTime = currentParams.SwayMathParams.x;
             if (_mockFlowEnabled)
             {
-                var mockFlowJob = new GenerateMockAmbientFlowJob
-                {
-                    FlowState = flowState,
-                    WrappedTime = currentTime,
-                    MockSpeed = _mockFlowSpeed,
-                    MockIntensity = _mockFlowIntensity,
-                    Frame = frame
-                };
+                GenerateMockAmbientFlowJob mockFlowJob = default;
+                mockFlowJob.FlowState = flowState;
+                mockFlowJob.WrappedTime = currentTime;
+                mockFlowJob.MockSpeed = _mockFlowSpeed;
+                mockFlowJob.MockIntensity = _mockFlowIntensity;
+                mockFlowJob.Frame = frame;
                 if (!RunMockAmbientFlowKernel(mockFlowJob))
                 {
                     RecordTelemetry(frame, TelemetryFlagBurstKernelUnavailable, default);
@@ -470,14 +468,12 @@ namespace Hecton8.World.FloraAmbientSway
                 }
             }
 
-            var parametersJob = new CalculateFloraSwayParametersJob
-            {
-                Params = parameters,
-                FlowState = flowState,
-                Tuning = tuning,
-                DeltaTime = deltaTime,
-                GlobalQualityWeight = ResolveGlobalQualityWeight()
-            };
+            CalculateFloraSwayParametersJob parametersJob = default;
+            parametersJob.Params = parameters;
+            parametersJob.FlowState = flowState;
+            parametersJob.Tuning = tuning;
+            parametersJob.DeltaTime = deltaTime;
+            parametersJob.GlobalQualityWeight = ResolveGlobalQualityWeight();
             if (!RunCalculateFloraSwayParametersKernel(parametersJob))
             {
                 RecordTelemetry(frame, TelemetryFlagBurstKernelUnavailable, default);
@@ -851,7 +847,7 @@ namespace Hecton8.World.FloraAmbientSway
             if ((uint)cursor >= (uint)ring.Length)
                 cursor = 0;
 
-            float3 telemetryFlow = new float3(dto.GlobalFlowVector.x, dto.GlobalFlowVector.y, dto.GlobalFlowVector.z);
+            float3 telemetryFlow = math.float3(dto.GlobalFlowVector.x, dto.GlobalFlowVector.y, dto.GlobalFlowVector.z);
             float flowLengthSq = math.max(math.lengthsq(telemetryFlow), 0f);
             float flowMagnitude = flowLengthSq * math.rsqrt(math.max(flowLengthSq, 0.0001f));
             uint stateHash = 2166136261u;
@@ -948,8 +944,9 @@ namespace Hecton8.World.FloraAmbientSway
 
         private static unsafe ref readonly SwayTelemetryEntry ReadTelemetryEntryReadonly(NativeArray<SwayTelemetryEntry> ring, int index)
         {
-            SwayTelemetryEntry* entries = (SwayTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
-            return ref entries[index];
+            byte* entries = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
+            byte* entry = entries + (UnsafeUtility.SizeOf<SwayTelemetryEntry>() * index);
+            return ref UnsafeUtility.AsRef<SwayTelemetryEntry>(entry);
         }
 
         private bool EnsureShaderParamsBuffers()

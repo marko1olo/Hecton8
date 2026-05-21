@@ -59,6 +59,7 @@ Payload/data shape:
 - UnityEngine.Object fields present: no.
 - Layout proof: `VisorDecalDTO` is explicit 80 bytes: `LocalToWorld@0` 64B, `DecalTypeHash@64` 4B, `Opacity01@68` 4B, `BirthTime@72` 4B, `Flags@76` 4B. Offset 72 matches the original XML shader ABI; request/profile lifetime is packed into bits 8..23 of `DecalTypeHash`, while bits 0..3 remain wound type and bits 4..7 remain atlas slice.
 - Telemetry proof: `VisorWoundTelemetryEntry` is explicit 64 bytes.
+- Fault dump proof: `Dump_SHINOBU_275.bin` writes a fixed 16-byte little-endian header plus fixed 64-byte telemetry rows via stack spans. The crash proof lane does not use `BinaryWriter`.
 
 Overflow/failure:
 - Active ring overwrites `TotalWritten % capacity`.
@@ -70,7 +71,7 @@ Telemetry fields:
 - frame, active, new, upload count, GPU upload microseconds, CPU microseconds, quality, thermal, flags, state hash, dropped, total written, max active, last ballistic frame.
 
 Black-box fields:
-- same fixed telemetry rows, dumped to `Docs/AgentLogs/Dump_SHINOBU_275.bin`.
+- same fixed telemetry rows, dumped to `Docs/AgentLogs/Dump_SHINOBU_275.bin` with explicit little-endian header/row bytes.
 
 Profiler marker:
 - `H8.VisorWounds.VisualSync`

@@ -14,30 +14,30 @@ Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, compile, Play
 
 The public/internal/protected mutable native API warning class is:
 
-- `nativeCollectionPublicMutableApiExposure`: 274 matches / 97 files
+- `nativeCollectionPublicMutableApiExposure`: 266 matches / 97 files
 
 Additive exposure-kind buckets:
 
-- `nativeApiExposureMutableReturn`: 87
+- `nativeApiExposureMutableReturn`: 79
 - `nativeApiExposureOutRefMutable`: 187
 - `nativeApiExposureAmbiguousMutable`: 0
-- Sum: 274
+- Sum: 266
 
 Additive build-surface buckets:
 
-- `nativeApiExposureBuildPlayerRuntime`: 260
+- `nativeApiExposureBuildPlayerRuntime`: 252
 - `nativeApiExposureBuildEditorOnly`: 5
 - `nativeApiExposureBuildQaDevProof`: 9
-- Sum: 274
+- Sum: 266
 
 Additive primary-risk buckets:
 
 - `nativeApiRiskCoreVaultOrAllocatorSurface`: 21
 - `nativeApiRiskEditorOrProofSurface`: 14
 - `nativeApiRiskRuntimeOutRefMutableView`: 160
-- `nativeApiRiskRuntimeReturnMutableView`: 79
+- `nativeApiRiskRuntimeReturnMutableView`: 71
 - `nativeApiRiskRuntimeAmbiguousMutableView`: 0
-- Sum: 274
+- Sum: 266
 
 This is not a debt reduction. It separates allocator/Vault APIs, editor/proof surfaces, and runtime mutable view exports so fixes can happen without breaking neighboring agents.
 
@@ -55,7 +55,6 @@ Top runtime mutable return/property files:
 | File | Count | Static meaning |
 |---|---:|---|
 | `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` | 27 | Exposes active vegetation matrix/metadata/type buffers for direct GPU/consumer handoff. |
-| `Assets/_Project/Scripts/Construction/HabitatGraphManager.cs` | 8 | Exposes internal graph SoA arrays to same-assembly consumers. |
 | `Assets/_Project/Scripts/Core/GlobalSignals.cs` | 4 | Opens legacy/native queue writer surfaces. |
 | `Assets/_Project/Scripts/World/EcosystemDirector.cs` | 4 | Exposes mutable simulation pools/views. |
 | `Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs` | 3 | Exposes mutable fauna simulation buffers. |
@@ -82,4 +81,4 @@ Top runtime `out/ref NativeArray<T>` files:
 
 The codebase has many methods that look like read accessors but return mutable native views. That violates the global read-accessor doctrine: a read route must not hand out a write-capable surface unless the name and ownership contract prove that the caller is the writer.
 
-The next real engineering step is per-domain read-only migration: start with `HabitatGraphManager` or one `HectonMapMagicVegetationBridge` buffer family, add read-only adapters, migrate consumers, then retire the mutable view only after compile/integration proof.
+`HabitatGraphManager` graph SoA accessors were migrated to `NativeArray<T>.ReadOnly` in this audit lane because its current external consumers only read those buffers. That reduced direct mutable return/property findings by 8. The next real engineering step is per-domain read-only migration: start with one `HectonMapMagicVegetationBridge` buffer family, add read-only adapters, migrate consumers, then retire the mutable view only after compile/integration proof.

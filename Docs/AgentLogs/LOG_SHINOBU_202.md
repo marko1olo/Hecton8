@@ -5191,3 +5191,27 @@ Exact microseconds saved:
 Static verification:
 - Focused scan on `HectonMarineSnowRenderer.cs` finds no executable legacy handle/direct-buffer/Vault resolve/byref/latest-created/generation-id/word-boundary `ResolveBuffer` hits. Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryGetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `AreOwnedVaultBuffersReady`, `EnsureOwnedVaultBuffer`, `TryResolveVaultBuffer`, `HasVaultBuffer`, `ReleaseOwnedVaultHandle`, and `ReleaseBuffer(in handle)`. Brace count is `383/383`; EOF check passed. No-index diff check reported only LF/CRLF warning. Build was not relaunched.
 - `git status --short` reports `HectonMarineSnowRenderer.cs` as untracked in this workspace; this loop claims the on-disk runtime edit only.
+
+## 2026-05-21 - Loop 221 - Somatic Kinematics Descriptor Route
+
+What was wrong:
+- `Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs` retained nine GameplayPlayer Vault lanes as pointer-era handles.
+- Kinematic state, bounding sphere, hand stroke history, tuning, drag LUT, signal scratch, blackbox ring/cursor, and CSV scratch opened through `GetBufferHandle`, `.Resolve(vault)`, retained handle created checks, retained handle length checks, and `GetElementAsRef`.
+- The route spans scheduled deterministic kinematic jobs, active Vault locks, DataVault hot-swap, origin shifts, CSV/binary tuning, signal publish, and blackbox dumps.
+
+What was done:
+- Converted all retained lanes to `VaultGenerationHandle<T>`.
+- Added Somatic descriptor helpers that validate exact BufferID, `SystemID.GameplayPlayer`, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated`.
+- Owned lanes now acquire through `GetGenerationHandle` only and release through `ReleaseBuffer(in handle)` on disable, destroy, DataVault replacement, and cold service rebind.
+- `GetStateRef` now opens a phase-local native view and returns `UnsafeUtility.ArrayElementAsRef` instead of using the retained-handle byref helper.
+- Added `[NoAlias]` to the deterministic kinematics job NativeArray fields.
+
+Cinematic cheats used:
+- Existing somatic motion remains deterministic and controllable: mock SDF sampling, LUT drag, triangle/stripe fallback current, bounded hand-history strokes, and shader/signal consequences are used instead of scene raycast spam, fluid simulation, MeshCollider terrain queries, or per-object wake physics. This loop does not add physics objects, scene searches, shader variants, or new gameplay truth routes.
+
+Exact microseconds saved:
+- No measured runtime saving claimed. The loop removes stale pointer trust, byref helper retention, and release ambiguity. Player DTO strides, BufferIDs, deterministic Burst job math, AUP-local transform math, SignalBus payloads, CSV parser contract, binary tuning probe, and blackbox dump format are unchanged.
+
+Static verification:
+- Focused scan on `SomaticKinematicsRuntime.cs` finds no executable legacy handle/direct-buffer/Vault resolve/byref/latest-created/generation-id/word-boundary `ResolveBuffer` hits. Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `AreSomaticVaultBuffersReady`, `EnsureSomaticVaultBuffer`, `TryResolveSomaticVaultBuffer`, `HasSomaticVaultBuffer`, `ReleaseSomaticVaultHandle`, `ReleaseBuffer(in handle)`, and `[NoAlias]`. Brace count is `180/180`; EOF check passed. `git diff --check` passed. Build was not relaunched.
+- `git status --short` reported `SomaticKinematicsRuntime.cs` as tracked and clean before the loop; this loop claims only the retained Vault descriptor route, GameplayPlayer-owned release/tombstone policy, DataVault rebind release path, byref helper removal, and job field aliasing proof.

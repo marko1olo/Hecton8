@@ -445,3 +445,15 @@ Route impact: Keeps direct-managed-kernel regression scans meaningful for early-
 Proof required: Static scan now; Unity import, route run, Burst/import evidence, profiler/GC, Frame Debugger, screenshot/clip, and save/load diff remain pending.
 Parked work rejected: Removing self-audit coverage, runtime behavior changes, and build launch under CPU gate.
 Static verification: Owned P40 forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; `git diff --check` reports no whitespace errors. Build not launched because CPU preflight reported 65%, dotnet=0, csc=0.
+
+## Polish Pass 41 Decisions
+Problem: Hot parameter reads were already routed through `ReadFirstParamsReadonly(parameters)`, but the runnable self-audit did not explicitly reject a future `parameters[0]` regression. The cold black-box dump helper also returned telemetry entries through pointer index syntax, which is legal unsafe code but weaker evidence than the byte-offset `UnsafeUtility.AsRef<T>` pattern used elsewhere.
+Solution: Extended `FloraAmbientSwaySelfAudit` to require `ReadFirstParamsReadonly(parameters)` and reject any runtime `parameters[0]` token. Reworked `ReadTelemetryEntryReadonly` to compute the byte offset from the ring base pointer and return `UnsafeUtility.AsRef<SwayTelemetryEntry>(entry)`.
+Rejected Alternatives: Leaving this as a log-only source review was rejected because Task 20 requires a runnable proof hook. Rewriting the dump loop into managed array copies was rejected because the black-box path must stay fixed-size native memory.
+Scalability potential: No visual-tier behavior change. Low/Middle/High/Ultra still use one 32-byte CBuffer and continuous shader quality curves; this pass hardens the source proof around that route.
+Hardware Impact: 0 measurable hot runtime us. The telemetry-entry change affects only the fault dump path; the self-audit change is editor-only.
+First 20 Minutes moment: World load and swim readability on the selected Copper Wire route biome.
+Route impact: Keeps the early-route flora presentation fake free of hidden `NativeArray` indexer read regressions.
+Proof required: Static source scan now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, and save/load diff remain pending.
+Parked work rejected: Build launch under CPU gate, runtime behavior expansion, and flora gameplay scope.
+Static verification: Owned forbidden scan reports no `parameters[0]`, `cursorArray[0]`, `ring[i]`, `.Run()`, `.Complete()`, same-frame `Schedule().Complete()`, direct kernel `Execute()`, vector upload, `UnityEngine.Random`, `foreach`, or `Pack=1`; runtime/editor/shader brace and full preprocessor balances are zero; Cdecl delegate count is 2 with both MonoPInvokeCallback attributes; asmdef/report JSON parse passed; `git diff --check` reported no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=0, csc=0.

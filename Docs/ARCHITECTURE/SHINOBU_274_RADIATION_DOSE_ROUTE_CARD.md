@@ -28,7 +28,8 @@ Owner: SHINOBU_274 / Radiation Scrubber
 - Simulation does not drain source/dose signals or rebuild grids while a previous radiation job is active; deferred processing is preferred over mutating Vault lanes under a live reader.
 - If a previous radiation job is still active at the next Simulation phase, source signals are requeued to the typed SignalBus for the next flush, external dose is folded into `_pendingExternalDoseRad`, and iodine treatment is folded into `_pendingIodineDoseReductionRad`. This prevents PostSimulation snapshot clearing from dropping gameplay facts without forcing completion.
 - Read-only compatibility intensity queries use the stable read grid while a radiation job is active; inverse-square source sampling resumes after the job is finalized.
-- PostSimulation: consumes only after dispatcher completion window.
+- PostSimulation: consumes only after dispatcher completion window. Completed radiation state, pending damage, dose signal, geiger signal, and telemetry are published even when a deferred load/DataVault swap is waiting for diffusion to finish. Structural mutation is applied only when no radiation or diffusion job is active.
+- While deferred load/DataVault swap waits for diffusion completion, Simulation pauses new radiation evaluation and preserves source, external-dose, and iodine snapshots instead of clearing or dropping them.
 - VisualSync: shader globals only; no gameplay authority.
 - Save serialization does not force-complete active jobs; it writes the last completed dose and current read-grid snapshot. Live load and DataVault hot-swap are deferred until PostSimulation observes no active radiation/diffusion job. Forced completion is teardown/disposal-only, where buffers are being released.
 - If Vault handles are unavailable, the system fails closed and keeps the last state; it does not allocate local NativeArrays or run managed dose fallback.
@@ -38,6 +39,15 @@ Owner: SHINOBU_274 / Radiation Scrubber
 - External dose uses `_pendingExternalDoseRad`, so atmospheric/solar/trauma rads are included once as exact dose. External intensity still drives `CurrentExposureRate` and shader/static severity but is not multiplied by `dt` a second time.
 - Iodine reductions consume pending external dose before accumulated dose to prevent same-frame hidden radiation debt.
 - Diffusion read/write parity is tracked by `_gridBuffersSwapped`; `RefreshVaultViews` maps the current front/back buffers without copying the whole grid.
+- Public `RegisterSource` and `ReportExternalDose` scalar ingress is explicit finite-safe before SignalBus payload construction. Non-finite source intensity is rejected; non-finite external intensity fails closed to zero.
+- `Dump_SHINOBU_274.bin` row order now matches `RadiationTelemetryEntry` explicit layout: AUP, depth, exposure, cumulative dose, shield, degradation, burst microseconds, frame, shift sequence, source count, source version, flags.
+
+## Generic HazardZoneManager Exception
+
+- `HazardZoneManager` still owns legacy non-radiation scene-scratch buffers for generic heat/toxicity/biohazard volumes (`_volumes`, `_volumeIds`, `_volumeSpatialHandles`, `_volumeCurveLutSamples`, `_jobVolumes`, `_candidateVolumeFlags`, `_spatialQueryHandles`).
+- SHINOBU_274 excludes radiation from those generic buffers: radiation registration and reads route to `RadiationHazardGrid`, and completed generic hazard jobs zero radiation cache slots before publishing non-radiation masks.
+- Exception scope: existing non-radiation compatibility scratch only. Owner is `HazardZoneManager`; capacity is `maxZoneCount`; allocations are registered with `NativeMemorySentinel`; disposal completes only active generic exposure work before release. `HazardExposureJobResult` is already Vault-backed.
+- Migration of the remaining generic scratch buffers to Vault descriptors is outside Radiation Scrubber authority and belongs to generic hazard/environment ownership. Radiation payload correctness does not depend on those private buffers.
 
 ## Proof Artifacts
 

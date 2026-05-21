@@ -5,7 +5,7 @@ Role: RADIATION_DOSE_ACCUMULATOR
 Domain: Radiation Scrubber
 Batch source: Docs/Tasks/CURRENT_BATCH.md
 Task count: 20
-State: POLISH_LOOP_14_FAIL_CLOSED_SAMPLER_AND_COMPATIBILITY_AUDIT_COMPILE_BLOCKED_BY_CPU
+State: POLISH_LOOP_15_PUBLICATION_FENCE_SIGNAL_INGRESS_AND_DUMP_ABI_COMPILE_BLOCKED_BY_CPU
 Compile gate: BLOCKED_BY_CPU_100_PERCENT_AND_EXTERNAL_DEPENDENCIES
 
 ## Mandates Selected Before Coding
@@ -119,6 +119,7 @@ Compile gate: BLOCKED_BY_CPU_100_PERCENT_AND_EXTERNAL_DEPENDENCIES
 - Loop 12: Runtime route and tooling audit. `HazardZoneManager` radiation reads now delegate to `RadiationHazardGrid`; generic hazard exposure jobs zero radiation cache slots and publish only non-radiation masks. Generic unregister no longer deletes radiation sources; source components track whether they actually registered radiation before emitting remove signals. `LoadFromSaveData` and DataVault hot-swap now defer structural mutation until PostSimulation has no active radiation/diffusion job; force-complete is teardown-only. Editor scanner writes a SHINOBU_274 dedicated report, masks comments/strings, sorts deterministically, and the tuner reads the telemetry ring/cursor instead of state slot zero.
 - Loop 13: Runtime race and tooling drift audit. `RadiationHazardGrid` dose math now sanitizes non-finite tuning/source/SDF/bulkhead values before inverse-square and SDF sampling. `HazardZoneManager` defers DataVault handle release/rebind while its generic exposure job is active and force-completes only during native teardown. `HectonHazardManager` now tracks untyped radiation facade IDs in a fixed cold table so legacy untyped unregister can remove its own radiation source without deleting unrelated IDs. The editor scanner shares one path owner, writes the dedicated SHINOBU_274 report, preserves the shared pointer, masks comments/strings before domain filtering, and emits microsecond estimate fields.
 - Loop 14: Subagent-aided fail-closed audit. `RadiationHazardGrid` now sanitizes save/load dose and grid cell size, rejects non-finite radiation source AUPs, clamps read-only sampler grid/source values, renames the stale FrostTick serialized field with `FormerlySerializedAs`, and finite-guards health/shader dose scalars. `HazardZoneManager` generic exposure job is deterministic and no longer calls the GlobalRegistry fallback from its step loop. Scanner/report policy text and stale rationale report route were aligned.
+- Loop 15: Subagent-aided publication/dump ABI audit. `RadiationHazardGrid` now publishes completed dose, pending damage, geiger, dose signal, and telemetry before deferred structural mutation can block on diffusion; Simulation pauses new radiation evaluation and preserves snapshots while deferred load/hot-swap waits. Public source/dose SignalBus ingress is finite-safe, grid-cell indexing rejects out-of-range AUP offsets before int casts, and `Dump_SHINOBU_274.bin` write order now matches the 64-byte `RadiationTelemetryEntry` explicit layout. Generic `HazardZoneManager` private native scratch is documented as a non-radiation compatibility exception, not SHINOBU_274 payload ownership.
 
 ## Verification
 
@@ -155,3 +156,7 @@ Compile gate: BLOCKED_BY_CPU_100_PERCENT_AND_EXTERNAL_DEPENDENCIES
 - Loop 14 compatibility scan: PASS. `EvaluateHazardExposureJob` uses `FloatMode.Deterministic`, and `AdvanceHazardStep` calls `RefreshPlayerContextSnapshot` instead of the cold `ResolvePlayerContext` path that can fall back to `GlobalRegistry.Player`.
 - Loop 14 scanner/report scan: PASS. Generated, dedicated, and shared `finding_list_policy` strings match; both JSON reports parse through `ConvertFrom-Json`.
 - Loop 14 build gate: BLOCKED. `typeperf "\\Processor(_Total)\\% Processor Time" -sc 1` sampled CPU at `100.000000`; `Get-Process dotnet,csc,MSBuild,VBCSCompiler` returned no rows, but the repository protocol forbids dotnet rebuild above 50 percent CPU.
+- Loop 15 publication fence scan: PASS. `PostSimulationRadiation` no longer returns before publishing completed state when deferred structural mutation is blocked; `ScheduleRadiationSimulation` preserves source/dose/iodine snapshots and pauses new evaluation while load/hot-swap waits for diffusion.
+- Loop 15 signal ingress scan: PASS. Public `RegisterSource` and `ReportExternalDose` use explicit finite-safe scalar guards before constructing SignalBus payloads; stale raw `math.saturate(intensity01)` and raw pending-dose accumulation patterns are absent.
+- Loop 15 blackbox ABI scan: PASS. `DumpBlackBox` writes telemetry tail fields in explicit layout order (`Frame`, `ShiftSequence`, `SourceCount`, `SourceVersion`, `Flags`), and `RadiationStateLayoutGuard` validates `RadiationTelemetryEntry` offsets.
+- Loop 15 route-card scan: PASS. `SHINOBU_274_RADIATION_DOSE_ROUTE_CARD.md` documents deferred publication ordering, finite-safe ingress, dump row order, and the non-radiation `HazardZoneManager` scratch exception.

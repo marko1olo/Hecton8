@@ -333,6 +333,15 @@ namespace Hecton8.Gameplay
                 return dependsOn;
             }
 
+            if (HasDeferredStructuralOperations() && !TryApplyDeferredStructuralOperations())
+            {
+                PreserveRadiationSourceSignalsForNextSimulation();
+                DrainExternalDoseSignals();
+                DrainItemAcquiredSignalsDeferred();
+                _radiationEvaluatedThisFrame = false;
+                return dependsOn;
+            }
+
             _radiationEvaluatedThisFrame = false;
             PlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
             DrainRadiationSourceSignals();
@@ -396,8 +405,8 @@ namespace Hecton8.Gameplay
                 _lastBurstExecutionMicroseconds = TicksToMicroseconds(Stopwatch.GetTimestamp() - _radiationSimulationStartTicks);
             }
 
-            if (!TryApplyDeferredStructuralOperations())
-                return;
+            if (HasDeferredStructuralOperations() && !HasActiveRadiationJobs())
+                TryApplyDeferredStructuralOperations();
 
             RadiationStateDTO state = _radiationStates.IsCreated && _radiationStates.Length > 0
                 ? _radiationStates[0]
@@ -1441,6 +1450,11 @@ namespace Hecton8.Gameplay
             return _radiationSimulationJobActive || _diffusionJobActive;
         }
 
+        private bool HasDeferredStructuralOperations()
+        {
+            return _pendingDataVaultSwap || _pendingLoadDataValid;
+        }
+
         private bool TryApplyDeferredStructuralOperations()
         {
             if (HasActiveRadiationJobs())
@@ -1781,6 +1795,14 @@ namespace Hecton8.Gameplay
                 return false;
 
             float safeCellSize = SanitizeRange(cellSizeMeters, DefaultCellSizeMeters, 0.5f, 1000f);
+            double maxOffsetMeters = (double)safeCellSize * GridResolution;
+            if (math.abs(offset.x) > maxOffsetMeters ||
+                math.abs(offset.y) > maxOffsetMeters ||
+                math.abs(offset.z) > maxOffsetMeters)
+            {
+                return false;
+            }
+
             int half = GridResolution >> 1;
             x = (int)math.floor(offset.x / safeCellSize) + half;
             y = (int)math.floor(offset.y / safeCellSize) + half;
@@ -2236,10 +2258,10 @@ namespace Hecton8.Gameplay
                         writer.Write(entry.ShieldingFactor01);
                         writer.Write(entry.CellularDegradation01);
                         writer.Write(entry.BurstExecutionMicroseconds);
-                        writer.Write(entry.SourceCount);
-                        writer.Write(entry.SourceVersion);
                         writer.Write(entry.Frame);
                         writer.Write(entry.ShiftSequence);
+                        writer.Write(entry.SourceCount);
+                        writer.Write(entry.SourceVersion);
                         writer.Write(entry.Flags);
                     }
                 }
@@ -2478,7 +2500,19 @@ namespace Hecton8.Gameplay
                        GetOffset<RadiationStateDTO>(nameof(RadiationStateDTO.EntityHashID)) == 16 &&
                        GetOffset<RadiationStateDTO>(nameof(RadiationStateDTO.Flags)) == 20 &&
                        GetOffset<RadiationStateDTO>(nameof(RadiationStateDTO._pad0)) == 24 &&
-                       GetOffset<RadiationStateDTO>(nameof(RadiationStateDTO._pad7)) == 31;
+                       GetOffset<RadiationStateDTO>(nameof(RadiationStateDTO._pad7)) == 31 &&
+                       GetOffset<RadiationTelemetryEntry>(nameof(RadiationTelemetryEntry.PlayerAup)) == 0 &&
+                       GetOffset<RadiationTelemetryEntry>(nameof(RadiationTelemetryEntry.PlayerDepthMeters)) == 24 &&
+                       GetOffset<RadiationTelemetryEntry>(nameof(RadiationTelemetryEntry.CurrentExposureRate)) == 28 &&
+                       GetOffset<RadiationTelemetryEntry>(nameof(RadiationTelemetryEntry.CumulativeDoseRad)) == 32 &&
+                       GetOffset<RadiationTelemetryEntry>(nameof(RadiationTelemetryEntry.ShieldingFactor01)) == 36 &&
+                       GetOffset<RadiationTelemetryEntry>(nameof(RadiationTelemetryEntry.CellularDegradation01)) == 40 &&
+                       GetOffset<RadiationTelemetryEntry>(nameof(RadiationTelemetryEntry.BurstExecutionMicroseconds)) == 44 &&
+                       GetOffset<RadiationTelemetryEntry>(nameof(RadiationTelemetryEntry.Frame)) == 48 &&
+                       GetOffset<RadiationTelemetryEntry>(nameof(RadiationTelemetryEntry.ShiftSequence)) == 52 &&
+                       GetOffset<RadiationTelemetryEntry>(nameof(RadiationTelemetryEntry.SourceCount)) == 56 &&
+                       GetOffset<RadiationTelemetryEntry>(nameof(RadiationTelemetryEntry.SourceVersion)) == 58 &&
+                       GetOffset<RadiationTelemetryEntry>(nameof(RadiationTelemetryEntry.Flags)) == 60;
 #else
                 return sizesValid;
 #endif

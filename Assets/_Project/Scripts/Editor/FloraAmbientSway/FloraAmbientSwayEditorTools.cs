@@ -543,7 +543,9 @@ namespace Hecton8.Editor.FloraAmbientSway
             string forbiddenTuningIndexerWrite = "tuning" + "[0] =";
             string forbiddenRingIndexerWrite = "ring" + "[cursor] =";
             string forbiddenCursorIndexerWrite = "cursorArray" + "[0] =";
+            string forbiddenParamsIndexerRead = "parameters" + "[0]";
             bool hotOwnerMutationAndMath =
+                runtime.Contains("ReadFirstParamsReadonly(parameters)") &&
                 runtime.Contains("UnsafeUtility.AsRef<FloraSwayTuningDTO>(tuningPtr) = dto") &&
                 runtime.Contains("UnsafeUtility.AsRef<SwayTelemetryEntry>(entryPtr) = entry") &&
                 runtime.Contains("UnsafeUtility.AsRef<int>(cursorPtr)") &&
@@ -551,7 +553,15 @@ namespace Hecton8.Editor.FloraAmbientSway
                 !runtime.Contains(forbiddenMathSqrt) &&
                 !runtime.Contains(forbiddenTuningIndexerWrite) &&
                 !runtime.Contains(forbiddenRingIndexerWrite) &&
-                !runtime.Contains(forbiddenCursorIndexerWrite);
+                !runtime.Contains(forbiddenCursorIndexerWrite) &&
+                !runtime.Contains(forbiddenParamsIndexerRead);
+            bool hotValueNewHygiene =
+                runtime.Contains("GenerateMockAmbientFlowJob mockFlowJob = default") &&
+                runtime.Contains("CalculateFloraSwayParametersJob parametersJob = default") &&
+                !runtime.Contains("new " + "GenerateMockAmbientFlowJob") &&
+                !runtime.Contains("new " + "CalculateFloraSwayParametersJob") &&
+                !runtime.Contains("new " + "float3") &&
+                !runtime.Contains("new " + "float4");
             bool burstFunctionPointers =
                 runtime.Contains("BurstCompiler.CompileFunctionPointer<GenerateMockAmbientFlowKernelDelegate>") &&
                 runtime.Contains("BurstCompiler.CompileFunctionPointer<CalculateFloraSwayParametersKernelDelegate>") &&
@@ -579,7 +589,7 @@ namespace Hecton8.Editor.FloraAmbientSway
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway.meta") &&
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway/FloraAmbientSwayEditorTools.cs.meta") &&
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway/Hecton8.World.FloraAmbientSway.Editor.asmdef.meta");
-            bool pass = layout && dispatcher && fmod && upload && shaderQuality && telemetry && readAccessorPurity && runtimeQualityFailClosed && unsafeDtoMutation && hotOwnerMutationAndMath && burstFunctionPointers && aotFunctionPointerAbi && asmdefBoundary && metaIdentity;
+            bool pass = layout && dispatcher && fmod && upload && shaderQuality && telemetry && readAccessorPurity && runtimeQualityFailClosed && unsafeDtoMutation && hotOwnerMutationAndMath && hotValueNewHygiene && burstFunctionPointers && aotFunctionPointerAbi && asmdefBoundary && metaIdentity;
             if (!pass)
             {
                 Debug.LogError(
@@ -596,6 +606,7 @@ namespace Hecton8.Editor.FloraAmbientSway
                     " runtimeQualityFailClosed=" + runtimeQualityFailClosed +
                     " unsafeDtoMutation=" + unsafeDtoMutation +
                     " hotOwnerMutationAndMath=" + hotOwnerMutationAndMath +
+                    " hotValueNewHygiene=" + hotValueNewHygiene +
                     " burstFunctionPointers=" + burstFunctionPointers +
                     " aotFunctionPointerAbi=" + aotFunctionPointerAbi +
                     " asmdefBoundary=" + asmdefBoundary +

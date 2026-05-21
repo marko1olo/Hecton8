@@ -633,7 +633,7 @@
         }
       ],
       "files": 91,
-      "matches": 254,
+      "matches": 252,
       "topFiles": [
         {
           "count": 48,
@@ -989,8 +989,8 @@
           "text": "public static bool EnsureTelemetryRing( IDataVault vault, out NativeArray<ConstructionTelemetryEntry> telemetryRing)"
         }
       ],
-      "files": 78,
-      "matches": 189,
+      "files": 77,
+      "matches": 187,
       "topFiles": [
         {
           "count": 21,
@@ -1262,149 +1262,6 @@
       "matches": 0,
       "topFiles": []
     },
-    "nativeApiRiskRuntimeDiagnosticNamedMutableView": {
-      "examples": [
-        {
-          "line": 553,
-          "path": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-          "text": "public static bool TryGetReadbackDebugSnapshot( out NativeArray<float4> completedQueries, out NativeArray<float4> completedResults, out NativeArray<OceanSurfaceTelemetryEntry> telemetry)"
-        },
-        {
-          "line": 527,
-          "path": "Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs",
-          "text": "public static bool TryResolveTelemetry(IDataVault vault, out NativeArray<EconomyTelemetryEntry> telemetry)"
-        },
-        {
-          "line": 355,
-          "path": "Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs",
-          "text": "public bool TryGetTelemetryReadback(out NativeArray<DynamicPointLightCullingTelemetryEntry> telemetry, out int cursor)"
-        },
-        {
-          "line": 508,
-          "path": "Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs",
-          "text": "public bool TryGetTelemetryReadback(out NativeArray<InteriorGITelemetryEntry> telemetry, out int cursor)"
-        },
-        {
-          "line": 210,
-          "path": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs",
-          "text": "public static bool TryGetTelemetry(out NativeArray<NetTelemetryEntry64> telemetry)"
-        },
-        {
-          "line": 219,
-          "path": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs",
-          "text": "public static bool TryGetInputPredictionTelemetry(out NativeArray<InputPredictionTelemetryEntry> telemetry)"
-        },
-        {
-          "line": 84,
-          "path": "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
-          "text": "public bool TryOpenEditorViews( out NativeArray<GerstnerWaveTuningDTO> tuning, out NativeArray<WaveMathTelemetryEntry> telemetry, out NativeArray<int> cursor, out NativeArray<OceanSampleRequestDTO> requests, out NativeArray<OceanSampleResultDTO> results)"
-        },
-        {
-          "line": 266,
-          "path": "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
-          "text": "public bool TryOpenEditorViews( out NativeArray<ReadbackTuningDTO> tuning, out NativeArray<ReadbackTelemetryEntry> telemetry, out NativeArray<int> cursor, out NativeArray<AsyncReadbackCounterDTO> counters)"
-        },
-        {
-          "line": 128,
-          "path": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
-          "text": "public bool TryOpenEditorViews( out NativeArray<BuoyancyTuningDTO> tuning, out NativeArray<BuoyancyCounterDTO> counters, out NativeArray<BuoyancyTelemetryEntry> telemetry, out NativeArray<int> cursor)"
-        },
-        {
-          "line": 145,
-          "path": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
-          "text": "public bool TryOpenEditorViews( out NativeArray<BuoyancyTuningDTO> tuning, out NativeArray<BuoyancyCounterDTO> counters, out NativeArray<BuoyancyTelemetryEntry> telemetry, out NativeArray<SleepStateTelemetryEntry> sleepTelemetry, out NativeArray<int> cursor)"
-        },
-        {
-          "line": 178,
-          "path": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
-          "text": "public bool TryOpenSimdEditorViews( out NativeArray<SimdTelemetryEntry> telemetry, out NativeArray<int> cursor, out NativeArray<SimdMathToleranceDTO> tolerances)"
-        },
-        {
-          "line": 218,
-          "path": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
-          "text": "public bool TryOpenSleepTelemetryEditorViews( out NativeArray<BuoyancyTuningDTO> tuning, out NativeArray<SleepStateTelemetryEntry> telemetry, out NativeArray<int> cursor, out NativeArray<BuoyancySleepSdfConfigDTO> sdfConfig)"
-        },
-        {
-          "line": 2444,
-          "path": "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
-          "text": "public static bool TryGetEditorTelemetryVaultView(out NativeArray<KinematicTelemetryEntry> telemetry, out int cursor, out int length)"
-        },
-        {
-          "line": 2496,
-          "path": "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
-          "text": "public static bool TryGetEditorEnvironmentTelemetryVaultView(out NativeArray<KccEnvironmentTelemetryEntry> telemetry, out int cursor, out int length)"
-        },
-        {
-          "line": 97,
-          "path": "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
-          "text": "public bool TryResolveEditorViews( out NativeArray<SeaglideTuningDTO> tuning, out NativeArray<SeaglideCounterDTO> counters, out NativeArray<SeaglideTelemetryEntry> telemetry, out NativeArray<int> cursor, out NativeArray<SeaglideAudioSignalDTO> audio, out NativeArray<SeaglideCavitationVfxSignalDTO> cavitation)"
-        },
-        {
-          "line": 144,
-          "path": "Assets/_Project/Scripts/Rendering/OceanSinglePass/OceanSinglePassRuntime.cs",
-          "text": "public static bool TryReadTelemetry(out NativeArray<OceanRenderTelemetryEntry> telemetry, out int cursor)"
-        },
-        {
-          "line": 675,
-          "path": "Assets/_Project/Scripts/Rendering/OceanSinglePass/ShorelineFoamGraftContracts.cs",
-          "text": "public static bool TryReadTelemetry(out NativeArray<ShorelineFoamTelemetryEntry> telemetry, out int cursor)"
-        },
-        {
-          "line": 1038,
-          "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
-          "text": "internal static void DisposeObstacleSnapshot(ref NativeArray<NavObstaclePrimitive> snapshot)"
-        },
-        {
-          "line": 1048,
-          "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
-          "text": "internal static JobHandle DisposeObstacleSnapshot( ref NativeArray<NavObstaclePrimitive> snapshot, JobHandle dependency)"
-        }
-      ],
-      "files": 13,
-      "matches": 19,
-      "topFiles": [
-        {
-          "count": 4,
-          "path": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs"
-        },
-        {
-          "count": 2,
-          "path": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs"
-        },
-        {
-          "count": 2,
-          "path": "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs"
-        },
-        {
-          "count": 2,
-          "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs"
-        },
-        {
-          "count": 1,
-          "path": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs"
-        },
-        {
-          "count": 1,
-          "path": "Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs"
-        },
-        {
-          "count": 1,
-          "path": "Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs"
-        },
-        {
-          "count": 1,
-          "path": "Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs"
-        },
-        {
-          "count": 1,
-          "path": "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs"
-        },
-        {
-          "count": 1,
-          "path": "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs"
-        }
-      ]
-    },
     "nativeApiRiskRuntimeOutRefMutableView": {
       "examples": [
         {
@@ -1441,6 +1298,11 @@
           "line": 536,
           "path": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
           "text": "public static bool TryGetVaultSnapshot( out NativeArray<WaveParametersDTO> waves, out NativeArray<WeatherStateDTO> weather, out NativeArray<AtmosphereDTO> atmosphere)"
+        },
+        {
+          "line": 553,
+          "path": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+          "text": "public static bool TryGetReadbackDebugSnapshot( out NativeArray<float4> completedQueries, out NativeArray<float4> completedResults, out NativeArray<OceanSurfaceTelemetryEntry> telemetry)"
         },
         {
           "line": 452,
@@ -1501,23 +1363,26 @@
           "line": 736,
           "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
           "text": "public static bool TryResolveTelemetryVaultBuffers( IDataVault vault, out NativeArray<BTreeTelemetryEntry> ring, out NativeArray<int> cursor, out NativeArray<BTreeTelemetryAccumulatorDTO> accumulator)"
-        },
-        {
-          "line": 797,
-          "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
-          "text": "public static bool EnsureTuningProfileVaultBufferCold(IDataVault vault, out NativeArray<BTreeTuningProfileDTO> profiles)"
         }
       ],
-      "files": 66,
-      "matches": 143,
+      "files": 69,
+      "matches": 160,
       "topFiles": [
         {
           "count": 21,
           "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs"
         },
         {
-          "count": 7,
+          "count": 8,
           "path": "Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs"
+        },
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs"
         },
         {
           "count": 4,
@@ -1529,6 +1394,10 @@
         },
         {
           "count": 4,
+          "path": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs"
+        },
+        {
+          "count": 4,
           "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs"
         },
         {
@@ -1536,20 +1405,8 @@
           "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs"
         },
         {
-          "count": 4,
-          "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs"
-        },
-        {
           "count": 3,
           "path": "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs"
-        },
-        {
-          "count": 3,
-          "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs"
-        },
-        {
-          "count": 3,
-          "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs"
         }
       ]
     },
@@ -1646,9 +1503,9 @@
           "text": "public NativeArray<T> GetSubArray(int start, int length)"
         },
         {
-          "line": 185,
+          "line": 160,
           "path": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
-          "text": "public NativeArray<T> AsNativeArray()"
+          "text": "public NativeArray<T> Resolve()"
         },
         {
           "line": 497,
@@ -1805,7 +1662,7 @@
         }
       ],
       "files": 97,
-      "matches": 268,
+      "matches": 266,
       "topFiles": [
         {
           "count": 48,

@@ -81,7 +81,7 @@ namespace Hecton8.UI.Editor
             builder.AppendLine("      71378,");
             builder.AppendLine("      71379");
             builder.AppendLine("    ],");
-            builder.AppendLine("    \"determinismPatch\": \"Decryption input uses HectonPhysicsContract.FixedDeltaTimeSeconds and SystemDispatcher.CurrentFrameId; Time.unscaledDeltaTime is not used by the solver.\",");
+            builder.AppendLine("    \"determinismPatch\": \"Decryption input uses HectonPhysicsContract.FixedDeltaTimeSeconds and requires SystemDispatcher.CurrentFrameId; Time.frameCount and Time.unscaledDeltaTime are not solver/unlock fallbacks.\",");
             builder.AppendLine("    \"falseSharingPatch\": \"Three parallel puzzle mutation jobs were replaced with one fused deterministic Burst IJob, preserving the required 32-byte puzzle DTO without adjacent-row parallel writes.\",");
             builder.AppendLine("    \"faultExportPatch\": \"Decryption fault export writes fixed 64-byte telemetry rows through a background DecryptionBlackBoxDumpWriter raw span writer; owner frame does not call FileStream/BinaryWriter.\",");
             builder.AppendLine("    \"editorFacadePatch\": \"Oscilloscope tuner exposes Base Frequency, Snap Tolerance, Noise Density, and GlobalQualityWeight Override, with numeric UI Toolkit fields instead of StringBuilder/ToString readout assembly.\",");
@@ -92,6 +92,7 @@ namespace Hecton8.UI.Editor
             builder.AppendLine("    \"ownerMutationSurfacePatch\": \"OpenTerminalStateRefForOwner, ForceDirty, and ForceAllDirty are private owner helpers; public mutable-ref/dirty-flag escape hatches are not exposed.\",");
             builder.AppendLine("    \"shaderVariantPatch\": \"Hecton_DiegeticTerminal uses a material scalar _HectonTerminalInstancedMode instead of shader_feature_local/keyword toggles, avoiding a runtime variant warmup hitch.\",");
             builder.AppendLine("    \"shaderReadBoundsPatch\": \"_GlobalDecryptionPuzzleCount is bound to the last successful bounded GPU upload count, clamped by terminal capacity; upload failure clears the material count to zero so the shader fails closed instead of reading stale or beyond-upload DTO rows.\",");
+            builder.AppendLine("    \"solverVaultBoundsPatch\": \"EvaluateDecryptionPipelineJob is scheduled only after dispatcher frame resolve and clamps row count by puzzle and terminal Vault lengths; zero-length knob input fails closed and cold ValidateNativeBuffers requires requested capacities before native readiness.\",");
             builder.AppendLine("    \"status\": \"STATIC_PASS_COMPILE_BLOCKED_BY_CPU_GATE\",");
             builder.AppendLine("    \"notes\": \"Terminal hacking routes through Vault DTOs and shader buffer overlay. DataMonolith static_data.h8bin is missing, so CSV/mock data is fallback only. dotnet build remains gated by CPU/compiler policy.\"");
             builder.Append("  }");

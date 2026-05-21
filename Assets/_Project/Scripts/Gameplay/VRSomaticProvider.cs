@@ -19,7 +19,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/VR Somatic Provider")]
-    public sealed partial class VRSomaticProvider : MonoBehaviour, IVRSomaticProvider, IUpdatable, ILateFrameTickable, IOriginShiftListener, IScalabilityChangedEventListener
+    public sealed partial class VRSomaticProvider : MonoBehaviour, IVRSomaticProvider, IUpdatable, ILateFrameTickable, IOriginShiftListener, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener
     {
         private const int HeadCollisionCommandCount = 6;
         private const int HeadCollisionMaxHitsPerCommand = 1;
@@ -116,6 +116,8 @@ namespace Hecton8.Gameplay
         private const uint StateHandsInitialized = 1u << 11;
         private const uint StateRootInitialized = 1u << 12;
         private const uint StateHasPreviousKccPlanarDirection = 1u << 13;
+        private const uint StateRegisteredHotSwap = 1u << 14;
+        private const SystemID VaultOwnerSystem = SystemID.GameplayPlayer;
 
         private static readonly int NearCollisionIntensityId = Shader.PropertyToID("_HectonVRNearCollisionIntensity");
         private static readonly int SomaticCondensationId = Shader.PropertyToID("_HectonVRSomaticCondensation");
@@ -128,43 +130,111 @@ namespace Hecton8.Gameplay
         private struct VaultNativeArray<T> where T : struct
         {
             private IDataVault _vault;
-            private VaultBufferHandle<T> _handle;
+            private VaultGenerationHandle<T> _handle;
+            private BufferID _bufferId;
+            private int _requiredLength;
 
-            public static VaultNativeArray<T> Create(IDataVault vault, VaultBufferHandle<T> handle)
+            public static VaultNativeArray<T> Create(
+                IDataVault vault,
+                BufferID bufferId,
+                int requiredLength,
+                NativeArrayOptions options)
             {
+                if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                    return default;
+
+                VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+                    bufferId,
+                    requiredLength,
+                    VaultOwnerSystem,
+                    options);
+
                 return new VaultNativeArray<T>
                 {
                     _vault = vault,
-                    _handle = handle
+                    _handle = handle,
+                    _bufferId = bufferId,
+                    _requiredLength = requiredLength
                 };
             }
 
-            public bool IsCreated => _handle.IsCreated;
+            public bool IsCreated => TryRead(out _);
 
-            public int Length => Resolve().Length;
+            public int Length
+            {
+                get
+                {
+                    return TryRead(out NativeArray<T> array) ? array.Length : 0;
+                }
+            }
 
             public T this[int index]
             {
                 get
                 {
-                    NativeArray<T> array = Resolve();
+                    NativeArray<T> array = AsNativeArray();
                     return array[index];
                 }
                 set
                 {
-                    NativeArray<T> array = Resolve();
+                    NativeArray<T> array = AsNativeArray();
                     array[index] = value;
                 }
             }
 
-            public NativeArray<T> Resolve()
+            public NativeArray<T> AsNativeArray()
             {
-                return _handle.Resolve(_vault);
+                if (TryResolve(out NativeArray<T> array))
+                    return array;
+
+                FatalMemoryException.ThrowStaleVaultHandle();
+                return default;
+            }
+
+            public bool TryResolve(out NativeArray<T> array)
+            {
+                array = default;
+                return IsHandleValid() &&
+                       _vault != null &&
+                       !_vault.IsCompactionFenceActive &&
+                       _vault.TryResolveHandle(in _handle, out array) &&
+                       array.IsCreated &&
+                       array.Length >= _requiredLength;
+            }
+
+            public bool TryRead(out NativeArray<T> array)
+            {
+                array = default;
+                return IsHandleValid() &&
+                       _vault != null &&
+                       !_vault.IsCompactionFenceActive &&
+                       _vault.TryReadHandle(in _handle, out array) &&
+                       array.IsCreated &&
+                       array.Length >= _requiredLength;
+            }
+
+            public void Release()
+            {
+                if (IsHandleValid() && _vault != null)
+                    _vault.ReleaseBuffer(in _handle);
+
+                _vault = null;
+                _handle = default;
+                _bufferId = default;
+                _requiredLength = 0;
             }
 
             public static implicit operator NativeArray<T>(VaultNativeArray<T> view)
             {
-                return view.Resolve();
+                return view.AsNativeArray();
+            }
+
+            private bool IsHandleValid()
+            {
+                return _requiredLength > 0 &&
+                       _handle.BufferID == unchecked((uint)(int)_bufferId) &&
+                       _handle.SystemID == (uint)VaultOwnerSystem &&
+                       _handle.Generation != 0u;
             }
         }
 
@@ -599,6 +669,7 @@ namespace Hecton8.Gameplay
             TrySubscribeXRRuntime();
             HectonFloatingOrigin.RegisterListener(this);
             TryRegisterScalability();
+            TryRegisterHotSwap();
             RefreshRuntimeRegistration(IsVRSomaticRuntimeActive());
         }
 
@@ -628,9 +699,21 @@ namespace Hecton8.Gameplay
             TryUnregisterLateFrame();
             TryUnregisterUpdate();
             TryUnregisterService();
+            TryUnregisterHotSwap();
             ApplyInactiveState(0f, hadRuntimeState);
             ResetSomaticComfortBuffers();
             DisposeNativeBuffers();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            DisposeNativeBuffers();
+            _dataVault = currentService as IDataVault;
+            if (Application.isPlaying && IsVRSomaticRuntimeActive())
+                EnsureNativeBuffers();
         }
 
         private void OnValidate()
@@ -733,6 +816,24 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.RegisterVRSomaticProvider(this);
             _stateFlags |= StateRegisteredService;
+        }
+
+        private void TryRegisterHotSwap()
+        {
+            if ((_stateFlags & StateRegisteredHotSwap) != 0u || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterHotSwapListener(this);
+            _stateFlags |= StateRegisteredHotSwap;
+        }
+
+        private void TryUnregisterHotSwap()
+        {
+            if ((_stateFlags & StateRegisteredHotSwap) == 0u)
+                return;
+
+            GlobalRegistry.UnregisterHotSwapListener(this);
+            _stateFlags &= ~StateRegisteredHotSwap;
         }
 
         private void TryUnregisterService()
@@ -2810,11 +2911,9 @@ namespace Hecton8.Gameplay
 
             _blackBox = VaultNativeArray<VRSomaticBlackBoxEntry>.Create(
                 vault,
-                vault.GetBufferHandle<VRSomaticBlackBoxEntry>(
-                    BufferID.ShinobuVRSomaticBlackBox,
-                    BlackBoxFrameCapacity,
-                    SystemID.GameplayPlayer,
-                    NativeArrayOptions.ClearMemory));
+                BufferID.ShinobuVRSomaticBlackBox,
+                BlackBoxFrameCapacity,
+                NativeArrayOptions.ClearMemory);
         }
 
         private void EnsureNativeBuffers()
@@ -2833,45 +2932,47 @@ namespace Hecton8.Gameplay
             {
                 _headCollisionCommands = VaultNativeArray<CapsulecastCommand>.Create(
                     vault,
-                    vault.GetBufferHandle<CapsulecastCommand>(
-                        BufferID.ShinobuVRSomaticHeadCollisionCommands,
-                        HeadCollisionCommandCount,
-                        SystemID.GameplayPlayer,
-                        NativeArrayOptions.UninitializedMemory));
+                    BufferID.ShinobuVRSomaticHeadCollisionCommands,
+                    HeadCollisionCommandCount,
+                    NativeArrayOptions.UninitializedMemory);
                 _headCollisionHits = VaultNativeArray<RaycastHit>.Create(
                     vault,
-                    vault.GetBufferHandle<RaycastHit>(
-                        BufferID.ShinobuVRSomaticHeadCollisionHits,
-                        HeadCollisionCommandCount * HeadCollisionMaxHitsPerCommand,
-                        SystemID.GameplayPlayer,
-                        NativeArrayOptions.ClearMemory));
+                    BufferID.ShinobuVRSomaticHeadCollisionHits,
+                    HeadCollisionCommandCount * HeadCollisionMaxHitsPerCommand,
+                    NativeArrayOptions.ClearMemory);
                 _headCollisionSamples = VaultNativeArray<HeadCastSample>.Create(
                     vault,
-                    vault.GetBufferHandle<HeadCastSample>(
-                        BufferID.ShinobuVRSomaticHeadCollisionSamples,
-                        HeadCollisionCommandCount,
-                        SystemID.GameplayPlayer,
-                        NativeArrayOptions.ClearMemory));
+                    BufferID.ShinobuVRSomaticHeadCollisionSamples,
+                    HeadCollisionCommandCount,
+                    NativeArrayOptions.ClearMemory);
             }
 
             if (!_rootSyncInput.IsCreated)
             {
                 _rootSyncInput = VaultNativeArray<VRSomaticRootSyncInput>.Create(
                     vault,
-                    vault.GetBufferHandle<VRSomaticRootSyncInput>(BufferID.ShinobuVRSomaticRootSyncInput, 1, SystemID.GameplayPlayer, NativeArrayOptions.ClearMemory));
+                    BufferID.ShinobuVRSomaticRootSyncInput,
+                    1,
+                    NativeArrayOptions.ClearMemory);
                 _rootSyncOutput = VaultNativeArray<VRSomaticRootSyncOutput>.Create(
                     vault,
-                    vault.GetBufferHandle<VRSomaticRootSyncOutput>(BufferID.ShinobuVRSomaticRootSyncOutput, 1, SystemID.GameplayPlayer, NativeArrayOptions.ClearMemory));
+                    BufferID.ShinobuVRSomaticRootSyncOutput,
+                    1,
+                    NativeArrayOptions.ClearMemory);
             }
 
             if (!HandTargets.IsCreated)
             {
                 HandTargets = VaultNativeArray<float3>.Create(
                     vault,
-                    vault.GetBufferHandle<float3>(BufferID.ShinobuVRSomaticHandTargets, HandCount, SystemID.GameplayPlayer, NativeArrayOptions.ClearMemory));
+                    BufferID.ShinobuVRSomaticHandTargets,
+                    HandCount,
+                    NativeArrayOptions.ClearMemory);
                 HandPhysicalPositions = VaultNativeArray<float3>.Create(
                     vault,
-                    vault.GetBufferHandle<float3>(BufferID.ShinobuVRSomaticHandPhysicalPositions, HandCount, SystemID.GameplayPlayer, NativeArrayOptions.ClearMemory));
+                    BufferID.ShinobuVRSomaticHandPhysicalPositions,
+                    HandCount,
+                    NativeArrayOptions.ClearMemory);
             }
 
             EnsureSomaticComfortBuffers(vault);

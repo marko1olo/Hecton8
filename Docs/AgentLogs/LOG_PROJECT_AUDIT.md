@@ -192,3 +192,15 @@ Cinematic Cheats used: None. This is evidence/tooling work. The architectural ch
 Exact Microseconds saved: 0 us measured. Static outcome: `nativeCollectionPublicMutableApiExposure=274 files=97`; 260 are player-runtime surfaces, 5 editor-only, 9 QA/dev-proof. Exposure kind: 87 direct mutable returns/properties, 187 `out/ref` mutable views, 0 ambiguous. Primary risk: 21 core Vault/allocator surfaces, 14 editor/proof surfaces, 160 runtime `out/ref` mutable views, and 79 runtime mutable return/property views.
 
 Evidence: `python Tools\test_polish_mandate_static_audit.py` ran 10 tests OK. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_native_api_exposure.json --report-path Docs\Reports\PROJECT_AUDIT_polish_native_api_exposure.md` returned `PASS_WITH_WARNINGS`. Top runtime mutable API offenders are `HectonMapMagicVegetationBridge`, `HabitatGraphManager`, `Shinobu19EconomyLedger`, `VoxelDynamicNavGridRuntime`, and `BuoyancyDisplacementRuntime`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-21 - Habitat Graph Read-Only Native Accessors
+
+What was wrong: `HabitatGraphManager` exposed eight graph SoA buffers as internal mutable `NativeArray<T>` properties. Current external users in `ConstructionManager` and `SpatialAudioManager` only read those arrays, so the mutable signatures were unnecessary authority leakage.
+
+What was done: Changed `Nodes`, `EdgeOffsets`, `EdgeDestinations`, `EdgeResistance`, `RoomWaterLevels`, `RoomVolumes`, `RoomFlags`, and `EdgeFlags` to `NativeArray<T>.ReadOnly`. Updated `ConstructionManager` save topology extraction and `SpatialAudioManager` acoustic portal extraction to use read-only views. Left `RoomConnections` unchanged because the hash-map read-only route needs separate consumer/API proof.
+
+Cinematic Cheats used: None. This is authority-surface reduction. Existing acoustic portal graph is still a cheap topology sampling route, not a physical sound simulation.
+
+Exact Microseconds saved: 0 us measured. Static outcome: mutable native API exposure dropped from `274` to `266`; direct mutable return/property exposure dropped from `87` to `79`; runtime mutable return/property risk dropped from `79` to `71`.
+
+Evidence: `python Tools\test_polish_mandate_static_audit.py` ran 10 tests OK. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_native_api_exposure.json --report-path Docs\Reports\PROJECT_AUDIT_polish_native_api_exposure.md` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=266 files=97`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

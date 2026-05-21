@@ -290,6 +290,12 @@ public sealed class NativeApi
 {
     public NativeArray<int> MutableRows => _rows;
 
+    public bool TryResolveTuningForEditor(out NativeArray<int> tuning)
+    {
+        tuning = default;
+        return false;
+    }
+
     public bool TryGetRows(
         out NativeArray<float> rows,
         out int count)
@@ -311,13 +317,14 @@ public sealed class NativeApi
 
             payload = audit.build_payload(root)
             cats = payload["categories"]
-            self.assertEqual(cats["nativeCollectionPublicMutableApiExposure"]["matches"], 2)
+            self.assertEqual(cats["nativeCollectionPublicMutableApiExposure"]["matches"], 3)
             self.assertEqual(cats["nativeApiExposureMutableReturn"]["matches"], 1)
-            self.assertEqual(cats["nativeApiExposureOutRefMutable"]["matches"], 1)
+            self.assertEqual(cats["nativeApiExposureOutRefMutable"]["matches"], 2)
             self.assertEqual(cats["nativeApiExposureAmbiguousMutable"]["matches"], 0)
-            self.assertEqual(cats["nativeApiExposureBuildPlayerRuntime"]["matches"], 2)
+            self.assertEqual(cats["nativeApiExposureBuildPlayerRuntime"]["matches"], 3)
             self.assertEqual(cats["nativeApiRiskRuntimeReturnMutableView"]["matches"], 1)
             self.assertEqual(cats["nativeApiRiskRuntimeOutRefMutableView"]["matches"], 1)
+            self.assertEqual(cats["nativeApiRiskRuntimeDiagnosticNamedMutableView"]["matches"], 1)
 
 
 if __name__ == "__main__":

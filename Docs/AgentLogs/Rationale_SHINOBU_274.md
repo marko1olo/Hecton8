@@ -146,6 +146,32 @@ Rejected Alternatives: Keeping manual JSON-only proof. Reproducible scanner outp
 Scalability potential: No runtime impact; prevents proof drift across low/high-tier validation runs.
 Hardware Impact: Editor-only.
 
+## 2026-05-21 Loop 15 - Publication Fence, Signal Ingress, and Dump ABI
+
+Problem: Subagent audit found that completed radiation state publication could be skipped while a deferred load/DataVault swap waited for diffusion completion. The pending `CombatDamageSignal` lane could then be cleared by the next radiation evaluation before it was bridged.
+Solution: `PostSimulationRadiation` no longer returns solely because structural mutation is deferred. It publishes completed dose, health context, pending damage, dose signal, geiger signal, and telemetry first. Structural mutation applies only when no radiation/diffusion job is active. Simulation pauses new radiation work while deferred structural mutation waits for diffusion and preserves source/external-dose/iodine snapshots.
+Rejected Alternatives: Force-completing diffusion to apply load/swap immediately was rejected because it violates dispatcher-owned completion windows. Publishing after structural mutation was rejected because it can drop the already-completed radiation damage fact.
+Scalability potential: Low devices with long diffusion windows retain gameplay facts without stalls; Middle/High/Ultra resolve the fence faster but follow the same owner route.
+Hardware Impact: Prevents damage/signal loss without adding a main-thread wait; pausing new evaluation under deferred mutation costs one sparse radiation tick only during load/hot-swap.
+
+Problem: Public source and external-dose SignalBus payload construction still had finite-safety gaps before the owner drain path.
+Solution: `RegisterSource` normalizes source intensity before publishing and rejects inactive/non-finite input. `ReportExternalDose`, health presentation, geiger, telemetry, grid-cell resolution, iodine quantity, and external exact-dose accumulation now use explicit finite-safe clamps before signal/context mutation.
+Rejected Alternatives: Trusting downstream owner drains was rejected because SignalBus payloads are first-party hot facts and must not carry NaN/Infinity into snapshots.
+Scalability potential: Low devices fail closed cheaply; high tiers keep the same payload layout and can still spend quality budget on SDF/bulkhead samples and GPU hand mutation.
+Hardware Impact: Bounded scalar guards add under 1 us per ingress-heavy frame and prevent NaN propagation into shader globals, rollback state, and blackbox telemetry.
+
+Problem: `Dump_SHINOBU_274.bin` wrote telemetry fields out of explicit-layout order, so forensic parsers using `RadiationTelemetryEntry` offsets would misread frame/source fields.
+Solution: Dump writer order now matches `RadiationTelemetryEntry` exactly, and `RadiationStateLayoutGuard` validates telemetry offsets as well as state offsets.
+Rejected Alternatives: Documenting a second dump schema was rejected because the blackbox route should mirror the fixed telemetry DTO, not invent a parallel ABI.
+Scalability potential: No runtime quality impact; blackbox forensic proof remains deterministic at all tiers.
+Hardware Impact: 0 steady-state us; dump-only correctness fix.
+
+Problem: `HazardZoneManager` still owns private persistent native scratch for generic non-radiation volumes, which violates the broad Vault law if left undocumented.
+Solution: `SHINOBU_274_RADIATION_DOSE_ROUTE_CARD.md` now documents this as a non-radiation compatibility exception with owner, phase, capacity, sentinel registration, disposal, and radiation exclusion. Moving the remaining generic scratch to Vault is outside Radiation Scrubber authority.
+Rejected Alternatives: Large generic hazard refactor from SHINOBU_274 was rejected because it crosses domain ownership and risks breaking heat/toxicity/biohazard systems while solving no radiation payload defect.
+Scalability potential: Radiation low/mid/high/ultra path is unaffected; generic hazard migration can proceed independently.
+Hardware Impact: 0 runtime change; documentation prevents the generic scratch from being misreported as SHINOBU_274 payload ownership.
+
 ## 2026-05-21 Loop 10 - Radiation Read Route and Artifact Consistency
 
 Problem: Registration paths for `HazardType.Radiation` were sealed into `RadiationHazardGrid`, but read paths through `HectonHazardManager.GetHazardIntensity(... HazardType.Radiation)` still resolved `HazardZoneManager`. `FloraRegrowthDirector` consumed that compatibility read and could observe stale legacy hazard truth.
