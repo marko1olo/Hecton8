@@ -4562,22 +4562,22 @@
           "text": "int frame = Time.frameCount;"
         },
         {
-          "line": 698,
+          "line": 696,
           "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
           "text": "Frame = Time.frameCount,"
         },
         {
-          "line": 855,
+          "line": 853,
           "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
           "text": "uint frame = unchecked((uint)Time.frameCount);"
         },
         {
-          "line": 961,
+          "line": 959,
           "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
           "text": "Frame = (uint)Time.frameCount,"
         },
         {
-          "line": 996,
+          "line": 994,
           "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
           "text": "int frame = Time.frameCount;"
         },
@@ -4658,7 +4658,7 @@
         }
       ],
       "files": 246,
-      "matches": 927,
+      "matches": 925,
       "topFiles": [
         {
           "count": 36,
@@ -4694,11 +4694,11 @@
         },
         {
           "count": 16,
-          "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs"
+          "path": "Assets/_Project/Scripts/HectonPlayerMovement.cs"
         },
         {
           "count": 16,
-          "path": "Assets/_Project/Scripts/HectonPlayerMovement.cs"
+          "path": "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs"
         }
       ]
     },
@@ -4846,22 +4846,22 @@
           "text": "int frame = Time.frameCount;"
         },
         {
-          "line": 698,
+          "line": 696,
           "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
           "text": "Frame = Time.frameCount,"
         },
         {
-          "line": 855,
+          "line": 853,
           "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
           "text": "uint frame = unchecked((uint)Time.frameCount);"
         },
         {
-          "line": 961,
+          "line": 959,
           "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
           "text": "Frame = (uint)Time.frameCount,"
         },
         {
-          "line": 996,
+          "line": 994,
           "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
           "text": "int frame = Time.frameCount;"
         },
@@ -4942,7 +4942,7 @@
         }
       ],
       "files": 261,
-      "matches": 964,
+      "matches": 962,
       "topFiles": [
         {
           "count": 36,
@@ -4978,11 +4978,11 @@
         },
         {
           "count": 16,
-          "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs"
+          "path": "Assets/_Project/Scripts/HectonPlayerMovement.cs"
         },
         {
           "count": 16,
-          "path": "Assets/_Project/Scripts/HectonPlayerMovement.cs"
+          "path": "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs"
         }
       ]
     },
@@ -4994,23 +4994,13 @@
           "text": "public float PhysicsFixedDeltaClampSeconds => Time.fixedDeltaTime;"
         },
         {
-          "line": 3406,
-          "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-          "text": "float fixedDeltaTime = math.max(Time.fixedDeltaTime, 0.0001f);"
-        },
-        {
           "line": 616,
           "path": "Assets/_Project/Scripts/Rendering/OceanSinglePass/ShorelineFoamGraftContracts.cs",
           "text": "float deltaSeconds = Time.deltaTime;"
-        },
-        {
-          "line": 4444,
-          "path": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
-          "text": "_brineSubmersionTime += math.max(0f, Time.fixedDeltaTime);"
         }
       ],
-      "files": 4,
-      "matches": 4,
+      "files": 2,
+      "matches": 2,
       "topFiles": [
         {
           "count": 1,
@@ -5018,15 +5008,7 @@
         },
         {
           "count": 1,
-          "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs"
-        },
-        {
-          "count": 1,
           "path": "Assets/_Project/Scripts/Rendering/OceanSinglePass/ShorelineFoamGraftContracts.cs"
-        },
-        {
-          "count": 1,
-          "path": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs"
         }
       ]
     },
@@ -5038,22 +5020,22 @@
           "text": "int frame = Time.frameCount;"
         },
         {
-          "line": 698,
+          "line": 696,
           "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
           "text": "Frame = Time.frameCount,"
         },
         {
-          "line": 855,
+          "line": 853,
           "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
           "text": "uint frame = unchecked((uint)Time.frameCount);"
         },
         {
-          "line": 961,
+          "line": 959,
           "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
           "text": "Frame = (uint)Time.frameCount,"
         },
         {
-          "line": 996,
+          "line": 994,
           "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
           "text": "int frame = Time.frameCount;"
         },
@@ -5191,12 +5173,12 @@
           "text": "_nextSignalLogTime = Time.time + 5f;"
         },
         {
-          "line": 4708,
+          "line": 4711,
           "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
           "text": "Time.time >= _nextSlowTickWatchdogLogTime)"
         },
         {
-          "line": 4710,
+          "line": 4713,
           "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
           "text": "_nextSlowTickWatchdogLogTime = Time.time + 5f;"
         },
@@ -5482,22 +5464,22 @@
           "text": "int frame = Time.frameCount;"
         },
         {
-          "line": 698,
+          "line": 696,
           "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
           "text": "Frame = Time.frameCount,"
         },
         {
-          "line": 855,
+          "line": 853,
           "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
           "text": "uint frame = unchecked((uint)Time.frameCount);"
         },
         {
-          "line": 961,
+          "line": 959,
           "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
           "text": "Frame = (uint)Time.frameCount,"
         },
         {
-          "line": 996,
+          "line": 994,
           "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
           "text": "int frame = Time.frameCount;"
         },
@@ -5625,35 +5607,17 @@
     "unityTimeRiskGameplayDelta": {
       "examples": [
         {
-          "line": 3406,
-          "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-          "text": "float fixedDeltaTime = math.max(Time.fixedDeltaTime, 0.0001f);"
-        },
-        {
           "line": 616,
           "path": "Assets/_Project/Scripts/Rendering/OceanSinglePass/ShorelineFoamGraftContracts.cs",
           "text": "float deltaSeconds = Time.deltaTime;"
-        },
-        {
-          "line": 4444,
-          "path": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
-          "text": "_brineSubmersionTime += math.max(0f, Time.fixedDeltaTime);"
         }
       ],
-      "files": 3,
-      "matches": 3,
+      "files": 1,
+      "matches": 1,
       "topFiles": [
         {
           "count": 1,
-          "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs"
-        },
-        {
-          "count": 1,
           "path": "Assets/_Project/Scripts/Rendering/OceanSinglePass/ShorelineFoamGraftContracts.cs"
-        },
-        {
-          "count": 1,
-          "path": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs"
         }
       ]
     },
@@ -5725,22 +5689,22 @@
           "text": "return fallbackRuntimeSeconds > 0f ? fallbackRuntimeSeconds : Time.time;"
         },
         {
-          "line": 3015,
+          "line": 3018,
           "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
           "text": "_combatMobilityUntilTime = math.max(_combatMobilityUntilTime, Time.time + durationSeconds);"
         },
         {
-          "line": 3020,
+          "line": 3023,
           "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
           "text": "if (_combatMobilityUntilTime <= Time.time)"
         },
         {
-          "line": 4475,
+          "line": 4478,
           "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
           "text": "ApplyCorpseBloatShaderTimer(Time.time);"
         },
         {
-          "line": 6817,
+          "line": 6820,
           "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
           "text": "Time.time,"
         },
@@ -5883,27 +5847,27 @@
           "text": "return fallbackRuntimeSeconds > 0f ? fallbackRuntimeSeconds : Time.time;"
         },
         {
-          "line": 3015,
+          "line": 3018,
           "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
           "text": "_combatMobilityUntilTime = math.max(_combatMobilityUntilTime, Time.time + durationSeconds);"
         },
         {
-          "line": 3020,
+          "line": 3023,
           "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
           "text": "if (_combatMobilityUntilTime <= Time.time)"
         },
         {
-          "line": 4475,
+          "line": 4478,
           "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
           "text": "ApplyCorpseBloatShaderTimer(Time.time);"
         },
         {
-          "line": 4708,
+          "line": 4711,
           "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
           "text": "Time.time >= _nextSlowTickWatchdogLogTime)"
         },
         {
-          "line": 4710,
+          "line": 4713,
           "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
           "text": "_nextSlowTickWatchdogLogTime = Time.time + 5f;"
         }

@@ -56,15 +56,15 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `structAutoProperties` | 0 | 0 |
 | `unityRandom` | 0 | 0 |
 | `unityTimeBuildEditorOnly` | 14 | 8 |
-| `unityTimeBuildPlayerRuntime` | 927 | 246 |
+| `unityTimeBuildPlayerRuntime` | 925 | 246 |
 | `unityTimeBuildQaDevProof` | 23 | 7 |
-| `unityTimeCritical` | 964 | 261 |
-| `unityTimeDelta` | 4 | 4 |
+| `unityTimeCritical` | 962 | 261 |
+| `unityTimeDelta` | 2 | 2 |
 | `unityTimeFrameCount` | 842 | 238 |
 | `unityTimeRiskCooldownOrPerfLog` | 38 | 16 |
 | `unityTimeRiskEditorOrProof` | 37 | 15 |
 | `unityTimeRiskFrameStampOrTelemetry` | 806 | 224 |
-| `unityTimeRiskGameplayDelta` | 3 | 3 |
+| `unityTimeRiskGameplayDelta` | 1 | 1 |
 | `unityTimeRiskGameplayWallClock` | 80 | 36 |
 | `unityTimeWallClock` | 118 | 49 |
 | `unityUpdateMethod` | 11 | 11 |
@@ -423,9 +423,7 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | Path | Count |
 |---|---:|
 | `Assets/_Project/Scripts/Dev/CelestialTimeLapseDebugger.cs` | 1 |
-| `Assets/_Project/Scripts/Fauna/FaunaBrain.cs` | 1 |
 | `Assets/_Project/Scripts/Rendering/OceanSinglePass/ShorelineFoamGraftContracts.cs` | 1 |
-| `Assets/_Project/Scripts/SubmarineFluidDynamics.cs` | 1 |
 
 ### unityTimeFrameCount
 
@@ -471,9 +469,7 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 
 | Path | Count |
 |---|---:|
-| `Assets/_Project/Scripts/Fauna/FaunaBrain.cs` | 1 |
 | `Assets/_Project/Scripts/Rendering/OceanSinglePass/ShorelineFoamGraftContracts.cs` | 1 |
-| `Assets/_Project/Scripts/SubmarineFluidDynamics.cs` | 1 |
 
 ### unityTimeRiskGameplayWallClock
 

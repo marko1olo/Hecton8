@@ -786,3 +786,11 @@ Solution: Kept RenderGraph handles on `RasterCommandBuffer` and moved regular as
 Rejected Alternatives: Importing every asset texture into RenderGraph was rejected because these are stable material textures, not transient graph resources, and would add unnecessary graph ownership. Polling `GlobalRegistry.Player` in the fallback read was rejected after patch review because GlobalRegistry is cold DI, not a hot read path.
 Scalability potential: Low/Middle/High/Ultra render the same bound visor/decal texture assets; quality remains expressed through existing scalar uniforms and texture flags. Survival AUP fallback now reads one immutable cached interface route without changing authority state.
 Hardware Impact: below 1 us. The main gain is compile correctness and avoiding hot registry polling; no frame-time speed claim.
+
+## Ladder Climb IK Hardware Tier Detachment
+
+Problem: `ProceduralLadderClimbRuntime` sampled `GlobalRegistry.ScalabilityTierProfileByte` during climb begin and used tier 0 to force the camera-slide/fake-elbow path even in VR grip mode. That lets hardware tier change hand target fidelity, grip presentation flags, and player climb feedback.
+Solution: Removed the scalability tier cache. The camera-slide fake is now selected only when VR grip mode is not required, which is an input-mode route rather than a hardware route. The IK job flag and local names now describe the camera-slide fake instead of low-tier hardware.
+Rejected Alternatives: Keeping a binary tier branch for VR climb IK was rejected because VR grip parity and hand feedback should not collapse on weaker hardware. Driving the climb fake directly from `GlobalQualityWeight` was rejected because this is not an optional visual density parameter; it switches animation/control presentation mode.
+Scalability potential: Low/Middle/High/Ultra share the same VR grip IK behavior. Non-VR keeps the cheap camera-slide Dear Lie because there is no tracked grip authority to solve, while VR hardware uses the full elbow solution on every tier.
+Hardware Impact: 0 us speed claim. One cold registry tier read is removed from climb begin; weak VR devices now spend the same IK solve path to preserve player-control feedback.
