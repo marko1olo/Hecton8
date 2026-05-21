@@ -675,38 +675,22 @@ namespace Hecton8.QA.Headless
             if (!LockRuntimeBuffers())
                 throw new InvalidOperationException("SHINOBU_79 failed to lock DataVault buffers.");
 
-            NativeArray<WatchdogStateDTO> stateBuffer = _stateHandle.Resolve(_dataVault);
-            NativeArray<TelemetrySnapshotDTO> snapshotBuffer = _snapshotHandle.Resolve(_dataVault);
-            NativeArray<InputStateDTO> inputBuffer = _agent36InputHandle.Resolve(_dataVault);
-            NativeArray<Shinobu38RouteWaypointDTO> waypoints = _waypointsHandle.Resolve(_dataVault);
-            NativeArray<MockRebaseSignal> rebaseSignals = _mockRebaseSignalsHandle.Resolve(_dataVault);
-            NativeArray<Shinobu38TuningDTO> tuningBuffer = _tuningHandle.Resolve(_dataVault);
-            NativeArray<Shinobu38MockVaultDTO> mockVault = _mockVaultHandle.Resolve(_dataVault);
-            NativeArray<Shinobu38WatchdogTelemetryEntry> telemetryRing = _telemetryRingHandle.Resolve(_dataVault);
-            NativeArray<byte> csvScratch = _csvScratchHandle.Resolve(_dataVault);
-            NativeArray<byte> waypointScratch = _waypointScratchHandle.Resolve(_dataVault);
-            NativeArray<byte> dumpScratch = _dumpScratchHandle.Resolve(_dataVault);
-            NativeArray<Shinobu38FileWriteCommand> fileCommands = _fileWriteCommandsHandle.Resolve(_dataVault);
-            NativeArray<byte> filePayload = _fileWritePayloadHandle.Resolve(_dataVault);
-            NativeArray<Shinobu38FileWriterStateDTO> fileWriterState = _fileWriterStateHandle.Resolve(_dataVault);
-            NativeArray<Shinobu38FileWriterCursorDTO> fileWriterCursor = _fileWriterCursorHandle.Resolve(_dataVault);
-            NativeArray<Shinobu38WaypointIngestStateDTO> waypointIngestState = _waypointIngestStateHandle.Resolve(_dataVault);
-            if (!stateBuffer.IsCreated ||
-                !snapshotBuffer.IsCreated ||
-                !inputBuffer.IsCreated ||
-                !waypoints.IsCreated ||
-                !rebaseSignals.IsCreated ||
-                !tuningBuffer.IsCreated ||
-                !mockVault.IsCreated ||
-                !telemetryRing.IsCreated ||
-                !csvScratch.IsCreated ||
-                !waypointScratch.IsCreated ||
-                !dumpScratch.IsCreated ||
-                !fileCommands.IsCreated ||
-                !filePayload.IsCreated ||
-                !fileWriterState.IsCreated ||
-                !fileWriterCursor.IsCreated ||
-                !waypointIngestState.IsCreated)
+            if (!TryResolveWatchdogVaultBuffer(_dataVault, in _stateHandle, StateBufferId, 1, out NativeArray<WatchdogStateDTO> stateBuffer) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _snapshotHandle, SnapshotBufferId, 1, out NativeArray<TelemetrySnapshotDTO> snapshotBuffer) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _agent36InputHandle, BufferID.ShinobuInputCurrentDto, InputBufferCapacity, out NativeArray<InputStateDTO> inputBuffer) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _waypointsHandle, WaypointsBufferId, RouteCapacity, out NativeArray<Shinobu38RouteWaypointDTO> waypoints) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _mockRebaseSignalsHandle, RebaseSignalsBufferId, 1, out NativeArray<MockRebaseSignal> rebaseSignals) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _tuningHandle, TuningBufferId, 1, out NativeArray<Shinobu38TuningDTO> tuningBuffer) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _mockVaultHandle, MockVaultBufferId, 1, out NativeArray<Shinobu38MockVaultDTO> mockVault) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _telemetryRingHandle, TelemetryRingBufferId, TelemetryCapacity, out NativeArray<Shinobu38WatchdogTelemetryEntry> telemetryRing) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _csvScratchHandle, CsvScratchBufferId, CsvScratchBytes, out NativeArray<byte> csvScratch) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _waypointScratchHandle, WaypointScratchBufferId, CsvOverrideBytes, out NativeArray<byte> waypointScratch) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _dumpScratchHandle, DumpScratchBufferId, CrashDumpBytes, out NativeArray<byte> dumpScratch) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _fileWriteCommandsHandle, FileWriteCommandsBufferId, FileWriteQueueCapacity, out NativeArray<Shinobu38FileWriteCommand> fileCommands) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _fileWritePayloadHandle, FileWritePayloadBufferId, FileWritePayloadTotalBytes, out NativeArray<byte> filePayload) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _fileWriterStateHandle, FileWriterStateBufferId, 1, out NativeArray<Shinobu38FileWriterStateDTO> fileWriterState) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _fileWriterCursorHandle, FileWriterCursorBufferId, 1, out NativeArray<Shinobu38FileWriterCursorDTO> fileWriterCursor) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _waypointIngestStateHandle, WaypointIngestStateBufferId, 1, out NativeArray<Shinobu38WaypointIngestStateDTO> waypointIngestState))
             {
                 throw new InvalidOperationException("SHINOBU_79 failed to resolve DataVault buffers.");
             }
@@ -754,22 +738,71 @@ namespace Hecton8.QA.Headless
             if (vault == null)
                 throw new InvalidOperationException("SHINOBU_79 requires GlobalRegistry.DataVault.");
 
-            _stateHandle = vault.GetBufferHandle<WatchdogStateDTO>(StateBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _snapshotHandle = vault.GetBufferHandle<TelemetrySnapshotDTO>(SnapshotBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _agent36InputHandle = vault.GetBufferHandle<InputStateDTO>(BufferID.ShinobuInputCurrentDto, InputBufferCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _waypointsHandle = vault.GetBufferHandle<Shinobu38RouteWaypointDTO>(WaypointsBufferId, RouteCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _mockRebaseSignalsHandle = vault.GetBufferHandle<MockRebaseSignal>(RebaseSignalsBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _tuningHandle = vault.GetBufferHandle<Shinobu38TuningDTO>(TuningBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _mockVaultHandle = vault.GetBufferHandle<Shinobu38MockVaultDTO>(MockVaultBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _telemetryRingHandle = vault.GetBufferHandle<Shinobu38WatchdogTelemetryEntry>(TelemetryRingBufferId, TelemetryCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = vault.GetBufferHandle<byte>(CsvScratchBufferId, CsvScratchBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _waypointScratchHandle = vault.GetBufferHandle<byte>(WaypointScratchBufferId, CsvOverrideBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _dumpScratchHandle = vault.GetBufferHandle<byte>(DumpScratchBufferId, CrashDumpBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _fileWriteCommandsHandle = vault.GetBufferHandle<Shinobu38FileWriteCommand>(FileWriteCommandsBufferId, FileWriteQueueCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _fileWritePayloadHandle = vault.GetBufferHandle<byte>(FileWritePayloadBufferId, FileWritePayloadTotalBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _fileWriterStateHandle = vault.GetBufferHandle<Shinobu38FileWriterStateDTO>(FileWriterStateBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _fileWriterCursorHandle = vault.GetBufferHandle<Shinobu38FileWriterCursorDTO>(FileWriterCursorBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _waypointIngestStateHandle = vault.GetBufferHandle<Shinobu38WaypointIngestStateDTO>(WaypointIngestStateBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _stateHandle = vault.GetGenerationHandle<WatchdogStateDTO>(StateBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _snapshotHandle = vault.GetGenerationHandle<TelemetrySnapshotDTO>(SnapshotBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _agent36InputHandle = vault.GetGenerationHandle<InputStateDTO>(BufferID.ShinobuInputCurrentDto, InputBufferCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _waypointsHandle = vault.GetGenerationHandle<Shinobu38RouteWaypointDTO>(WaypointsBufferId, RouteCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _mockRebaseSignalsHandle = vault.GetGenerationHandle<MockRebaseSignal>(RebaseSignalsBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _tuningHandle = vault.GetGenerationHandle<Shinobu38TuningDTO>(TuningBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _mockVaultHandle = vault.GetGenerationHandle<Shinobu38MockVaultDTO>(MockVaultBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _telemetryRingHandle = vault.GetGenerationHandle<Shinobu38WatchdogTelemetryEntry>(TelemetryRingBufferId, TelemetryCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _csvScratchHandle = vault.GetGenerationHandle<byte>(CsvScratchBufferId, CsvScratchBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _waypointScratchHandle = vault.GetGenerationHandle<byte>(WaypointScratchBufferId, CsvOverrideBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _dumpScratchHandle = vault.GetGenerationHandle<byte>(DumpScratchBufferId, CrashDumpBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _fileWriteCommandsHandle = vault.GetGenerationHandle<Shinobu38FileWriteCommand>(FileWriteCommandsBufferId, FileWriteQueueCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _fileWritePayloadHandle = vault.GetGenerationHandle<byte>(FileWritePayloadBufferId, FileWritePayloadTotalBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _fileWriterStateHandle = vault.GetGenerationHandle<Shinobu38FileWriterStateDTO>(FileWriterStateBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _fileWriterCursorHandle = vault.GetGenerationHandle<Shinobu38FileWriterCursorDTO>(FileWriterCursorBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _waypointIngestStateHandle = vault.GetGenerationHandle<Shinobu38WaypointIngestStateDTO>(WaypointIngestStateBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+        }
+
+        private static bool TryResolveWatchdogVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   requiredLength > 0 &&
+                   IsWatchdogVaultHandle(in handle, bufferId) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool TryReadWatchdogVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   requiredLength > 0 &&
+                   IsWatchdogVaultHandle(in handle, bufferId) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool IsWatchdogVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.Generation != 0u;
+        }
+
+        private static unsafe ref T ElementRef<T>(NativeArray<T> buffer, int index) where T : struct
+        {
+            if (!buffer.IsCreated || (uint)index >= (uint)buffer.Length)
+                FatalMemoryException.ThrowStaleVaultHandle();
+
+            void* ptr = (byte*)buffer.GetUnsafePtr() + (index * UnsafeUtility.SizeOf<T>());
+            return ref UnsafeUtility.AsRef<T>(ptr);
         }
 
         private bool LockRuntimeBuffers()
@@ -842,6 +875,37 @@ namespace Hecton8.QA.Headless
             }
         }
 
+        private void ReleaseWatchdogVaultHandles(IDataVault vault)
+        {
+            ReleaseWatchdogVaultHandle(vault, ref _stateHandle, StateBufferId);
+            ReleaseWatchdogVaultHandle(vault, ref _snapshotHandle, SnapshotBufferId);
+            ReleaseWatchdogVaultHandle(vault, ref _agent36InputHandle, BufferID.ShinobuInputCurrentDto);
+            ReleaseWatchdogVaultHandle(vault, ref _waypointsHandle, WaypointsBufferId);
+            ReleaseWatchdogVaultHandle(vault, ref _mockRebaseSignalsHandle, RebaseSignalsBufferId);
+            ReleaseWatchdogVaultHandle(vault, ref _tuningHandle, TuningBufferId);
+            ReleaseWatchdogVaultHandle(vault, ref _mockVaultHandle, MockVaultBufferId);
+            ReleaseWatchdogVaultHandle(vault, ref _telemetryRingHandle, TelemetryRingBufferId);
+            ReleaseWatchdogVaultHandle(vault, ref _csvScratchHandle, CsvScratchBufferId);
+            ReleaseWatchdogVaultHandle(vault, ref _waypointScratchHandle, WaypointScratchBufferId);
+            ReleaseWatchdogVaultHandle(vault, ref _dumpScratchHandle, DumpScratchBufferId);
+            ReleaseWatchdogVaultHandle(vault, ref _fileWriteCommandsHandle, FileWriteCommandsBufferId);
+            ReleaseWatchdogVaultHandle(vault, ref _fileWritePayloadHandle, FileWritePayloadBufferId);
+            ReleaseWatchdogVaultHandle(vault, ref _fileWriterStateHandle, FileWriterStateBufferId);
+            ReleaseWatchdogVaultHandle(vault, ref _fileWriterCursorHandle, FileWriterCursorBufferId);
+            ReleaseWatchdogVaultHandle(vault, ref _waypointIngestStateHandle, WaypointIngestStateBufferId);
+        }
+
+        private static void ReleaseWatchdogVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            if (vault != null && IsWatchdogVaultHandle(in handle, bufferId))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
         private void RegisterRuntime()
         {
             ForceRuntimePolicy();
@@ -880,16 +944,11 @@ namespace Hecton8.QA.Headless
         private void ConsumeNavigationResult()
         {
             IDataVault dataVault = _dataVault;
-            NativeArray<WatchdogStateDTO> stateBuffer = _stateHandle.Resolve(dataVault);
-            NativeArray<TelemetrySnapshotDTO> snapshotBuffer = _snapshotHandle.Resolve(dataVault);
-            NativeArray<Shinobu38MockVaultDTO> mockVault = _mockVaultHandle.Resolve(dataVault);
-            NativeArray<MockRebaseSignal> rebaseSignals = _mockRebaseSignalsHandle.Resolve(dataVault);
-            NativeArray<Shinobu38TuningDTO> tuningBuffer = _tuningHandle.Resolve(dataVault);
-            if (!stateBuffer.IsCreated ||
-                !snapshotBuffer.IsCreated ||
-                !mockVault.IsCreated ||
-                !rebaseSignals.IsCreated ||
-                !tuningBuffer.IsCreated)
+            if (!TryResolveWatchdogVaultBuffer(dataVault, in _stateHandle, StateBufferId, 1, out NativeArray<WatchdogStateDTO> stateBuffer) ||
+                !TryResolveWatchdogVaultBuffer(dataVault, in _snapshotHandle, SnapshotBufferId, 1, out NativeArray<TelemetrySnapshotDTO> snapshotBuffer) ||
+                !TryResolveWatchdogVaultBuffer(dataVault, in _mockVaultHandle, MockVaultBufferId, 1, out NativeArray<Shinobu38MockVaultDTO> mockVault) ||
+                !TryResolveWatchdogVaultBuffer(dataVault, in _mockRebaseSignalsHandle, RebaseSignalsBufferId, 1, out NativeArray<MockRebaseSignal> rebaseSignals) ||
+                !TryResolveWatchdogVaultBuffer(dataVault, in _tuningHandle, TuningBufferId, 1, out NativeArray<Shinobu38TuningDTO> tuningBuffer))
             {
                 Finish(ResultStatusFault, EventHashCrash);
                 return;
@@ -947,8 +1006,7 @@ namespace Hecton8.QA.Headless
 
             if (state.TestDuration >= _nextCsvTime)
             {
-                NativeArray<byte> csvScratch = _csvScratchHandle.Resolve(dataVault);
-                if (!csvScratch.IsCreated)
+                if (!TryResolveWatchdogVaultBuffer(dataVault, in _csvScratchHandle, CsvScratchBufferId, CsvScratchBytes, out NativeArray<byte> csvScratch))
                 {
                     Finish(ResultStatusFault, EventHashCrash);
                     return;
@@ -1032,8 +1090,7 @@ namespace Hecton8.QA.Headless
 
         private void RecordTelemetry(in WatchdogStateDTO state, in Shinobu38MockVaultDTO vault, uint flags)
         {
-            NativeArray<Shinobu38WatchdogTelemetryEntry> telemetryRing = _telemetryRingHandle.Resolve(_dataVault);
-            if (!telemetryRing.IsCreated)
+            if (!TryResolveWatchdogVaultBuffer(_dataVault, in _telemetryRingHandle, TelemetryRingBufferId, TelemetryCapacity, out NativeArray<Shinobu38WatchdogTelemetryEntry> telemetryRing))
                 return;
 
             int index = (int)(_telemetryCursor % TelemetryCapacity);
@@ -1069,8 +1126,7 @@ namespace Hecton8.QA.Headless
         {
             float phase = _qualityWallSeconds - math.floor(_qualityWallSeconds / HealthStressCycleSeconds) * HealthStressCycleSeconds;
             bool stressActive = phase < HealthStressPulseSeconds;
-            NativeArray<Shinobu38MockVaultDTO> mockVault = _mockVaultHandle.Resolve(_dataVault);
-            if (!mockVault.IsCreated)
+            if (!TryResolveWatchdogVaultBuffer(_dataVault, in _mockVaultHandle, MockVaultBufferId, 1, out NativeArray<Shinobu38MockVaultDTO> mockVault))
                 return;
 
             Shinobu38MockVaultDTO vault = mockVault[0];
@@ -1190,7 +1246,7 @@ namespace Hecton8.QA.Headless
             _lastEventHash = eventHash;
             if (status != ResultStatusComplete)
             {
-                NativeArray<Shinobu38MockVaultDTO> mockVault = _mockVaultHandle.Resolve(_dataVault);
+                TryResolveWatchdogVaultBuffer(_dataVault, in _mockVaultHandle, MockVaultBufferId, 1, out NativeArray<Shinobu38MockVaultDTO> mockVault);
                 Shinobu38MockVaultDTO vault = mockVault.IsCreated ? mockVault[0] : default;
                 vault.Flags |= VaultFlagFatal;
                 if (mockVault.IsCreated)
@@ -1208,10 +1264,11 @@ namespace Hecton8.QA.Headless
 
         private void DumpTelemetry()
         {
-            NativeArray<Shinobu38WatchdogTelemetryEntry> telemetryRing = _telemetryRingHandle.Resolve(_dataVault);
-            NativeArray<byte> dumpScratch = _dumpScratchHandle.Resolve(_dataVault);
-            if (!telemetryRing.IsCreated || !dumpScratch.IsCreated)
+            if (!TryReadWatchdogVaultBuffer(_dataVault, in _telemetryRingHandle, TelemetryRingBufferId, TelemetryCapacity, out NativeArray<Shinobu38WatchdogTelemetryEntry> telemetryRing) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _dumpScratchHandle, DumpScratchBufferId, CrashDumpBytes, out NativeArray<byte> dumpScratch))
+            {
                 return;
+            }
 
             int cursor = 0;
             WriteUInt(dumpScratch, ref cursor, DumpMagic);
@@ -1247,9 +1304,9 @@ namespace Hecton8.QA.Headless
 
         private void WriteResult(uint status, uint eventHash)
         {
-            NativeArray<WatchdogStateDTO> stateBuffer = _stateHandle.Resolve(_dataVault);
-            NativeArray<Shinobu38MockVaultDTO> mockVault = _mockVaultHandle.Resolve(_dataVault);
-            NativeArray<byte> dumpScratch = _dumpScratchHandle.Resolve(_dataVault);
+            TryReadWatchdogVaultBuffer(_dataVault, in _stateHandle, StateBufferId, 1, out NativeArray<WatchdogStateDTO> stateBuffer);
+            TryReadWatchdogVaultBuffer(_dataVault, in _mockVaultHandle, MockVaultBufferId, 1, out NativeArray<Shinobu38MockVaultDTO> mockVault);
+            TryResolveWatchdogVaultBuffer(_dataVault, in _dumpScratchHandle, DumpScratchBufferId, CrashDumpBytes, out NativeArray<byte> dumpScratch);
             WatchdogStateDTO state = stateBuffer.IsCreated ? stateBuffer[0] : default;
             Shinobu38MockVaultDTO vault = mockVault.IsCreated ? mockVault[0] : default;
             if (!dumpScratch.IsCreated)
@@ -1297,8 +1354,7 @@ namespace Hecton8.QA.Headless
             int csvMicros = Volatile.Read(ref _writerLastCsvMicros);
             _lastCsvWriteMs = math.max(0f, csvMicros * 0.001f);
 
-            NativeArray<Shinobu38FileWriterStateDTO> state = _fileWriterStateHandle.Resolve(_dataVault);
-            if (!state.IsCreated)
+            if (!TryResolveWatchdogVaultBuffer(_dataVault, in _fileWriterStateHandle, FileWriterStateBufferId, 1, out NativeArray<Shinobu38FileWriterStateDTO> state))
                 return;
 
             try
@@ -1321,14 +1377,15 @@ namespace Hecton8.QA.Headless
             if (!source.IsCreated || length <= 0)
                 return false;
 
-            NativeArray<Shinobu38FileWriteCommand> commands = _fileWriteCommandsHandle.Resolve(_dataVault);
-            NativeArray<byte> payload = _fileWritePayloadHandle.Resolve(_dataVault);
-            NativeArray<Shinobu38FileWriterStateDTO> writerState = _fileWriterStateHandle.Resolve(_dataVault);
-            NativeArray<Shinobu38FileWriterCursorDTO> cursorBuffer = _fileWriterCursorHandle.Resolve(_dataVault);
-            if (!commands.IsCreated || !payload.IsCreated || !writerState.IsCreated || !cursorBuffer.IsCreated)
+            if (!TryResolveWatchdogVaultBuffer(_dataVault, in _fileWriteCommandsHandle, FileWriteCommandsBufferId, FileWriteQueueCapacity, out NativeArray<Shinobu38FileWriteCommand> commands) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _fileWritePayloadHandle, FileWritePayloadBufferId, FileWritePayloadTotalBytes, out NativeArray<byte> payload) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _fileWriterStateHandle, FileWriterStateBufferId, 1, out NativeArray<Shinobu38FileWriterStateDTO> writerState) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _fileWriterCursorHandle, FileWriterCursorBufferId, 1, out NativeArray<Shinobu38FileWriterCursorDTO> cursorBuffer))
+            {
                 return false;
+            }
 
-            ref Shinobu38FileWriterCursorDTO cursor = ref _fileWriterCursorHandle.GetElementAsRef(_dataVault, 0);
+            ref Shinobu38FileWriterCursorDTO cursor = ref ElementRef(cursorBuffer, 0);
             int safeLength = math.min(length, math.min(source.Length, FileWritePayloadBytes));
             int head = Volatile.Read(ref cursor.Head);
             int next = (head + 1) & FileWriteQueueMask;
@@ -1361,11 +1418,10 @@ namespace Hecton8.QA.Headless
             if (_fileWriterThread != null)
                 return;
 
-            NativeArray<Shinobu38FileWriterCursorDTO> cursorBuffer = _fileWriterCursorHandle.Resolve(_dataVault);
-            if (!cursorBuffer.IsCreated)
+            if (!TryResolveWatchdogVaultBuffer(_dataVault, in _fileWriterCursorHandle, FileWriterCursorBufferId, 1, out NativeArray<Shinobu38FileWriterCursorDTO> cursorBuffer))
                 return;
 
-            ref Shinobu38FileWriterCursorDTO cursor = ref _fileWriterCursorHandle.GetElementAsRef(_dataVault, 0);
+            ref Shinobu38FileWriterCursorDTO cursor = ref ElementRef(cursorBuffer, 0);
             Volatile.Write(ref cursor.Running, 1);
             Volatile.Write(ref cursor.Head, 0);
             Volatile.Write(ref cursor.Tail, 0);
@@ -1389,11 +1445,10 @@ namespace Hecton8.QA.Headless
             if (writer == null)
                 return;
 
-            NativeArray<Shinobu38FileWriterCursorDTO> cursorBuffer = _fileWriterCursorHandle.Resolve(_dataVault);
-            if (!cursorBuffer.IsCreated)
+            if (!TryResolveWatchdogVaultBuffer(_dataVault, in _fileWriterCursorHandle, FileWriterCursorBufferId, 1, out NativeArray<Shinobu38FileWriterCursorDTO> cursorBuffer))
                 return;
 
-            ref Shinobu38FileWriterCursorDTO cursor = ref _fileWriterCursorHandle.GetElementAsRef(_dataVault, 0);
+            ref Shinobu38FileWriterCursorDTO cursor = ref ElementRef(cursorBuffer, 0);
             if (flushPending)
             {
                 long start = Stopwatch.GetTimestamp();
@@ -1424,11 +1479,10 @@ namespace Hecton8.QA.Headless
                 if (vault == null)
                     return;
 
-                NativeArray<Shinobu38FileWriterCursorDTO> cursorBuffer = _fileWriterCursorHandle.Resolve(vault);
-                if (!cursorBuffer.IsCreated)
+                if (!TryResolveWatchdogVaultBuffer(vault, in _fileWriterCursorHandle, FileWriterCursorBufferId, 1, out NativeArray<Shinobu38FileWriterCursorDTO> cursorBuffer))
                     return;
 
-                ref Shinobu38FileWriterCursorDTO cursor = ref _fileWriterCursorHandle.GetElementAsRef(vault, 0);
+                ref Shinobu38FileWriterCursorDTO cursor = ref ElementRef(cursorBuffer, 0);
                 while (Volatile.Read(ref cursor.Running) != 0 ||
                        Volatile.Read(ref cursor.Tail) != Volatile.Read(ref cursor.Head))
                 {
@@ -1444,10 +1498,11 @@ namespace Hecton8.QA.Headless
                         continue;
                     }
 
-                    NativeArray<Shinobu38FileWriteCommand> commands = _fileWriteCommandsHandle.Resolve(vault);
-                    NativeArray<byte> payload = _fileWritePayloadHandle.Resolve(vault);
-                    if (!commands.IsCreated || !payload.IsCreated)
+                    if (!TryReadWatchdogVaultBuffer(vault, in _fileWriteCommandsHandle, FileWriteCommandsBufferId, FileWriteQueueCapacity, out NativeArray<Shinobu38FileWriteCommand> commands) ||
+                        !TryReadWatchdogVaultBuffer(vault, in _fileWritePayloadHandle, FileWritePayloadBufferId, FileWritePayloadTotalBytes, out NativeArray<byte> payload))
+                    {
                         break;
+                    }
 
                     Shinobu38FileWriteCommand command = commands[tail];
                     long start = Stopwatch.GetTimestamp();
@@ -1492,14 +1547,15 @@ namespace Hecton8.QA.Headless
 
         private void ApplyWaypointCsvOverrideIfReady()
         {
-            NativeArray<Shinobu38WaypointIngestStateDTO> ingestState = _waypointIngestStateHandle.Resolve(_dataVault);
-            NativeArray<byte> waypointScratch = _waypointScratchHandle.Resolve(_dataVault);
-            NativeArray<Shinobu38RouteWaypointDTO> waypoints = _waypointsHandle.Resolve(_dataVault);
-            NativeArray<Shinobu38MockVaultDTO> mockVault = _mockVaultHandle.Resolve(_dataVault);
-            if (!ingestState.IsCreated || !waypointScratch.IsCreated || !waypoints.IsCreated || !mockVault.IsCreated)
+            if (!TryResolveWatchdogVaultBuffer(_dataVault, in _waypointIngestStateHandle, WaypointIngestStateBufferId, 1, out NativeArray<Shinobu38WaypointIngestStateDTO> ingestState) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _waypointScratchHandle, WaypointScratchBufferId, CsvOverrideBytes, out NativeArray<byte> waypointScratch) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _waypointsHandle, WaypointsBufferId, RouteCapacity, out NativeArray<Shinobu38RouteWaypointDTO> waypoints) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _mockVaultHandle, MockVaultBufferId, 1, out NativeArray<Shinobu38MockVaultDTO> mockVault))
+            {
                 return;
+            }
 
-            ref Shinobu38WaypointIngestStateDTO ingest = ref _waypointIngestStateHandle.GetElementAsRef(_dataVault, 0);
+            ref Shinobu38WaypointIngestStateDTO ingest = ref ElementRef(ingestState, 0);
             int publishedVersion = Volatile.Read(ref ingest.PublishedVersion);
             if (publishedVersion == Volatile.Read(ref ingest.AppliedVersion))
                 return;
@@ -1528,12 +1584,13 @@ namespace Hecton8.QA.Headless
             if (string.IsNullOrEmpty(_waypointCsvPath))
                 return;
 
-            NativeArray<Shinobu38WaypointIngestStateDTO> ingestState = _waypointIngestStateHandle.Resolve(_dataVault);
-            NativeArray<byte> waypointScratch = _waypointScratchHandle.Resolve(_dataVault);
-            if (!ingestState.IsCreated || !waypointScratch.IsCreated)
+            if (!TryResolveWatchdogVaultBuffer(_dataVault, in _waypointIngestStateHandle, WaypointIngestStateBufferId, 1, out NativeArray<Shinobu38WaypointIngestStateDTO> ingestState) ||
+                !TryResolveWatchdogVaultBuffer(_dataVault, in _waypointScratchHandle, WaypointScratchBufferId, CsvOverrideBytes, out NativeArray<byte> waypointScratch))
+            {
                 return;
+            }
 
-            ref Shinobu38WaypointIngestStateDTO ingest = ref _waypointIngestStateHandle.GetElementAsRef(_dataVault, 0);
+            ref Shinobu38WaypointIngestStateDTO ingest = ref ElementRef(ingestState, 0);
             if (Volatile.Read(ref ingest.PublishedVersion) != Volatile.Read(ref ingest.AppliedVersion))
                 return;
 
@@ -1719,8 +1776,7 @@ namespace Hecton8.QA.Headless
 
         private void PublishAutomationInputOverride()
         {
-            NativeArray<InputStateDTO> inputBuffer = _agent36InputHandle.Resolve(_dataVault);
-            if (!inputBuffer.IsCreated || inputBuffer.Length == 0)
+            if (!TryResolveWatchdogVaultBuffer(_dataVault, in _agent36InputHandle, BufferID.ShinobuInputCurrentDto, InputBufferCapacity, out NativeArray<InputStateDTO> inputBuffer))
                 return;
 
             InputStateDTO input = inputBuffer[0];

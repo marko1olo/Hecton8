@@ -67,6 +67,42 @@ Remaining blocked/pending:
   <QUALITY status="DRS shader uses continuous scale-deficit curve; no binary low-tier switch added" />
 </SELF_AUDIT>
 
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="HullIntegrityQualityProfileContinuum">
+  <WHAT_WAS_WRONG>
+    `HullIntegrityRuntime` routed hardware tier profile bytes into deformation samples, shader parameters, and deformation signals. That made proof/presentation metadata hardware-discrete.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Replaced the cached scalability profile byte with a continuous quality profile byte derived from health-capped `GlobalQualityWeight`. Removed the cold `GlobalRegistry.ScalabilityTierProfileByte` read and the scalability-tier SignalBus drain.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Dents, deformation uploads, and breach jets remain shader/GPU presentation lanes scaled by continuous quality. Structural stress and breach facts stay owner-local.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. Removed a cold registry read and one frame snapshot scan from the quality metadata route.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `ScalabilityProfile`, `ScalabilityTierProfileByte`, `GlobalRegistry.ScalabilityTierProfileByte`, or `ScalabilityChangedEvent` route in `HullIntegrityRuntime.cs`. Targeted `git diff --check` passed with line-ending warnings only.
+  </VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="VrSomaticGhostHandQualityContinuum">
+  <WHAT_WAS_WRONG>
+    `VRSomaticProvider` used cached quality tier and low-memory profile to disable ghost hands and tag black-box frames as low tier. This was a binary presentation/telemetry branch.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed scalability listener routing, cached hardware fields, low-tier flag output, and `IsLowTier`. Ghost-hand threshold now scales continuously from `GlobalQualityWeight`; `FormerlySerializedAs` preserves existing scene data.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Ghost hands are a presentation cue around physical hand targets. Low quality raises the separation threshold for showing the cue; hand kinematics and collision stay untouched.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. Two cold registry reads and one scalability event route were removed.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no runtime `Scalability`, cached tier, low-memory flag, `IsLowTier`, `BlackBoxFlagLowTier`, or hardware registry branch in `VRSomaticProvider.cs`; only the serialization migration string remains. Targeted `git diff --check` passed with line-ending warnings only.
+  </VERIFICATION>
+</SELF_AUDIT>
+
 <SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="VoxelBiomeSdfModifierAuthorityTierRemoval">
   <WHAT_WAS_WRONG>
     `HectonVoxelEngine` disabled biome SDF modifiers on Low/Mx350/Unknown tiers. That let hardware change voxel density and generated chunk content.

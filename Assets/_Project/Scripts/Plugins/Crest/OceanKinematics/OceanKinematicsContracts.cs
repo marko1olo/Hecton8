@@ -255,6 +255,21 @@ namespace Hecton8.Physics
             return -1;
         }
 
+        public static int OffsetOfQueueCounters(string fieldName)
+        {
+            if (fieldName == nameof(OceanKinematicsQueueCountersDTO.PackedCount)) return 0;
+            if (fieldName == nameof(OceanKinematicsQueueCountersDTO.DroppedCount)) return 4;
+            if (fieldName == nameof(OceanKinematicsQueueCountersDTO.DuplicateCount)) return 8;
+            if (fieldName == nameof(OceanKinematicsQueueCountersDTO.CacheHitCount)) return 12;
+            if (fieldName == nameof(OceanKinematicsQueueCountersDTO.CacheMissCount)) return 16;
+            if (fieldName == nameof(OceanKinematicsQueueCountersDTO.DepthCulledCount)) return 20;
+            if (fieldName == nameof(OceanKinematicsQueueCountersDTO.ActiveOctaves)) return 24;
+            if (fieldName == nameof(OceanKinematicsQueueCountersDTO.NonFiniteCount)) return 28;
+            if (fieldName == nameof(OceanKinematicsQueueCountersDTO.ResultHash)) return 32;
+            if (fieldName == nameof(OceanKinematicsQueueCountersDTO.ResultNonFiniteCount)) return 36;
+            return -1;
+        }
+
         private static bool ValidateInternal()
         {
             return UnsafeUtility.SizeOf<FluidSampleResultDTO>() == OceanKinematicsConstants.FluidSampleResultBytes &&
@@ -267,6 +282,9 @@ namespace Hecton8.Physics
                    UnsafeUtility.SizeOf<OceanMacroStateDTO>() == OceanKinematicsConstants.MacroStateBytes &&
                    UnsafeUtility.SizeOf<OceanCachedFluidSampleDTO>() == OceanKinematicsConstants.CachedSampleBytes &&
                    UnsafeUtility.SizeOf<OceanKinematicsQueueCountersDTO>() == OceanKinematicsConstants.QueueCountersBytes &&
+                   OffsetOfQueueCounters(nameof(OceanKinematicsQueueCountersDTO.PackedCount)) == 0 &&
+                   OffsetOfQueueCounters(nameof(OceanKinematicsQueueCountersDTO.ResultHash)) == 32 &&
+                   OffsetOfQueueCounters(nameof(OceanKinematicsQueueCountersDTO.ResultNonFiniteCount)) == 36 &&
                    UnsafeUtility.SizeOf<OceanKinematicsRollbackFenceDTO>() == OceanKinematicsConstants.RollbackFenceBytes &&
                    UnsafeUtility.SizeOf<OceanKinematicsTelemetryEntry>() == OceanKinematicsConstants.TelemetryBytes &&
                    OffsetOfFluidSampleResult(nameof(FluidSampleResultDTO.WaterHeight)) == 0 &&

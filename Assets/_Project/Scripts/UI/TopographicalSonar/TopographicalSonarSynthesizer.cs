@@ -513,6 +513,7 @@ namespace Hecton8.UI
         private const string OwnerName = "SHINOBU_144";
         private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_SONAR_SYNTHESIZER.bin";
         private const float TelemetryTimeoutMilliseconds = 20f;
+        private const float SonarClockMaxSeconds = 16777215f;
 
         private static readonly int SonarPointsId = Shader.PropertyToID("_SonarPoints");
         private static readonly int SonarGlobalsId = Shader.PropertyToID("HectonTopographicalSonarGlobals");
@@ -564,6 +565,7 @@ namespace Hecton8.UI
         private int _sequence;
         private int _telemetryWriteIndex;
         private float _pendingIntensity01 = 1f;
+        private float _sonarClockSeconds;
         private float _lastPingTimeSeconds;
         private float _lastScheduledPingTimeSeconds = -1000f;
         private float _lastScanWallMilliseconds;
@@ -723,7 +725,7 @@ namespace Hecton8.UI
             if (_pendingPing != 0)
             {
                 float quality = ResolveQualityWeight();
-                float now = Time.time;
+                float now = ResolveSonarClockSeconds();
                 if (now - _lastScheduledPingTimeSeconds < ResolveMinimumPingIntervalSeconds(quality))
                     return;
 
@@ -736,6 +738,8 @@ namespace Hecton8.UI
 
         public void Render(float deltaTime)
         {
+            AdvanceSonarClock(deltaTime);
+
             if (scheduleCpuFadeJob)
                 TryScheduleFadeJob(deltaTime);
 
@@ -1038,7 +1042,7 @@ namespace Hecton8.UI
             _scanHandle = compactJob.Schedule(rayHandle);
             _scanJobScheduled = 1;
             _sequence++;
-            _lastPingTimeSeconds = Time.time;
+            _lastPingTimeSeconds = scheduleTimeSeconds;
             _lastScheduledPingTimeSeconds = scheduleTimeSeconds;
             _lastTelemetryFlags = flags;
             _lastSdfOrigin = volumeOrigin;
@@ -1304,6 +1308,19 @@ namespace Hecton8.UI
             return math.saturate(HomeostasisBrain.GlobalQualityWeight);
         }
 
+        private void AdvanceSonarClock(float deltaTime)
+        {
+            if (!math.isfinite(deltaTime) || deltaTime <= 0f)
+                return;
+
+            _sonarClockSeconds = math.min(SonarClockMaxSeconds, _sonarClockSeconds + deltaTime);
+        }
+
+        private float ResolveSonarClockSeconds()
+        {
+            return _sonarClockSeconds;
+        }
+
         private int ResolveRayCount(float quality)
         {
             return math.clamp(
@@ -1394,7 +1411,7 @@ namespace Hecton8.UI
             TopographicalSonarShaderGlobalsDTO globals = new TopographicalSonarShaderGlobalsDTO
             {
                 CameraRuntimeAndPointSize = new float4(cameraPosition.x, cameraPosition.y, cameraPosition.z, math.max(0.2f, pointSizePixels)),
-                PingSignal = new float4(math.max(0f, Time.time - _lastPingTimeSeconds), math.max(0.001f, echoFadeSeconds), math.max(0.05f, _pendingIntensity01), _activePointCount),
+                PingSignal = new float4(math.max(0f, ResolveSonarClockSeconds() - _lastPingTimeSeconds), math.max(0.001f, echoFadeSeconds), math.max(0.05f, _pendingIntensity01), _activePointCount),
                 RenderParams0 = new float4(math.saturate(opacity), math.max(0.0001f, depthFadeMeters), math.max(1f, maxDistanceMeters), quality),
                 RenderParams1 = new float4((float)pingCameraLocal.x, (float)pingCameraLocal.y, (float)pingCameraLocal.z, (float)_lastTelemetryFlags)
             };

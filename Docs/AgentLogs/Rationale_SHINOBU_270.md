@@ -427,7 +427,7 @@ Problem: The fail-open watchdog patch changed renderer lifetime/control flow and
 Solution: Re-ran the targeted forbidden-token scan, diff whitespace check, generated-project inclusion check, compiler-process gate, and CPU gate. The scan returned no visor/UI/shader risk-token hits. `git diff --check` reported only Git LF-to-CRLF warnings. `Hecton8.Core.csproj` still contains `SuitHUDV4CanvasOverlay.cs`, `ARWaypointOverlay.cs`, and `HectonVisorFluidDistortionFeature.cs`, but not `HectonVisorARStencilRendererFeature.cs` or `HectonVisorStencilPreviewGizmo.cs`.
 Rejected Alternatives: Launching `dotnet build` while active `csc.exe`/`dotnet.exe`/`VBCSCompiler.exe` processes exist, manually editing the generated `.csproj`, or treating stale generated project coverage as compile proof.
 Scalability potential: Runtime route unchanged: Low fail-opens to Canvas only when RenderGraph proof is absent; Middle/High/Ultra keep shader-side visor overkill once proof exists.
-Hardware Impact: Runtime 0 us. Build was not launched because active compilers were present and CPU sampled 100% by CIM plus processor counter; this protects shared IO/CPU and keeps compile proof PENDING VERIFICATION.
+Hardware Impact: Runtime 0 us. Build was not launched because active compilers were present. Initial gate sampled 100% CPU with `csc.exe`/`dotnet.exe`/`VBCSCompiler.exe`; later gate still had active `dotnet.exe`/`VBCSCompiler.exe` and a 51.50% processor counter sample. This protects shared IO/CPU and keeps compile proof PENDING VERIFICATION.
 
 ### D053 Generated Project Coverage Gate
 

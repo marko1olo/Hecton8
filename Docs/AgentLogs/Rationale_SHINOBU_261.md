@@ -458,6 +458,42 @@ Rejected Alternatives: Pretending to have applied a missing polish document was 
 Scalability potential: Runtime behavior unchanged.
 Hardware Impact: 0 runtime us.
 
+Problem: `Water_Interface_Scanner` generated a field named `forbiddenRuntimePatternsFoundInOwnedPath=0`, but its own `ShouldSkip()` excludes `Assets/_Project/Scripts/Plugins/Crest`. That field falsely implied the scanner had audited SHINOBU_261-owned Crest/OceanKinematics source.
+Solution: Replaced the field with `ownedPathScanPerformed=false`, an explicit reason, and the legacy-facade boundary. The scanner now states that Task 19 measures external Player/Flora callers only; owned runtime forbidden-pattern proof remains the separate scoped static gate over `Crest4KinematicsAdapter.cs` and `OceanKinematics`.
+Rejected Alternatives: Expanding the editor scanner into owned Crest code was rejected because Task 19's report purpose is external OOP caller discovery; the owned path already has stricter runtime scans. Leaving the zero-count field was rejected as false evidence.
+Scalability potential: Runtime unchanged. Proof now separates the scalable Vault/Burst route from the remaining Player/Flora migration debt without changing quality curves.
+Hardware Impact: 0 runtime us. This is proof-artifact correction only.
+
+Problem: `OceanKinematicsSelfAuditReport` claimed layout/static safety without carrying the 64-byte QueueCounters offset map that now owns result-hash and non-finite proof counters.
+Solution: Widened the self-audit report to 128 bytes, added QueueCounters size/offset/pad fields, recorded the owned Vault BufferID range, and added a `FlagStaticProofOnly` bit so the report cannot be mistaken for profiler/runtime evidence.
+Rejected Alternatives: Keeping a 64-byte self-audit was rejected because it hid the QueueCounters ABI. Claiming runtime/profiler proof from static flags was rejected; Unity/Burst/profiler proof remains pending.
+Scalability potential: Runtime DTOs and GlobalQualityWeight behavior unchanged. Low through Ultra use the same 64-byte QueueCounters lane; quality scales math work, not proof layout or authority route.
+Hardware Impact: Runtime: 0 us; self-audit is cold/static. QueueCounters false-sharing proof remains one 64-byte cache-line lane.
+
+Problem: Task 10 was marked done even though SHINOBU_261 only provides a facade over caller-owned `NativeQueue<T>` and does not own the global producer-fence contract.
+Solution: Downgraded Task 10 to partial/dispatcher-producer-fence pending in `Status_SHINOBU_261.md`. Current correctness requires callers to pass producer `JobHandle`s into the queued schedule route.
+Rejected Alternatives: Inventing a new cross-domain request queue owner was rejected without route-card/integrator approval. Reading `NativeQueue.Count` on the main thread was rejected under unresolved producer dependencies.
+Scalability potential: Current batch drain/evaluator path remains continuous-quality and scalable after producer fences are supplied; no binary quality tier was introduced.
+Hardware Impact: Runtime unchanged in this patch. The task state now matches the current architecture instead of overclaiming.
+
+Problem: A legal full-solution build attempt failed after the CPU/process gate opened, but the failing errors are outside SHINOBU_261 ownership.
+Solution: Recorded the exact failure as a compile-wall outside the ocean kinematics lane: missing `HectonMaterialChannelPackValidator`, duplicate `HectonPhysicsContract` in two editor files, and duplicate `SignalLaneTelemetry` in `SignalTrafficMonitorWindow`.
+Rejected Alternatives: Patching editor/core files from the SHINOBU_261 lane was rejected as cross-domain scope violation. Relaunching the same full build without those external fixes was rejected as wasted IO.
+Scalability potential: Runtime unchanged.
+Hardware Impact: 0 runtime us. Build contention is avoided until a targeted SHINOBU_261 compile or integrator fix is justified by the gate.
+
+Problem: The scanner/self-audit proof repair changed C# and JSON/doc artifacts after the previous static gate.
+Solution: Re-ran root and sidecar JSON parsing, scoped comment/string-aware brace balance, runtime forbidden-pattern scan, and scoped diff whitespace. The SHINOBU_261 root block now reports `ownedPathScanPerformed=false`, `scannedScripts=2178`, and four external managed water-query findings.
+Rejected Alternatives: Treating proof edits as harmless without parse/brace gates was rejected because the shared report has already drifted under concurrent agents. Launching a targeted build was rejected because active `csc`/`dotnet` processes were present even though CPU averaged 29.
+Scalability potential: Runtime behavior unchanged. Static proof now aligns the low/mid/high/ultra route story: continuous quality in Burst jobs, no scanner-owned runtime-path claim.
+Hardware Impact: 0 runtime us. Build contention avoided under the active process gate.
+
+Problem: The final proof repair introduced new cold ABI fields, and a broad scan would not prove the exact compile-shape anchors existed.
+Solution: Ran focused source-shape scans for `OffsetOfQueueCounters`, `QueueCountersSize`, `QueueCountersPadBytes`, `FlagStaticProofOnly`, `VaultBufferIdMax`, `StructLayout(Size = 128)`, 128-byte tail padding, 64-byte QueueCounters tail padding, and SHINOBU_261 root false-field removal.
+Rejected Alternatives: Calling the broad forbidden scan sufficient was rejected because it cannot prove positive ABI anchors. Running compile remained blocked by active compiler processes.
+Scalability potential: Runtime unchanged; positive proof anchors document fixed ABI while continuous `GlobalQualityWeight` remains the only fidelity scaler.
+Hardware Impact: 0 runtime us.
+
 Problem: The SHINOBU_261 sidecar report carried the current scanner proof (`scannedScripts=2178`, four legacy Player/Flora findings), but the shared `PHYSICS_OPTIMIZATION_REPORT.json` SHINOBU_261 block still had an empty `scannedScripts` field and omitted the concrete finding array.
 Solution: Mirrored the sidecar proof fields into the shared root block: generation route, scan scope, script count, four explicit findings, and a stable compile-proof pointer to `Status_SHINOBU_261.md`. Revalidated root/sidecar JSON after the patch.
 Rejected Alternatives: Leaving the shared root as a weaker stale summary was rejected because CTO-facing aggregate reports must not contradict dedicated sidecars. Re-running the Unity menu scanner was rejected because CPU/build/editor gate is closed.

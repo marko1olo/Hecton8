@@ -288,3 +288,15 @@ Cinematic Cheats used: Existing fish panic remains a GPU fake: one acoustic shoc
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped from `unityTimeRiskGameplayWallClock=48` to `45`, and from `unityTimeWallClock=83` to `80`. `unityTimeCritical` is now `926`.
 
 Evidence: Focused `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/HectonBoidController.cs` returns no rows. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_boid_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_boid_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=926`, `unityTimeWallClock=80`, and `unityTimeRiskGameplayWallClock=45`. `git diff --check -- Assets/_Project/Scripts/HectonBoidController.cs` reports only LF-to-CRLF warning. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Topographical Sonar Owner Clock
+
+What was wrong: `TopographicalSonarSynthesizer` used `Time.time` for ping cooldown, scan start timestamp, and shader `PingSignal.x` age. `Hecton_SonarPoint.shader` consumes `PingSignal.x` directly as ping age, so this was owner-time debt, not a Unity shader `_Time` bridge.
+
+What was done: Added bounded `_sonarClockSeconds`, advanced from `Render(float deltaTime)` before render early returns. Late-frame ping cadence, `_lastPingTimeSeconds`, `_lastScheduledPingTimeSeconds`, and shader-global ping age now use `ResolveSonarClockSeconds()`.
+
+Cinematic Cheats used: Existing topographical sonar remains a fake: ping-scheduled Burst SDF raymarch, compact hit buffer, point-cloud indirect draw, and GPU point fade replace continuous terrain physics or acoustic propagation.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped from `unityTimeCritical=926` to `923`, from `unityTimeWallClock=80` to `77`, and from `unityTimeRiskGameplayWallClock=45` to `42`.
+
+Evidence: Focused `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/UI/TopographicalSonar/TopographicalSonarSynthesizer.cs` returns no rows. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_topographical_sonar_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_topographical_sonar_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=923`, `unityTimeWallClock=77`, and `unityTimeRiskGameplayWallClock=42`. `git diff --check -- Assets/_Project/Scripts/UI/TopographicalSonar/TopographicalSonarSynthesizer.cs` reports only LF-to-CRLF warning. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

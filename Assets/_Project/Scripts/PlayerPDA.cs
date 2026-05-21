@@ -647,6 +647,7 @@ namespace Hecton8.UI
         private const float CraftCancelledClickPitch = 0.74f;
         private const float CraftFailedClickPitch = 0.58f;
         private const float CraftClickVolumeScale = 0.86f;
+        private const float PdaClockMaxSeconds = 16777215f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — REFERENCES
@@ -768,6 +769,7 @@ namespace Hecton8.UI
         private bool _isFading;
 
         // Battery drain
+        private float _pdaClockSeconds;
         private float _openStartTime;
         private float _batteryDrainAccumulator;
         private bool _lowBatteryWarningPlayed;
@@ -1169,6 +1171,7 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
+            AdvancePdaClock(deltaTime);
             ConsumePlayerInputSignals();
             ApplyHeadlessUIState();
 
@@ -1256,7 +1259,7 @@ namespace Hecton8.UI
                 return;
 
             IsOpen = true;
-            _openStartTime = Time.time;
+            _openStartTime = ResolvePdaClockSeconds();
             _batteryDrainAccumulator = 0f;
             _lowBatteryWarningPlayed = false;
 
@@ -1288,7 +1291,7 @@ namespace Hecton8.UI
         {
             if (!IsOpen) return;
 
-            float duration = Time.time - _openStartTime;
+            float duration = ResolvePdaOpenDurationSeconds();
 
             IsOpen = false;
             SystemDispatcher.RequestPdaDepthOfField(false);
@@ -1345,7 +1348,7 @@ namespace Hecton8.UI
         {
             if (!IsOpen) return;
 
-            float duration = Time.time - _openStartTime;
+            float duration = ResolvePdaOpenDurationSeconds();
 
             IsOpen = false;
             SystemDispatcher.RequestPdaDepthOfField(false);
@@ -1715,11 +1718,29 @@ namespace Hecton8.UI
         //  PRIVATE — DIAGNOSTICS
         // ══════════════════════════════════════════════════════════
 
+        private void AdvancePdaClock(float deltaTime)
+        {
+            if (!math.isfinite(deltaTime) || deltaTime <= 0f)
+                return;
+
+            _pdaClockSeconds = math.min(PdaClockMaxSeconds, _pdaClockSeconds + deltaTime);
+        }
+
+        private float ResolvePdaClockSeconds()
+        {
+            return _pdaClockSeconds;
+        }
+
+        private float ResolvePdaOpenDurationSeconds()
+        {
+            return math.max(0f, ResolvePdaClockSeconds() - _openStartTime);
+        }
+
         private void UpdateDiagnostics()
         {
             _debugIsOpen = IsOpen;
             _debugActiveTab = _activeTab;
-            _debugOpenDuration = IsOpen ? Time.time - _openStartTime : 0f;
+            _debugOpenDuration = IsOpen ? ResolvePdaOpenDurationSeconds() : 0f;
             _debugCurrentAlpha = _currentAlpha;
             _debugBatteryDrainAccum = _batteryDrainAccumulator;
             _debugTabHistoryDepth = _tabHistoryCount;

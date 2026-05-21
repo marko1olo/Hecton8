@@ -171,7 +171,7 @@ namespace Hecton8.Habitat.Deformation
         private int _pendingDentCap;
         private int _pendingHealthState;
         private float _pendingQualitySeconds;
-        private byte _cachedScalabilityProfileByte;
+        private byte _cachedQualityProfileByte;
         private int _activeModuleCount;
         private int _registeredUpdate;
         private int _registeredLate;
@@ -209,7 +209,7 @@ namespace Hecton8.Habitat.Deformation
 
         private void Awake()
         {
-            CacheColdScalabilityProfile();
+            CacheColdQualityProfile();
             _cachedGlobalQualityWeight = ResolveGlobalQualityWeight();
             _cachedDentCap = ResolveDentCap(_cachedGlobalQualityWeight);
             _cachedShaderDentLimit = ResolveShaderDentLimit(_cachedGlobalQualityWeight, DefaultVisualOverkillLimit);
@@ -555,7 +555,7 @@ namespace Hecton8.Habitat.Deformation
                 module.LocalCenter,
                 module.Stress01,
                 module.PeakStress01,
-                _cachedScalabilityProfileByte);
+                _cachedQualityProfileByte);
             return true;
         }
 
@@ -712,7 +712,7 @@ namespace Hecton8.Habitat.Deformation
             if (!ValidateLayouts())
                 return false;
 
-            CacheColdScalabilityProfile();
+            CacheColdQualityProfile();
             _cachedDentCap = ResolveDentCap(_cachedGlobalQualityWeight);
             _cachedShaderDentLimit = ResolveShaderDentLimit(_cachedGlobalQualityWeight, DefaultVisualOverkillLimit);
             _cachedHealthState = HealthStateNominal;
@@ -1252,7 +1252,7 @@ namespace Hecton8.Habitat.Deformation
                 SourceId = (ushort)(BreachSignalHash & 0xFFFFu),
                 Flags = BaseModuleCompromisedSignal.MaxDeformationFlag,
                 StressIndex = (byte)math.min(255, moduleIndex),
-                QualityTier = _cachedScalabilityProfileByte
+                QualityTier = _cachedQualityProfileByte
             };
 
             SignalBus<BaseModuleCompromisedSignal>.Push(in compromised);
@@ -1394,7 +1394,7 @@ namespace Hecton8.Habitat.Deformation
             _gpuReadIndex = writeIndex;
             GraphicsBuffer readBuffer = _gpuReadIndex == 0 ? _dentBufferA : _dentBufferB;
             float maxDepth = ResolveMaxDentDepth(dents, _cachedDentCap);
-            Vector4 dtoParams = new Vector4(activeCount, activeCount > 0 ? 1f : 0f, maxDepth, _cachedScalabilityProfileByte);
+            Vector4 dtoParams = new Vector4(activeCount, activeCount > 0 ? 1f : 0f, maxDepth, _cachedQualityProfileByte);
 
             if (_lastUploadedDentCount != activeCount || _lastDentParams != dtoParams)
             {
@@ -1725,8 +1725,6 @@ namespace Hecton8.Habitat.Deformation
 
         private void DrainQualitySignals(float deltaTime, in HullIntegrityTuningDTO tuning)
         {
-            DrainScalabilityProfileSignals();
-
             float healthPressure01 = ResolveHealthPressure01(out int healthState);
             float qualityWeight = ResolveGlobalQualityWeight();
             float warningRamp = math.smoothstep(0.25f, 0.65f, healthPressure01);
@@ -1736,18 +1734,10 @@ namespace Hecton8.Habitat.Deformation
             qualityWeight = math.min(qualityWeight, healthCeiling);
 
             _cachedGlobalQualityWeight = math.saturate(qualityWeight);
+            _cachedQualityProfileByte = ResolveQualityProfileByte(_cachedGlobalQualityWeight);
             _cachedShaderDentLimit = ResolveShaderDentLimit(_cachedGlobalQualityWeight, tuning.VisualOverkillLimit);
             int desiredCap = ResolveDentCap(_cachedGlobalQualityWeight);
             ApplyDentQualityWithHysteresis(desiredCap, healthState, deltaTime);
-        }
-
-        private void DrainScalabilityProfileSignals()
-        {
-            ReadOnlySpan<ScalabilityChangedEvent> profileSignals = SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();
-            if (profileSignals.Length == 0)
-                return;
-
-            _cachedScalabilityProfileByte = ScalabilityTierProfiles.Normalize(profileSignals[profileSignals.Length - 1].CurrentTier);
         }
 
         private static float ResolveHealthPressure01(out int healthState)
@@ -1814,10 +1804,10 @@ namespace Hecton8.Habitat.Deformation
             _pendingQualitySeconds = 0f;
         }
 
-        private void CacheColdScalabilityProfile()
+        private void CacheColdQualityProfile()
         {
-            _cachedScalabilityProfileByte = ScalabilityTierProfiles.Normalize(GlobalRegistry.ScalabilityTierProfileByte);
             _cachedGlobalQualityWeight = ResolveGlobalQualityWeight();
+            _cachedQualityProfileByte = ResolveQualityProfileByte(_cachedGlobalQualityWeight);
         }
 
         private static int ResolveDentCap(float globalQualityWeight)
@@ -1849,6 +1839,12 @@ namespace Hecton8.Habitat.Deformation
         {
             float weight = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.select(1f, weight, math.isfinite(weight)));
+        }
+
+        private static byte ResolveQualityProfileByte(float qualityWeight)
+        {
+            float q = math.saturate(math.select(1f, qualityWeight, math.isfinite(qualityWeight)));
+            return (byte)math.clamp((int)math.round(q * byte.MaxValue), 0, byte.MaxValue);
         }
 
         private Transform ResolveDentRoot()
@@ -1974,7 +1970,7 @@ namespace Hecton8.Habitat.Deformation
                 SourceId = (ushort)(source.SourceHash & 0xFFFFu),
                 ActiveDentCount = (byte)math.min(255, activeDents),
                 Flags = 0,
-                QualityTier = _cachedScalabilityProfileByte,
+                QualityTier = _cachedQualityProfileByte,
                 Channel = 0,
                 DamageType = source.DamageType
             };

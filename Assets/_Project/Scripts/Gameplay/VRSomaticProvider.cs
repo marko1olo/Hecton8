@@ -1820,10 +1820,11 @@ namespace Hecton8.Gameplay
             if (!HandTargets.IsCreated || !HandPhysicalPositions.IsCreated)
                 return 0u;
 
+            float baseThreshold = SanitizeMinimum(ghostHandDistanceMeters, 0.01f);
             float qualityCurve = Smoothstep01(_globalQualityWeight01);
-            float qualitySuppression = reduceGhostHandsAtLowQuality ? 1f - qualityCurve : 0f;
-            float threshold = SanitizeMinimum(ghostHandDistanceMeters, 0.01f) * math.lerp(2.5f, 1f, qualityCurve);
-            threshold = math.lerp(threshold, SanitizeMinimum(ghostHandDistanceMeters, 0.01f), 1f - qualitySuppression);
+            float threshold = reduceGhostHandsAtLowQuality
+                ? baseThreshold * math.lerp(2.5f, 1f, qualityCurve)
+                : baseThreshold;
             float thresholdSq = threshold * threshold;
             uint mask = 0u;
             for (int i = 0; i < HandCount; i++)

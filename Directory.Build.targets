@@ -300,10 +300,7 @@
     <Compile Include="Assets\_Project\Scripts\Editor\GeologyForge\GeologyProfileCsv.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Editor\GeologyForge\GeologyProfileCsv.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Editor\GeologyForge\GeologyVertexLayoutValidator.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Editor\GeologyForge\GeologyVertexLayoutValidator.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Editor\GeologyForge\RuntimeMeshGenerationScanner.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Editor\GeologyForge\RuntimeMeshGenerationScanner.cs'))" />
-    <Reference Include="Hecton8.Core.Contracts" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Core.Contracts.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.Core.Contracts'))">
-      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Core.Contracts.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
+    <Compile Include="Assets\_Project\Scripts\Editor\TextureChannelPacker\HectonMaterialChannelPackValidator.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Editor\TextureChannelPacker\HectonMaterialChannelPackValidator.cs'))" />
     <Reference Include="Unity.Collections" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Unity.Collections.dll') And !$([System.String]::Copy('@(Reference)').Contains('Unity.Collections'))">
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Unity.Collections.dll</HintPath>
       <Private>False</Private>

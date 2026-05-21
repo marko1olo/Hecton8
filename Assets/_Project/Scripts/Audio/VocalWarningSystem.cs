@@ -4,7 +4,6 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
-using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Core.Memory;
 using Hecton8.UI;
 using Unity.Collections;
@@ -84,9 +83,8 @@ namespace Hecton8.Audio
         private int _nativeAllocated;
         private int _telemetryDumpRequested;
         private int _telemetryDumped;
-        private int _lastScalabilitySignalFrame = -4096;
         private SubtitleManager _subtitles;
-        private HectonQualityTier _qualityTier = HectonQualityTier.Unknown;
+        private float _globalQualityWeight01 = 1f;
         private float _warningPlaybackRemainingSeconds;
         private byte _currentWarningId;
 
@@ -158,7 +156,7 @@ namespace Hecton8.Audio
             if (Volatile.Read(ref _nativeAllocated) == 0)
                 return;
 
-            ConsumeScalabilitySignals();
+            _globalQualityWeight01 = ResolveGlobalQualityWeight01();
             DrainSignals();
             _warningPlaybackRemainingSeconds = math.max(0f, _warningPlaybackRemainingSeconds - math.max(0f, deltaTime));
             PollRendererState();
@@ -232,26 +230,6 @@ namespace Hecton8.Audio
                 return;
 
             ClearQueuedWarnings();
-        }
-
-        private void HandleScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _qualityTier = payload.CurrentQualityTier;
-        }
-
-        private void ConsumeScalabilitySignals()
-        {
-            int frame = Time.frameCount;
-            if (_lastScalabilitySignalFrame == frame)
-                return;
-
-            _lastScalabilitySignalFrame = frame;
-            ReadOnlySpan<ScalabilityChangedEvent> signals = SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();
-            for (int i = 0; i < signals.Length; i++)
-            {
-                ScalabilityChangedEvent payload = signals[i];
-                HandleScalabilityChanged(in payload);
-            }
         }
 
         /// <inheritdoc />
@@ -427,7 +405,7 @@ namespace Hecton8.Audio
         private void RefreshCachedServicesCold()
         {
             _subtitles = GlobalRegistry.Subtitles;
-            _qualityTier = GlobalRegistry.ScalabilityTier;
+            _globalQualityWeight01 = ResolveGlobalQualityWeight01();
         }
 
         private void TryRegisterHotSwapListener()
@@ -580,7 +558,7 @@ namespace Hecton8.Audio
             if (active && !preempt)
                 return;
 
-            bool radioDegrade = ShouldUseRadioDegradation(ref views, nextId);
+            float radioDistortion01 = ResolveRadioDistortion01(ref views, nextId);
             float durationSeconds = EstimateWarningDurationSeconds(ref views, nextId);
             uint hash = VocalWarningHashes.FromWarningId(nextId);
             if (hash != 0u)
@@ -590,7 +568,7 @@ namespace Hecton8.Audio
                 cue.Priority = 255 - nextId;
                 cue.VolumeScalar = voiceGain;
                 cue.PlaybackSpeed = 1f;
-                cue.RadioDistortion01 = radioDegrade ? 0.72f : 0.38f;
+                cue.RadioDistortion01 = radioDistortion01;
                 cue.SpatialBlend01 = 0f;
                 cue.Flags = preempt ? 1u : 0u;
                 GlobalSignals.Publish(in cue);
@@ -633,17 +611,27 @@ namespace Hecton8.Audio
             subtitles.DisplaySubtitle(unchecked((int)hash), fallback.AsSpan(), duration);
         }
 
-        private bool ShouldUseRadioDegradation(ref VwsVaultViews views, byte warningId)
+        private float ResolveRadioDistortion01(ref VwsVaultViews views, byte warningId)
         {
             NativeArray<byte> warningFlags = views.WarningFlags;
             byte flags = warningFlags.IsCreated && warningId < warningFlags.Length ? warningFlags[warningId] : (byte)0;
             if ((flags & VocalWarningSignalFlags.HabitatIntegrityCompromised) == 0)
-                return false;
+                return 0.38f;
 
-            HectonQualityTier tier = _qualityTier;
-            return tier != HectonQualityTier.Low &&
-                   tier != HectonQualityTier.Mx350 &&
-                   tier != HectonQualityTier.Unknown;
+            float qualityCurve = SmoothQuality01(_globalQualityWeight01);
+            return math.lerp(0.38f, 0.72f, qualityCurve);
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float value = Hecton8.Gameplay.HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, value, math.isfinite(value)));
+        }
+
+        private static float SmoothQuality01(float quality)
+        {
+            float t = math.saturate(math.select(1f, quality, math.isfinite(quality)));
+            return t * t * (3f - 2f * t);
         }
 
         private float EstimateWarningDurationSeconds(ref VwsVaultViews views, byte warningId)

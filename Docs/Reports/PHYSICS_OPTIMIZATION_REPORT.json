@@ -116,7 +116,10 @@
       "requestDto": "OceanKinematicsSampleRequestDTO[50000] @ Vault 72940",
       "resultDto": "FluidSampleResultDTO[50000] @ Vault 72941",
       "cachedDearLie": "OceanCachedFluidSampleDTO[50000] @ Vault 72947",
-      "forbiddenRuntimePatternsFoundInOwnedPath": 0
+      "ownedPathScanPerformed": false,
+      "ownedPathScanReason": "Water_Interface_Scanner excludes Plugins/Crest so Task 19 measures external callers only; owned runtime forbidden patterns are verified by SHINOBU_261 scoped static gates.",
+      "ownedAdapterLegacyFacadeAllowed": true,
+      "ownedAdapterLegacyFacadeRoute": "Crest4KinematicsAdapter retains managed single-sample compatibility facades until Player/Flora migration; hot-path authority is the Vault-backed batch route."
     },
     "directOceanRendererLookups": 0,
     "managedWaterQueries": 4,

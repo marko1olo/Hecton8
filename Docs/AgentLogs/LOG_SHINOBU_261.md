@@ -563,7 +563,7 @@ Exact Microseconds saved -> Runtime: 0 us. The cold clear was already implemente
 </SELF_AUDIT_REVISION>
 
 <SELF_AUDIT_REVISION agent="SHINOBU_261" revision="adjacent_crest_bridge_owner_boundary_audit_2026_05_21">
-  <prompt_recheck status="[PASS_STATIC]">Attribute-aware XML extraction found SHINOBU_261 prompt with 19125 chars and 20 task tags.</prompt_recheck>
+  <prompt_recheck status="[PASS_STATIC]">Attribute-aware XML extraction found SHINOBU_261 prompt with 19125 chars, 20 `Task NN:` lines, and zero `<TASK>` tags.</prompt_recheck>
   <adjacent_file status="[OWNER_SHINOBU_260]">`CrestOceanRuntimeAdapter.cs` is documented in SHINOBU_260 status/rationale/log and was not patched by SHINOBU_261.</adjacent_file>
   <scoped_runtime status="[PASS_STATIC]">SHINOBU_261 forbidden scan remains scoped to `Crest4KinematicsAdapter.cs` plus `OceanKinematics` files.</scoped_runtime>
 </SELF_AUDIT_REVISION>
@@ -687,3 +687,57 @@ What was wrong: shared report proof had just been edited and required a source-l
 What was done: root and sidecar reports parse; root SHINOBU_261 block reports `scannedScripts=2178` and four findings; runtime forbidden-pattern scan returned `RUNTIME_CORE_FORBIDDEN_CLEAR_CASE_SENSITIVE_TRIG`; stale-token scan returned `STALE_TOKENS_CLEAR`; scoped `git diff --check` returned `GIT_DIFF_CHECK_OK`.
 Cinematic Cheats used: none.
 Exact Microseconds saved: 0 runtime us. Build not launched: CPU average 88 with active `csc` (`Id=38140`) and `dotnet` (`Id=41340`).
+
+## Proof Patch: Scanner And Self-Audit Truth Repair
+What was wrong: `Water_Interface_Scanner` reported `forbiddenRuntimePatternsFoundInOwnedPath=0` while explicitly excluding `Plugins/Crest`, and `OceanKinematicsSelfAuditReport` did not carry QueueCounters ABI fields after the counter lane became the result-hash proof path.
+What was done: patched the scanner generator, SHINOBU_261 sidecar, and shared root report to mark `ownedPathScanPerformed=false` with the exact route boundary. Widened `OceanKinematicsSelfAuditReport` to 128 bytes and added QueueCounters size/offset/pad fields plus `FlagStaticProofOnly`.
+Cinematic Cheats used: none in this proof patch. The existing Dear Lie remains the previous-frame cached water sample route.
+Exact Microseconds saved: Runtime 0 us. This removes false evidence and expands cold self-audit coverage only.
+
+<SELF_AUDIT_SUPERSESSION id="SHINOBU_261_SUPERSEDE_INITIAL_PASS_2026_05_22">
+  <supersedes block="initial SELF_AUDIT pass-class Task 01/10/19 language" reason="newer scanner/queue evidence is stricter than the early audit block" />
+  <task id="01" status="[PARTIAL_BLOCKED_BY_OWNER_BOUNDARY]">SHINOBU_261 owns the flat Vault/Burst batch route; four Player/Flora legacy managed water-query callers still block whole-project eradication.</task>
+  <task id="10" status="[PARTIAL_DISPATCHER_PRODUCER_FENCE_PENDING]">Current MPSC facade uses caller-owned `NativeQueue&lt;OceanKinematicsSampleRequestDTO&gt;`; global producer-fence ownership remains dispatcher/integrator work.</task>
+  <task id="19" status="[FAIL_BLOCKED_BY_DEPENDENCY]">Current scanner proof remains `oopWaterQueriesEradicated=false` with callers at `HectonPlayerMovement.cs:6924`, `:6932`, `:6984`, and `FloraInteractionManager.cs:7014`.</task>
+  <scanner_proof status="[CORRECTED]">`Water_Interface_Scanner` measures external callers only; owned Crest/OceanKinematics runtime proof remains the scoped forbidden-pattern gate, not the scanner.</scanner_proof>
+  <self_audit_layout name="OceanKinematicsSelfAuditReport" size="128">QueueCounters audit fields: `QueueCountersSize@36`, `PackedOffset@40`, `ResultHashOffset@44`, `ResultNonFiniteOffset@48`, `QueueCountersPadBytes@52`; static proof flag is explicit.</self_audit_layout>
+</SELF_AUDIT_SUPERSESSION>
+
+## Compile Gate Attempt: Full Solution
+What was wrong: the first permitted full solution compile failed before SHINOBU_261 can claim compile proof.
+What was done: ran `dotnet build .\Hecton8.slnx --no-restore` after the build gate opened. It exited 1 after ~76.9s on unrelated editor/core compile-wall errors.
+Cinematic Cheats used: none.
+Exact Microseconds saved: Runtime 0 us. Repeating the same full build without external fixes is rejected.
+Errors:
+- `Assets/_Project/Scripts/Editor/HectonAssetPipelineAudit.cs(51,13)`: missing `HectonMaterialChannelPackValidator`.
+- `Assets/_Project/Scripts/Core/Bridge/Editor/H8AupVisualizerEditor.cs(15,45)`: `HectonPhysicsContract` exists in both `Hecton8.Core.Contracts` and `Hecton8.Core`.
+- `Assets/_Project/Scripts/Core/Diagnostics/Visuals/Editor/ArchitectEyeBlackBoxTimelineViewer.cs(23,48)`: same `HectonPhysicsContract` duplicate.
+- `Assets/_Project/Scripts/Editor/SignalTrafficMonitorWindow.cs(19,29)`: `SignalLaneTelemetry` exists in both `Hecton8.Core.Contracts` and `Hecton8.Core`.
+
+<SELF_AUDIT_REVISION id="SHINOBU_261_COMPILE_WALL_2026_05_22">
+  <compile command="dotnet build .\Hecton8.slnx --no-restore" result="FAIL_OUTSIDE_SHINOBU_261" />
+  <scope status="[PRESERVED]">No non-ocean editor/core files were patched from the SHINOBU_261 lane.</scope>
+  <next_gate status="[PENDING]">Targeted SHINOBU_261 compile/static gates remain required after this proof patch, subject to CPU/process guard.</next_gate>
+</SELF_AUDIT_REVISION>
+
+## Verification: Post Scanner/Self-Audit Repair Static Gate
+What was wrong: the proof repair touched scanner C#, self-audit C#, root/sidecar JSON, and SHINOBU_261 logs/status.
+What was done: parsed root and sidecar JSON; verified the SHINOBU_261 root block has `ownedPathScanPerformed=false`, `scannedScripts=2178`, and four findings; ran scoped C# brace balance over the patched C# files; ran runtime forbidden-pattern scan over `Crest4KinematicsAdapter.cs` plus `OceanKinematics`; ran scoped diff whitespace.
+Cinematic Cheats used: none in this verification pass.
+Exact Microseconds saved: Runtime 0 us. This is static proof only.
+Build gate: CPU average 29, but active `csc` (`Id=11936`) and active `dotnet` processes (`Id=5880,6892,7448,27188,30128,31488,34312,37980`) were present; no targeted build launched.
+
+<SELF_AUDIT_REVISION id="SHINOBU_261_POST_SCANNER_SELFAUDIT_STATIC_GATE_2026_05_22">
+  <json root="PASS" sidecar="PASS" rootOwnedPathScanPerformed="false" rootFindings="4" />
+  <csharp_brace_scan scope="Water_Interface_Scanner/OceanKinematicsContracts/OceanKinematicsSelfAudit" result="PASS" />
+  <runtime_forbidden_scan scope="Crest4KinematicsAdapter plus OceanKinematics" result="PASS" />
+  <diff_check result="PASS_WARNINGS_ONLY" warning="LF will be replaced by CRLF" />
+  <compile_gate result="NOT_RUN" reason="active csc/dotnet processes despite CPU 29" />
+</SELF_AUDIT_REVISION>
+
+<SELF_AUDIT_REVISION id="SHINOBU_261_POST_REPAIR_SOURCE_SHAPE_2026_05_22">
+  <positive_anchor_scan result="PASS">`OffsetOfQueueCounters`, `QueueCountersSize`, `QueueCountersPadBytes`, `FlagStaticProofOnly`, `VaultBufferIdMax`, and explicit 128-byte self-audit layout anchors are present.</positive_anchor_scan>
+  <queue_counters_layout result="PASS">`OceanKinematicsQueueCountersDTO` remains explicit 64 bytes with final `_pad5@60`.</queue_counters_layout>
+  <scanner_root_false_field result="PASS">SHINOBU_261 root report block no longer contains `forbiddenRuntimePatternsFoundInOwnedPath`; other agents' root fields were left untouched.</scanner_root_false_field>
+  <compile_gate result="NOT_RUN" reason="active csc/dotnet process gate" />
+</SELF_AUDIT_REVISION>

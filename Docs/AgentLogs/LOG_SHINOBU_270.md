@@ -120,6 +120,7 @@ Post-watchdog gate:
 - Build not launched.
 - Active compiler processes were present: `csc.exe`, multiple `dotnet.exe` processes, and `VBCSCompiler.exe`.
 - CPU gate was closed: CIM CPU 100%; processor counter samples were effectively 100%.
+- Later gate still had active `dotnet.exe` and `VBCSCompiler.exe` rows; CPU samples were CIM 35% and processor counter 25.38%, 51.50%, 22.33%, so active compiler plus one over-threshold counter sample kept the build gate closed.
 - Compile remains PENDING VERIFICATION; Unity project regeneration/import is still required before external `dotnet build` covers the new SHINOBU_270 renderer scripts.
 
 ## 2026-05-22 - Generated Project Static Gate

@@ -84,13 +84,19 @@ namespace Hecton8.Physics.Editor
                                "  \"agent\": \"SHINOBU_261\",\n" +
                                "  \"scanner\": \"Water_Interface_Scanner\",\n" +
                                "  \"status\": \"" + status + "\",\n" +
+                               "  \"generatedWithoutUnity\": false,\n" +
+                               "  \"unityMenuRoute\": \"Hecton/Physics/Water Interface Scanner\",\n" +
+                               "  \"scanScope\": \"Assets/_Project/Scripts excluding Plugins/Crest\",\n" +
                                "  \"dedicatedReport\": \"" + SidecarReportPath + "\",\n" +
                                "  \"runtimeRouteProof\": {\n" +
                                "    \"adapter\": \"Crest4KinematicsAdapter\",\n" +
                                "    \"requestDto\": \"OceanKinematicsSampleRequestDTO[50000] @ Vault 72940\",\n" +
                                "    \"resultDto\": \"FluidSampleResultDTO[50000] @ Vault 72941\",\n" +
                                "    \"cachedDearLie\": \"OceanCachedFluidSampleDTO[50000] @ Vault 72947\",\n" +
-                               "    \"forbiddenRuntimePatternsFoundInOwnedPath\": 0\n" +
+                               "    \"ownedPathScanPerformed\": false,\n" +
+                               "    \"ownedPathScanReason\": \"Water_Interface_Scanner excludes Plugins/Crest so Task 19 measures external callers only; owned runtime forbidden patterns are verified by SHINOBU_261 scoped static gates.\",\n" +
+                               "    \"ownedAdapterLegacyFacadeAllowed\": true,\n" +
+                               "    \"ownedAdapterLegacyFacadeRoute\": \"Crest4KinematicsAdapter retains managed single-sample compatibility facades until Player/Flora migration; hot-path authority is the Vault-backed batch route.\"\n" +
                                "  },\n" +
                                "  \"scannedScripts\": " + scanned.ToString() + ",\n" +
                                "  \"directOceanRendererLookups\": " + directOceanRendererLookups.ToString() + ",\n" +

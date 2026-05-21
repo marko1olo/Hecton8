@@ -169,3 +169,23 @@ Updated static counts from that artifact:
 - `unityTimeRiskGameplayDelta`: 1
 
 Residual note: this did not change boid GPU buffers, `BoidData` stride, compute shader ABI, acoustic signal DTOs, or the SignalBus route. The remaining wall-clock owners should be inspected one at a time because some are presentation shader clocks and some are real owner-state timers.
+
+## 2026-05-22 Topographical Sonar Follow-Up
+
+`TopographicalSonarSynthesizer` no longer uses direct Unity wall-clock time for ping cadence or point-cloud ping age. The synthesizer now owns `_sonarClockSeconds`, advances it from `Render(float deltaTime)`, and writes shader `PingSignal.x` as `ResolveSonarClockSeconds() - _lastPingTimeSeconds`.
+
+Why this was safe: `Hecton_SonarPoint.shader` reads `_PingSignal.x` directly as `pingAge`. It does not compute `Unity _Time.y - pingStart`, so replacing the C# source clock does not desync a shader-time subtraction.
+
+Focused proof:
+
+- `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/UI/TopographicalSonar/TopographicalSonarSynthesizer.cs` returns no rows.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_time_after_topographical_sonar_clock.json`.
+
+Updated static counts from that artifact:
+
+- `unityTimeCritical`: 923
+- `unityTimeWallClock`: 77
+- `unityTimeRiskGameplayWallClock`: 42
+- `unityTimeRiskGameplayDelta`: 1
+
+Residual note: the sonar owner clock currently advances in `Render(float deltaTime)`, because the class implements `IRenderable` and `ILateFrameTickable` but not `ITickable`. Late-frame ping cadence can therefore observe the previous render tick by one frame. That is acceptable for the UI point-cloud fake, but a future dispatcher API that passes delta to late-frame tickables would make the route cleaner.

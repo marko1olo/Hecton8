@@ -898,3 +898,19 @@ Solution: Removed the hardware-tier branch. The modifier remains disabled only f
 Rejected Alternatives: Converting this to `GlobalQualityWeight` was rejected because voxel density/content is not a presentation budget. Moving biome modifiers into a visual-only shader overlay was out of scope for this static sanitation pass and would require a separate route card.
 Scalability potential: Low/Middle/High/Ultra share generated terrain content for the same LOD. Device savings must come from chunk scheduling cadence, mesh density LOD, shader material detail, vegetation draw density, or streaming budget, not from changing biome SDF truth.
 Hardware Impact: 0 us speed claim. Weak devices spend the same biome modifier work for near LOD chunks; removed one chunk-generation hardware tier read.
+
+## VR Somatic Ghost Hand Quality Continuum
+
+Problem: `VRSomaticProvider` cached `GlobalRegistry.ScalabilityTier` and `H8_LOW_MEMORY_PROFILE`, listened to scalability events, disabled ghost hands on low tier, and emitted a low-tier black-box flag. This made VR hand presentation pop by binary hardware state and carried stale hardware identity through telemetry.
+Solution: Removed scalability listener implementation/registration, cached tier and low-memory fields, low-tier telemetry flag, and `IsLowTier`. Ghost-hand threshold now scales continuously from `GlobalQualityWeight` with a 2.5x low-quality threshold and 1.0x high-quality threshold. The serialized setting is preserved with `FormerlySerializedAs`.
+Rejected Alternatives: Keeping a hard low-tier disable was rejected because hand feedback should degrade smoothly. Changing hand physical spring or target authority was rejected because those affect control feel; only the ghost visibility threshold is presentation.
+Scalability potential: Low devices show fewer ghost hand offsets unless the hand separation is large, middle devices interpolate, and high/ultra retain the authored threshold. Physical hand target and spring simulation remain unchanged.
+Hardware Impact: 0 us speed claim. Removed two cold registry hardware reads and one scalability event route; runtime behavior now uses the already cached continuous quality weight.
+
+## Hull Integrity Quality Profile Continuum
+
+Problem: `HullIntegrityRuntime` cached `GlobalRegistry.ScalabilityTierProfileByte` and drained `ScalabilityChangedEvent.CurrentTier` into deformation samples, compromised-module signals, hull-deformed signals, and shader parameter metadata. That leaked binary hardware identity into deformation presentation/proof lanes.
+Solution: Replaced the tier byte with `_cachedQualityProfileByte`, derived from the health-capped continuous `GlobalQualityWeight` as a 0..255 byte. Removed the scalability profile signal drain and cold registry tier read. Dent capacity and shader dent limit continue to use the existing continuous curves.
+Rejected Alternatives: Keeping the tier event as metadata was rejected because downstream consumers can treat metadata as authority. Mapping profile tier through `ScalabilityTierProfiles.Normalize` was rejected because the source remains binary hardware identity.
+Scalability potential: Low/Middle/High/Ultra deformation metadata now moves smoothly with quality and structural health pressure. Weak devices reduce tracked dent/shader upload capacity through continuous curves; high/ultra receive full overkill metadata without changing structural facts.
+Hardware Impact: 0 us speed claim. Removed one cold registry read and one SignalBus snapshot scan; dent/deformation authority remains unchanged.
