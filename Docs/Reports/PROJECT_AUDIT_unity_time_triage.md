@@ -107,3 +107,22 @@ Updated static counts from that artifact:
 - `unityTimeRiskGameplayDelta`: 1
 
 Residual note: `MigrationDirector` still uses `Time.unscaledTime` for cold-tick cadence because `ISlowTickable` currently does not pass a delta. That is not a `Time.time` authority stamp anymore, but it remains a dispatcher-contract cleanup candidate.
+
+## 2026-05-22 FaunaBrain Time Follow-Up
+
+`FaunaBrain` no longer uses Unity wall clock for combat mobility, hibernation sleep-start records, or dev watchdog throttling. Combat mobility now uses `_cognitionTimeSeconds`, hibernation sleep-start uses dispatcher `DilatedTimeSeconds`, and watchdog logging is frame-gated.
+
+Focused proof:
+
+- `rg -n "Time\.time|Time\.deltaTime|Time\.fixedDeltaTime" Assets/_Project/Scripts/Fauna/FaunaBrain.cs` leaves one row: `ArmCorpseBloatShaderTimer()`.
+- The remaining row feeds `_CorpseBloatStartTime`, and `Hecton_LeviathanOrganic.shader` computes bloat age from Unity `_Time.y`. This is presentation shader time, not gameplay authority.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_time_after_fauna_clock.json`.
+
+Updated static counts from that artifact:
+
+- `unityTimeCritical`: 932
+- `unityTimeWallClock`: 88
+- `unityTimeRiskGameplayWallClock`: 53
+- `unityTimeRiskGameplayDelta`: 1
+
+Residual note: replacing the corpse-bloat row requires a shader-side migration to a project-owned visual time global or a material property that is advanced by visual dispatcher time. A blind C# replacement would break the GPU fake.

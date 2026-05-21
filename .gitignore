@@ -120,6 +120,7 @@ bld/
 # Visual Studio cache/options directory
 .vs/
 *.vsconfig
+*.pid
 
 # Rider auto-generated files
 *.DotSettings.user

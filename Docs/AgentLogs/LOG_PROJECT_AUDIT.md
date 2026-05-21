@@ -252,3 +252,15 @@ Cinematic Cheats used: Existing statistical swarm population remains the fake: O
 Exact Microseconds saved: 0 us measured. Static outcome: `unityTimeCritical` dropped from `940` to `936`; `unityTimeRiskGameplayWallClock` dropped from `60` to `56`.
 
 Evidence: Focused `rg -n "Time\.time" Assets/_Project/Scripts/Ecosystem/MigrationDirector.cs` returns no rows. `python -X faulthandler Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_migration_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_migration_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=936`, `unityTimeWallClock=93`, and `unityTimeRiskGameplayWallClock=56`. `Time.unscaledTime` remains only as cold-tick cadence pending a dispatcher slow-tick delta route. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - FaunaBrain Owner-Time Cleanup
+
+What was wrong: `FaunaBrain` still used `Time.time` for combat mobility duration, hibernation sleep-start records, dev slow-tick watchdog throttling, and corpse-bloat shader start time. The first three are owner/proof timing routes; the corpse-bloat row is a shader presentation bridge.
+
+What was done: Combat mobility now compares against `_cognitionTimeSeconds`. Tier-2 hibernation state now writes sleep start from `SystemDispatcher.ActiveRuntimeInstance.DilatedTimeSeconds`, matching `FaunaDirector` restore/catch-up math. The dev watchdog now throttles by `Time.frameCount` instead of wall-clock seconds. The corpse-bloat shader start remains `Time.time` because `Hecton_LeviathanOrganic.shader` computes age from Unity `_Time.y`.
+
+Cinematic Cheats used: Existing corpse bloat remains the fake: material time and shader deformation replace CPU corpse physiology simulation. Existing predator lunge/telegraph fakes are unchanged.
+
+Exact Microseconds saved: 0 us measured. Static outcome: `unityTimeCritical` dropped from `936` to `932`; `unityTimeRiskGameplayWallClock` dropped from `56` to `53`.
+
+Evidence: Focused `rg -n "Time\.time|Time\.deltaTime|Time\.fixedDeltaTime" Assets/_Project/Scripts/Fauna/FaunaBrain.cs` leaves only `ArmCorpseBloatShaderTimer()` feeding `_CorpseBloatStartTime`. `python -X faulthandler Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_fauna_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_fauna_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=932`, `unityTimeWallClock=88`, and `unityTimeRiskGameplayWallClock=53`. `git diff --check -- Assets/_Project/Scripts/Fauna/FaunaBrain.cs` reports only LF-to-CRLF warning. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
