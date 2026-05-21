@@ -5215,3 +5215,27 @@ Exact microseconds saved:
 Static verification:
 - Focused scan on `SomaticKinematicsRuntime.cs` finds no executable legacy handle/direct-buffer/Vault resolve/byref/latest-created/generation-id/word-boundary `ResolveBuffer` hits. Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `AreSomaticVaultBuffersReady`, `EnsureSomaticVaultBuffer`, `TryResolveSomaticVaultBuffer`, `HasSomaticVaultBuffer`, `ReleaseSomaticVaultHandle`, `ReleaseBuffer(in handle)`, and `[NoAlias]`. Brace count is `180/180`; EOF check passed. `git diff --check` passed. Build was not relaunched.
 - `git status --short` reported `SomaticKinematicsRuntime.cs` as tracked and clean before the loop; this loop claims only the retained Vault descriptor route, GameplayPlayer-owned release/tombstone policy, DataVault rebind release path, byref helper removal, and job field aliasing proof.
+
+## 2026-05-21 - Loop 222 - VR Somatic Provider Descriptor Route
+
+What was wrong:
+- `Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs` used a nested `VaultNativeArray<T>` wrapper that retained `VaultBufferHandle<T>` and exposed `.Resolve()`.
+- `Assets/_Project/Scripts/Gameplay/VRSomaticProvider.Comfort.cs` created comfort lanes through `GetBufferHandle` and consumed them through the wrapper `.Resolve()` path.
+- Provider lanes cover blackbox, head collision commands/hits/samples, root sync input/output, hand targets/physical positions, comfort state, derivatives, history, profiles, telemetry, mock sickness, and CSV scratch. These lanes cross scheduled jobs, shader publish, blackbox dumps, and DataVault replacement.
+
+What was done:
+- Converted `VaultNativeArray<T>` to store `VaultGenerationHandle<T>`, BufferID, required length, and the owning Vault reference.
+- Creation now uses `GetGenerationHandle` under `SystemID.GameplayPlayer`; mutable views use `TryResolveHandle`; read/proof checks use `TryReadHandle`.
+- Removed direct `.Resolve()` call sites by switching native-view consumers to `AsNativeArray()`.
+- Added wrapper `Release()` and wired provider/comfort teardown to release every nonzero descriptor after pending jobs are completed.
+- Registered the provider as a GlobalRegistry hot-swap listener and moved DataVault replacement disposal/reacquisition to `OnGlobalRegistryServiceReplaced`.
+
+Cinematic cheats used:
+- Existing VR somatic presentation remains fake-first: bounded capsule-cast batches, root-sync horizon correction, two-hand kinematic ghosts, shader scalar comfort/vignette state, and blackbox telemetry are used instead of scene-wide physics probes, per-finger rigidbodies, or physical vestibular simulation. This loop does not add GameObjects, MeshColliders, shader variants, or new gameplay truth routes.
+
+Exact microseconds saved:
+- No measured runtime saving claimed. The loop removes stale pointer trust and hidden wrapper resolve semantics. DTO strides, BufferIDs, capsule cast batch shape, root/hand/comfort job math, shader property IDs, SignalBus/GlobalSignals payloads, CSV parser contracts, and blackbox dump format are unchanged.
+
+Static verification:
+- Focused scan on `VRSomaticProvider.cs` and `VRSomaticProvider.Comfort.cs` finds no executable legacy handle/direct-buffer/Vault resolve/byref/latest-created/generation-id/word-boundary `ResolveBuffer` hits. Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `AsNativeArray`, `Release()`, `ReleaseBuffer(in _handle)`, `RegisterHotSwapListener`, and `OnGlobalRegistryServiceReplaced`. Brace counts are `281/281` and `132/132`; EOF checks passed. `git diff --check` passed. Build was not relaunched.
+- `git status --short` does not currently report the provider files after patching; this loop records the audited on-disk route state and documentation evidence, not repository index ownership.

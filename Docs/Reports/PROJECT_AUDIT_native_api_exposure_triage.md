@@ -14,30 +14,31 @@ Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, compile, Play
 
 The public/internal/protected mutable native API warning class is:
 
-- `nativeCollectionPublicMutableApiExposure`: 266 matches / 97 files
+- `nativeCollectionPublicMutableApiExposure`: 268 matches / 97 files
 
 Additive exposure-kind buckets:
 
 - `nativeApiExposureMutableReturn`: 79
-- `nativeApiExposureOutRefMutable`: 187
+- `nativeApiExposureOutRefMutable`: 189
 - `nativeApiExposureAmbiguousMutable`: 0
-- Sum: 266
+- Sum: 268
 
 Additive build-surface buckets:
 
-- `nativeApiExposureBuildPlayerRuntime`: 252
+- `nativeApiExposureBuildPlayerRuntime`: 254
 - `nativeApiExposureBuildEditorOnly`: 5
 - `nativeApiExposureBuildQaDevProof`: 9
-- Sum: 266
+- Sum: 268
 
 Additive primary-risk buckets:
 
 - `nativeApiRiskCoreVaultOrAllocatorSurface`: 21
 - `nativeApiRiskEditorOrProofSurface`: 14
-- `nativeApiRiskRuntimeOutRefMutableView`: 160
-- `nativeApiRiskRuntimeReturnMutableView`: 71
+- `nativeApiRiskRuntimeDiagnosticNamedMutableView`: 61
+- `nativeApiRiskRuntimeOutRefMutableView`: 114
+- `nativeApiRiskRuntimeReturnMutableView`: 58
 - `nativeApiRiskRuntimeAmbiguousMutableView`: 0
-- Sum: 266
+- Sum: 268
 
 This is not a debt reduction. It separates allocator/Vault APIs, editor/proof surfaces, and runtime mutable view exports so fixes can happen without breaking neighboring agents.
 
@@ -81,4 +82,4 @@ Top runtime `out/ref NativeArray<T>` files:
 
 The codebase has many methods that look like read accessors but return mutable native views. That violates the global read-accessor doctrine: a read route must not hand out a write-capable surface unless the name and ownership contract prove that the caller is the writer.
 
-`HabitatGraphManager` graph SoA accessors were migrated to `NativeArray<T>.ReadOnly` in this audit lane because its current external consumers only read those buffers. That reduced direct mutable return/property findings by 8. The next real engineering step is per-domain read-only migration: start with one `HectonMapMagicVegetationBridge` buffer family, add read-only adapters, migrate consumers, then retire the mutable view only after compile/integration proof.
+`HabitatGraphManager` graph SoA accessors are currently `NativeArray<T>.ReadOnly`, so they are no longer part of the direct mutable return/property top list. The diagnostic/editor-named bucket now separates 61 runtime-compiled mutable views with names or payloads such as `ForEditor`, `Debug`, `Readback`, `Snapshot`, or `Telemetry`; these are still player-runtime signatures unless they have an actual compile/runtime guard. The next real engineering step is per-domain read-only migration: start with one `HectonMapMagicVegetationBridge` buffer family, add read-only adapters, migrate consumers, then retire the mutable view only after compile/integration proof.

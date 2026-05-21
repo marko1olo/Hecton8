@@ -204,3 +204,15 @@ Cinematic Cheats used: None. This is authority-surface reduction. Existing acous
 Exact Microseconds saved: 0 us measured. Static outcome: mutable native API exposure dropped from `274` to `266`; direct mutable return/property exposure dropped from `87` to `79`; runtime mutable return/property risk dropped from `79` to `71`.
 
 Evidence: `python Tools\test_polish_mandate_static_audit.py` ran 10 tests OK. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_native_api_exposure.json --report-path Docs\Reports\PROJECT_AUDIT_polish_native_api_exposure.md` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=266 files=97`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-21 - Diagnostic Mutable Native API Split
+
+What was wrong: The mutable native API report mixed gameplay-looking read accessors with player-runtime methods that are named or typed as diagnostics: `ForEditor`, `Debug`, `Readback`, `Snapshot`, `Telemetry`, `Inspector`, or `Gizmo`. Those methods are not safe just because of their names, but they need a different migration queue.
+
+What was done: Added `nativeApiRiskRuntimeDiagnosticNamedMutableView` to `Tools/PolishMandateStaticAudit.py` and updated the regression test so CamelCase names like `TryResolveTuningForEditor` are classified correctly. Updated native API triage reports with the new bucket.
+
+Cinematic Cheats used: None. This is evidence/tooling work.
+
+Exact Microseconds saved: 0 us measured. Static outcome: raw mutable API exposure is preserved at `268 files=97`; diagnostic/editor-named runtime mutable views are split into `61 files=36`, leaving `114` gameplay-looking runtime `out/ref` mutable views and `58` gameplay-looking runtime mutable return/property views.
+
+Evidence: `python Tools\test_polish_mandate_static_audit.py` ran 10 tests OK. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_native_api_exposure.json --report-path Docs\Reports\PROJECT_AUDIT_polish_native_api_exposure.md` returned `PASS_WITH_WARNINGS`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

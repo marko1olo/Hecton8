@@ -953,3 +953,30 @@ Exact Microseconds saved:
   <PARKED_WORK_REJECTED>Build launch under CPU gate, flora gameplay expansion, and scalar-array replacement for SIMD vector math.</PARKED_WORK_REJECTED>
   <STATIC_VERIFICATION>`PreSimulationTick` contains no `new ` token, runtime contains zero `new float3/new float4` constructors and zero hot job `new` constructors, editor self-audit contains `hotValueNewHygiene`, runtime/editor/shader brace and full preprocessor balances are zero, and `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 67%, dotnet=0, csc=0.</STATIC_VERIFICATION>
 </SELF_AUDIT_DELTA>
+
+## 2026-05-21 - Polish Pass 43
+
+What was wrong:
+- A generic visual-performance rule could push this domain toward `FloatMode.Fast`, but SHINOBU_267 Task 06 explicitly requires deterministic Burst mode for the global sway time scalar.
+- The editor self-audit did not yet lock that XML-specific Burst mode.
+
+What was done:
+- Preserved four deterministic Burst attributes on the two job structs and two FunctionPointer entrypoints.
+- Added `burstFloatMode` to the editor self-audit, requiring deterministic/synchronous/standard-precision coverage and rejecting `FloatMode.Fast` in owned runtime.
+
+Cinematic Cheats used:
+- No physical flora simulation was added. The route remains shader-side sine displacement over a single 32-byte CBuffer.
+
+Exact Microseconds saved:
+- 0 measured us. This pass prevents an invalid optimization, not a measured runtime speedup.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-21-P43_XML_BURST_MODE_LOCK">
+  <TASK id="06" status="PASS">Task 06 XML requires deterministic Burst mode; self-audit now locks that mode for all four owned Burst entry surfaces.</TASK>
+  <TASK id="13" status="PASS">The deterministic visual time scalar remains excluded from rollback/save truth; no StateRingBuffer authority is introduced.</TASK>
+  <TASK id="20" status="PASS">Runnable self-audit now rejects accidental `FloatMode.Fast` substitution in owned runtime.</TASK>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Early-route flora phase stays stable across clients without adding gameplay authority.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static source/self-audit now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, and save/load diff remain pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Generic Fast-mode substitution, build launch under CPU/csc/dotnet gate, and historical log rewriting.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>SHINOBU_267 XML extraction remains 15929 chars; runtime has `DeterministicCount=4`, `FastCount=0`, `StandardPrecisionCount=4`, `CompileSyncCount=4`; owned forbidden scan is clean for `FloatMode.Fast`, `parameters[0]`, `.Run()`, `.Complete()`, direct kernel `Execute()`, vector upload, random, `foreach`, and `Pack=1`; runtime/editor/shader brace and full preprocessor balances are zero; asmdef/report JSON parse passed; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=1, csc=1.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>

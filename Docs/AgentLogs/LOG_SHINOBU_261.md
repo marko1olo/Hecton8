@@ -567,3 +567,20 @@ Exact Microseconds saved -> Runtime: 0 us. The cold clear was already implemente
   <adjacent_file status="[OWNER_SHINOBU_260]">`CrestOceanRuntimeAdapter.cs` is documented in SHINOBU_260 status/rationale/log and was not patched by SHINOBU_261.</adjacent_file>
   <scoped_runtime status="[PASS_STATIC]">SHINOBU_261 forbidden scan remains scoped to `Crest4KinematicsAdapter.cs` plus `OceanKinematics` files.</scoped_runtime>
 </SELF_AUDIT_REVISION>
+
+## Polish Pass: OOP Water Query Proof Correction
+
+What was wrong -> The active SHINOBU_261 sidecar report says `OOP Water Queries Not Eradicated - legacy callers remain`, with four managed query hits in `HectonPlayerMovement.cs` and `World/FloraInteractionManager.cs`. The previous top-level task/status language still used pass-class wording for Tasks 01 and 19, which is not defensible.
+
+What was done -> Downgraded Task 01 to partial/blocked and Task 19 to blocked-by-dependency in `Status_SHINOBU_261.md`. Updated `Water_Interface_Scanner` so future reports preserve `ownerBoundary`, `requiredMigration`, and `legacyManagedCallers` fields. No Player/Flora source was edited because those files are outside the SHINOBU_261 ownership boundary.
+
+Cinematic Cheats used -> None in this patch. The existing Dear Lie remains the previous-frame cached water result path; this pass corrects proof integrity.
+
+Exact Microseconds saved -> Runtime: 0 us. This prevents false green reporting and preserves cross-domain migration evidence.
+
+<SELF_AUDIT_CORRECTION agent="SHINOBU_261" revision="oop_water_query_proof_correction_2026_05_21">
+  <task id="01" status="[PARTIAL_BLOCKED]">Flat AUP batch path exists in SHINOBU_261, but external legacy managed water-query callers still exist.</task>
+  <task id="19" status="[FAIL_BLOCKED_BY_DEPENDENCY]">Current scanner verdict is `oopWaterQueriesEradicated=false`; remaining callers are `HectonPlayerMovement.cs` and `World/FloraInteractionManager.cs`.</task>
+  <owner_boundary status="[PRESERVED]">No Player/Flora source was patched without owner/integrator authorization.</owner_boundary>
+  <compile status="[NOT_RUN]">No compile/build launched; this was a source/report correction under the existing CPU gate.</compile>
+</SELF_AUDIT_CORRECTION>

@@ -762,3 +762,27 @@ Solution: Removed the global quality helper from the physics culling partial rou
 Rejected Alternatives: Smooth quality scaling of culling radius was rejected because continuous hardware-dependent sleep/wake divergence is still physics divergence. Keeping low-tier shorter ranges was rejected because it can remove collision/rigidbody participation earlier on weak devices.
 Scalability potential: Low/Middle/High/Ultra share identical rigidbody sleep/wake and kinematic culling thresholds. Device savings should move to collider LOD visuals, mesh-collider strip policy with explicit authoring, broadphase debug rendering, or presentation-only impact wake density.
 Hardware Impact: 0 us speed claim. Weak devices retain the same conservative activation radius and may keep more physics bodies active; targeted diff check passed, build skipped because CPU was 97%.
+
+## Thermodynamics Authority Solver Pinning
+
+Problem: Abyssal thermodynamics used global quality to change authority cadence, grid resolution, Jacobi iteration count, solver omega, residual tolerance/sampling, and temperature interpolation. Those values feed heat hazards, thermal damage, and shader proof buffers; hardware quality was changing the thermal truth surface.
+Solution: Added canonical thermodynamics authority constants and pinned the solver to 1/60s, 32^3 cells, 6 Jacobi iterations, omega 1.0, tolerance 0.001, full residual sampling, and trilinear temperature sampling. Real quality remains only in visual buffer metadata and shader-side presentation.
+Rejected Alternatives: Continuous degradation of resolution, solver count, or nearest-neighbor sampling was rejected because smooth thermal divergence is still hazard/damage divergence. Removing visual quality publication was rejected because shader caustics and heat shimmer are valid Dear Lie presentation lanes.
+Scalability potential: Low/Middle/High/Ultra share identical thermal diffusion, temperature sampling, heat hazard, and damage truth. Weak devices can only shed visual shimmer, debug readback, optional telemetry cadence, or shader overkill around the same authoritative scalar field.
+Hardware Impact: 0 us speed claim. Weak devices spend canonical thermodynamics work to preserve survival parity.
+
+## Core Content Namespace Compile Repair
+
+Problem: `ContentRuntimeServices.cs` referenced Optimization services (`VRAMMonitor`, `VRAMPressureMonitor`, `AssetLifecycleGovernor`) without importing the namespace that owns them. The compile wall was a using-boundary error, not a missing runtime dependency.
+Solution: Added `using Hecton8.Optimization;` to the content runtime file. This does not add an assembly definition reference; the project already compiles the Optimization sources in the same C# assembly route exposed by the existing project file.
+Rejected Alternatives: Moving types, adding wrappers, or changing asmdef references was rejected because the failure was local namespace visibility and broad dependency churn would enlarge the compile wall.
+Scalability potential: No runtime scalability impact. The change preserves existing content/optimization ownership while restoring compile visibility.
+Hardware Impact: 0 us runtime.
+
+## RenderGraph Texture And Survival Context Compile Repair
+
+Problem: Unity 6000 `RasterCommandBuffer.SetGlobalTexture` accepts RenderGraph `TextureHandle`s for command-buffer texture globals, not arbitrary `UnityEngine.Texture` assets. Visor post/decal passes were binding asset textures through the wrong API. `HectonSurvivalSystem` also called `TryGetPlayerPoseSnapshot` on the concrete `PlayerRuntimeContext`, but the snapshot route is owned by `IPlayerRuntimeContext`.
+Solution: Kept RenderGraph handles on `RasterCommandBuffer` and moved regular asset textures to persistent material `SetTexture` calls inside the render function. Added a cached `IPlayerRuntimeContext` lane in survival, populated during player-root binding and hot-swap replacement, then used that cached interface for pose fallback reads.
+Rejected Alternatives: Importing every asset texture into RenderGraph was rejected because these are stable material textures, not transient graph resources, and would add unnecessary graph ownership. Polling `GlobalRegistry.Player` in the fallback read was rejected after patch review because GlobalRegistry is cold DI, not a hot read path.
+Scalability potential: Low/Middle/High/Ultra render the same bound visor/decal texture assets; quality remains expressed through existing scalar uniforms and texture flags. Survival AUP fallback now reads one immutable cached interface route without changing authority state.
+Hardware Impact: below 1 us. The main gain is compile correctness and avoiding hot registry polling; no frame-time speed claim.

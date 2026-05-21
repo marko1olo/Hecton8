@@ -342,6 +342,7 @@ namespace Hecton8.Gameplay
         private float _oxygenGraceVisionBlur01;
         private bool _oxygenGraceActive;
         private PlayerRuntimeContext _runtimeContext;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private Unity.Mathematics.Random _traumaRandom;
         private FixedCharBuffer _telemetryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — telemetry construction — owner: HectonSurvivalSystem
         private const float HazardGraceDuration = 3f;
@@ -652,6 +653,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _runtimeContext = runtimeContext;
+            _playerRuntimeContext = GlobalRegistry.Player;
             _playerMovement = runtimeContext.PlayerMovement;
             _playerTransportCoordinator = runtimeContext.PlayerTransportCoordinator;
             _traumaDispatcher = runtimeContext.TraumaDispatcher;
@@ -703,6 +705,9 @@ namespace Hecton8.Gameplay
             {
                 case GlobalRegistryServiceSlot.AtmosphereRuntime:
                     _atmosphereRuntime = currentService as HectonAtmosphereManager;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
                     break;
                 case GlobalRegistryServiceSlot.Save:
                     if (ReferenceEquals(_saveService, currentService))
@@ -1999,7 +2004,7 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            PlayerRuntimeContext playerContext = _runtimeContext;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext != null &&
                 playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
             {
@@ -2030,7 +2035,7 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            PlayerRuntimeContext playerContext = _runtimeContext;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext != null &&
                 playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
                 snapshot.Aup.IsFinite())

@@ -67,6 +67,42 @@ Remaining blocked/pending:
   <QUALITY status="DRS shader uses continuous scale-deficit curve; no binary low-tier switch added" />
 </SELF_AUDIT>
 
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="ThermodynamicsAuthoritySolver">
+  <WHAT_WAS_WRONG>
+    Abyssal thermodynamics changed simulation cadence, active cell count, Jacobi iterations, solver omega, residual tolerance/sampling, and temperature interpolation through quality. That makes heat hazards and thermal damage depend on hardware.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    `AbyssalThermodynamicsSolver` and `AbyssalThermodynamicsJobs` now use canonical authority: fixed 1/60s tick, 32^3 cells, 6 Jacobi iterations, omega 1.0, tolerance 0.001, full residual sampling, and trilinear temperature sampling. Visual quality remains shader metadata only.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Heat shimmer, caustics, debug readback, and shader overkill remain Dear Lie lanes. The thermal field itself no longer degrades.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. This spends canonical authority work on weak devices to preserve heat/damage parity.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scans found no remaining thermodynamics cadence/resolution/interpolation quality helpers. `ThermalGridTuningDTO` remains explicit 128 bytes and `ThermalResidualSlot64` remains explicit 64 bytes. Build later exposed unrelated compile walls, not thermodynamics diagnostics.
+  </VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="CompileWallRepairContentVisorSurvival">
+  <WHAT_WAS_WRONG>
+    Build exposed a namespace compile wall in content services, RenderGraph texture API drift in visor passes, and a concrete/interface mismatch in survival pose fallback.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Added the existing `Hecton8.Optimization` namespace import to `ContentRuntimeServices.cs`. Moved visor/decal ordinary texture asset binding from `RasterCommandBuffer.SetGlobalTexture` to persistent material `SetTexture` while leaving RenderGraph `TextureHandle`s on the command buffer. Survival now caches `IPlayerRuntimeContext` during bind/hot-swap and uses that interface for pose snapshots.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    No new simulation path. Visor/decal texture binding remains presentation-only and quality continues through shader scalar/flag uniforms.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="below 1">
+    Compile correctness plus one hot registry poll avoided in survival fallback; no claimed frame-time win.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Static scans found no remaining `SetGlobalTexture` calls for ordinary visor/decal asset texture IDs and no concrete `PlayerRuntimeContext.TryGetPlayerPoseSnapshot` usage. `git diff --check` passed with line-ending warnings only. Build was skipped because CPU was 100% with active `dotnet` and `csc`.
+  </VERIFICATION>
+</SELF_AUDIT>
+
 <SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="EcosystemPopulationSymbiosisMigrationAuthority">
   <WHAT_WAS_WRONG>
     Ecology population, symbiosis chemistry, and migration routing still used performance pressure or quality to change gameplay facts: stress could deactivate entities, symbiosis quality could thin exchanges/oxygen/biomass/toxemia/camouflage, and migration quality could change field cadence, interpolation, blood-cloud POI sampling, attraction strength, and grid magnitude.

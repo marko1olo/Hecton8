@@ -487,3 +487,9 @@ Solution: Re-extracted the SHINOBU_261 XML block with an attribute-aware regex a
 Rejected Alternatives: Patching another agent's untracked adapter was rejected because it would mix domain ownership and could silently invalidate SHINOBU_260's quarantine audit. Ignoring the finding was rejected because full-assembly scans will still see that file.
 Scalability potential: SHINOBU_261 runtime behavior unchanged. The scoped kinematics adapter remains deterministic/continuous; adjacent SHINOBU_260 code requires owner follow-up if the integrator wants whole-assembly raw-trig cleanliness.
 Hardware Impact: 0 runtime microseconds claimed. This prevents cross-agent churn while preserving an explicit integration breadcrumb.
+
+Problem: The current SHINOBU_261 scanner sidecar proves `oopWaterQueriesEradicated=false`, but `Status_SHINOBU_261.md` and the initial self-audit still marked Tasks 01 and 19 as pass-class work.
+Solution: Downgraded Task 01 to partial/blocked and Task 19 to blocked-by-dependency in the status file. Strengthened `Water_Interface_Scanner` so future Unity-menu reports include `ownerBoundary`, `requiredMigration`, and `legacyManagedCallers` fields instead of only raw findings.
+Rejected Alternatives: Claiming eradication while four managed query sites remain was rejected. Editing `HectonPlayerMovement.cs` or `World/FloraInteractionManager.cs` from this pass was rejected because those are Player/Flora ownership surfaces with serialized/runtime side effects and no current integrator authorization.
+Scalability potential: SHINOBU_261 queued Vault/Burst path remains scalable from low to ultra through continuous `GlobalQualityWeight`. Remaining Player/Flora callers are the migration debt preventing whole-project OOP-water-query pass.
+Hardware Impact: Runtime: 0 us in this patch. Proof integrity gain only; it prevents a false green report from hiding Player/Flora migration work.

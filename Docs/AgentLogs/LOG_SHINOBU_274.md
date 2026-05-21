@@ -609,3 +609,34 @@ Verification:
   <DependencyGraph>Loop 13 adds no hot-path `.Complete()`. The only new forced completion is teardown-only in `HazardZoneManager.DisposeNativeState` before releasing the Vault result buffer.</DependencyGraph>
   <CompileGuard>No new sibling asmdef dependency was added; build still gated by CPU 100 percent and known external dependency wall.</CompileGuard>
 </SELF_AUDIT>
+
+## 2026-05-21 Loop 15 EOF Superseding Closure
+
+This EOF block supersedes the earlier out-of-order Loop 15 insertion above and restores the Top=Old, Bottom=New reporting contract.
+
+What was wrong:
+- Completed radiation state/damage publication could be skipped when deferred load/DataVault swap waited for diffusion completion.
+- Public radiation source/dose ingress could carry non-finite scalars before owner drain.
+- Blackbox dump row order did not match `RadiationTelemetryEntry` explicit layout.
+- Generic `HazardZoneManager` private scratch needed formal non-radiation exception documentation.
+
+What was done:
+- `RadiationHazardGrid` now publishes completed state, pending damage, dose signal, geiger signal, and telemetry before any deferred structural mutation wait.
+- Simulation pauses new radiation evaluation while deferred load/hot-swap waits for active diffusion and preserves source/external-dose/iodine snapshots.
+- Public source/dose ingress, iodine quantity, pending exact-dose accumulation, mock source injection, presentation scalars, and grid-cell indexing are finite-safe.
+- `Dump_SHINOBU_274.bin` writer order now matches `RadiationTelemetryEntry`; telemetry offsets are validated in `RadiationStateLayoutGuard`.
+- Route card and binary ledger now document Loop 15, including the non-radiation `HazardZoneManager` scratch exception.
+
+Verification:
+- Focused `git diff --check`: PASS with line-ending warnings only.
+- Publication-fence, signal-ingress, dump-order, route-card, and JSON report scans: PASS.
+- Build not relaunched: known external dependency files remain missing, active `csc.exe`/`dotnet.exe` processes were present, and CPU sampled at `84.675630`.
+
+<SELF_AUDIT agent="SHINOBU_274" domain="Radiation Scrubber" date="2026-05-21" pass="loop_15_eof_closure">
+  <TaskReconciliation>Tasks 01-19 remain PASS. Task 20 remains PARTIAL because Unity import/build/profiler proof is blocked by external dependencies, active compiler processes, and CPU gate.</TaskReconciliation>
+  <StructLayout>RadiationStateDTO remains 32 bytes. RadiationTelemetryEntry remains 64 bytes; dump order now matches offsets 0,24,28,32,36,40,44,48,52,56,58,60.</StructLayout>
+  <HphiVaultStatus>SHINOBU_274 runtime buffers remain Vault IDs 72740..72751. No SHINOBU_274 private persistent NativeArray ownership was introduced. Generic HazardZoneManager scratch is documented as non-radiation compatibility debt.</HphiVaultStatus>
+  <DependencyGraph>No hot `.Complete()` added. Deferred structural mutation waits for no active radiation/diffusion jobs; completed radiation publication does not wait behind that structural fence.</DependencyGraph>
+  <CompileGuard>No asmdef edge added. Build not launched under active compiler/CPU/dependency gate.</CompileGuard>
+  <DearLie>No CPU mesh deformation, decal spawning, trigger volume dose, collider shielding, or raycast shielding added; GPU hand mutation remains scalar vertex fake.</DearLie>
+</SELF_AUDIT>

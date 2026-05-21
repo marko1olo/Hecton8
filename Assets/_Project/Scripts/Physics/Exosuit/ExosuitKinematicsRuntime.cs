@@ -662,7 +662,7 @@ namespace Hecton8.Physics.Exosuit
                 }
 
                 input.Frame = frame;
-                input.GlobalQualityWeight = ExosuitMathGuards.AuthoritativeQualityWeight;
+                input.GlobalQualityWeight = ResolveFrameQualityWeight01(tuning.GlobalQualityWeight);
                 inputBuffer[0] = input;
                 _pendingFrameInput = input;
 
@@ -1665,7 +1665,7 @@ namespace Hecton8.Physics.Exosuit
             tuning.ClampRange = math.max(tuning.Radius, clampRange);
             tuning.HydraulicLatencySeconds = math.clamp(math.isfinite(_hydraulicLatencySeconds) ? _hydraulicLatencySeconds : 0.5f, 0.05f, 3f);
             tuning.PurgeImpulse = math.max(0f, math.isfinite(_purgeImpulseMetersPerSecond) ? _purgeImpulseMetersPerSecond : 14f);
-            tuning.GlobalQualityWeight = ExosuitMathGuards.AuthoritativeQualityWeight;
+            tuning.GlobalQualityWeight = ExosuitMathGuards.DefaultQualityWeight;
             tuning.FootstepStrideMeters = math.max(0.25f, math.isfinite(_footstepStrideMeters) ? _footstepStrideMeters : 3f);
             tuning.MaxSpeedMetersPerSecond = math.max(0.25f, math.isfinite(_maxSpeedMetersPerSecond) ? _maxSpeedMetersPerSecond : 9f);
             tuning.CrushDepthMeters = math.max(1f, math.isfinite(_crushDepthMeters) ? _crushDepthMeters : 4000f);
@@ -1746,7 +1746,15 @@ namespace Hecton8.Physics.Exosuit
 
         private static float ResolveGlobalQualityWeight01()
         {
-            return ExosuitMathGuards.AuthoritativeQualityWeight;
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(quality) ? quality : ExosuitMathGuards.DefaultQualityWeight);
+        }
+
+        private static float ResolveFrameQualityWeight01(float tuningQualityWeight)
+        {
+            return math.min(
+                SanitizeQualityWeight01(tuningQualityWeight, ExosuitMathGuards.DefaultQualityWeight),
+                ResolveGlobalQualityWeight01());
         }
 
         private static uint ComputeSectorHash(double3 cameraAup)
@@ -1783,7 +1791,7 @@ namespace Hecton8.Physics.Exosuit
             tuning.ClampRange = math.max(tuning.Radius, math.isfinite(tuning.ClampRange) ? tuning.ClampRange : 2f);
             tuning.HydraulicLatencySeconds = math.clamp(math.isfinite(tuning.HydraulicLatencySeconds) ? tuning.HydraulicLatencySeconds : 0.5f, 0.05f, 3f);
             tuning.PurgeImpulse = math.max(0f, math.isfinite(tuning.PurgeImpulse) ? tuning.PurgeImpulse : 14f);
-            tuning.GlobalQualityWeight = ExosuitMathGuards.AuthoritativeQualityWeight;
+            tuning.GlobalQualityWeight = SanitizeQualityWeight01(tuning.GlobalQualityWeight, ExosuitMathGuards.DefaultQualityWeight);
             tuning.FootstepStrideMeters = math.max(0.25f, math.isfinite(tuning.FootstepStrideMeters) ? tuning.FootstepStrideMeters : 3f);
             tuning.MaxSpeedMetersPerSecond = math.max(0.25f, math.isfinite(tuning.MaxSpeedMetersPerSecond) ? tuning.MaxSpeedMetersPerSecond : 9f);
             tuning.CrushDepthMeters = math.max(1f, math.isfinite(tuning.CrushDepthMeters) ? tuning.CrushDepthMeters : 4000f);
@@ -1792,6 +1800,12 @@ namespace Hecton8.Physics.Exosuit
             tuning.MaxSubsteps = math.clamp(tuning.MaxSubsteps, 2u, 8u);
             tuning.StateHash = ComputeManagedHash(tuning);
             return tuning;
+        }
+
+        private static float SanitizeQualityWeight01(float value, float fallback)
+        {
+            float safeFallback = math.saturate(math.isfinite(fallback) ? fallback : ExosuitMathGuards.DefaultQualityWeight);
+            return math.saturate(math.isfinite(value) ? value : safeFallback);
         }
 
         private static uint ComputeManagedHash(in ExosuitTuningDTO tuning)

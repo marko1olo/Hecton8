@@ -8,6 +8,8 @@
   "directOceanRendererLookups": 0,
   "managedWaterQueries": 4,
   "oopWaterQueriesEradicated": false,
+  "ownerBoundary": "Remaining managed water-query callers are outside SHINOBU_261 Crest adapter write scope and require Player/Flora owner migration or integrator authorization.",
+  "requiredMigration": "Move remaining callers to Vault-backed OceanKinematicsSampleRequestDTO queues, OceanMacroStateDTO reads, or an owner-approved nonblocking batch bridge; do not add per-frame Crest/OceanRenderer calls.",
   "legacyManagedCallers": [
     "Assets/_Project/Scripts/HectonPlayerMovement.cs",
     "Assets/_Project/Scripts/World/FloraInteractionManager.cs"

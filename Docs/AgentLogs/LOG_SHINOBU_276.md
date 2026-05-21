@@ -349,3 +349,27 @@ Verification: Targeted scan shows `s_pendingInput = default`, `s_pendingSequence
 Cinematic Cheats used: None in this pass. It preserves the existing heavy-suit movement cheat: one pending unmanaged intent row feeding byte-SDF kinematic depenetration instead of Rigidbody/joint authority.
 
 Exact Microseconds saved: No measured frame claim. Cost is one authority branch per submit/consume boundary; Burst solver math is unchanged.
+
+## 2026-05-21 Polish Pass: Live Global Quality Route
+
+What was wrong: Avicenna found the low/middle quality path was unreachable. `ExosuitMathGuards.AuthoritativeQualityWeight` forced `1f`, runtime staged `1f` into input, and job sanitizers overwrote tuning quality. The docs claimed continuous quality scaling, but executable code always ran the high/ultra branch.
+
+What was done: Removed the hardwired authority constant. Runtime now stages frame input quality as `min(HomeostasisBrain.GlobalQualityWeight, ExosuitTuningDTO.GlobalQualityWeight)`. Burst jobs resolve quality from `min(input.GlobalQualityWeight, tuning.GlobalQualityWeight)`, and standalone SDF jobs use their explicit quality parameter capped by tuning. `DefaultQualityWeight` remains only invalid-data fallback.
+
+Verification: Targeted scan finds no `AuthoritativeQualityWeight` token in SHINOBU exosuit source/proof scope. Source scan finds `HomeostasisBrain.GlobalQualityWeight`, `ResolveFrameQualityWeight01`, and `ExosuitMathGuards.ResolveQualityWeight` in the expected runtime/job routes. Jobs raw brace scan is `110/110`; runtime raw brace scan is `146/146`. No rebuild was launched.
+
+Cinematic Cheats used: The low-quality byte-SDF lie is now executable: nearest SDF lookup and cheap normal path can run when global quality drops instead of always paying high-quality trilinear/finite-difference cost.
+
+Exact Microseconds saved: Profiler pending. Static cost change enables the low path to avoid eight trilinear SDF loads and six finite-difference normal samples per collision sample when quality collapses.
+
+## 2026-05-21 Polish Pass: Atomic Scanner Aggregate Upsert
+
+What was wrong: Shared `PHYSICS_OPTIMIZATION_REPORT.json` upsert was an unlocked read/modify/write with direct `File.WriteAllText`, so concurrent editor scanner runs could clobber other agents' nodes.
+
+What was done: Added lock-file guarded aggregate read/modify/write and temp-file atomic replace. The dedicated SHINOBU report write also uses the atomic helper.
+
+Verification: Targeted source scan finds `BuildAggregateReportText`, `WriteTextAtomic`, and `WriteTextAtomicUnlocked`; the only remaining `File.WriteAllText` writes a unique temp file before replace. No Unity editor scanner run was launched from CLI.
+
+Cinematic Cheats used: None. Proof artifact integrity only.
+
+Exact Microseconds saved: Editor-only; no runtime frame claim.

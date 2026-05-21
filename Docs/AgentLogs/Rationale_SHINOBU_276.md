@@ -1,7 +1,7 @@
 # SHINOBU_276 Rationale
 
 Date: 2026-05-21
-Status: LOOP 29 CORE PENDING INTENT REBIND FENCE / COMPILE BLOCKED BY EXTERNAL MISSING SOURCE
+Status: LOOP 30 GLOBAL QUALITY LIVE ROUTE AND SCANNER ATOMIC UPSERT / COMPILE BLOCKED BY EXTERNAL MISSING SOURCE
 Domain: Echelon 4 Player, Kinematics & Tools / Exosuit 6DoF Kinematics
 
 ## Decision 00: Authority And Scope Gate
@@ -291,3 +291,19 @@ Solution: Clear pending DTO, pending sequence, and pending flag on every valid b
 Rejected Alternatives: Preserving queued input across rebind was rejected because a handle transition is an authority boundary, not a gameplay continuity guarantee. Adding Vault validation in the facade was rejected because player hot input submission must stay allocation-free and must not poll global state.
 Scalability potential: Low, Middle, High, and Ultra behavior is unchanged. `GlobalQualityWeight` still scales only solver fidelity and presentation cadence; pending intent authority does not affect DTO layout, save identity, or fact ownership.
 Hardware Impact: One owner-proof branch per submit/consume boundary and no Burst/job cost. No measured frame claim.
+
+## Decision 36: Live Global Quality Route
+
+Problem: Avicenna found that `GlobalQualityWeight` was executable fiction: runtime frame input, tuning sanitizers, and Burst jobs forced quality to `1f`, so low and middle quality paths could not run while the docs claimed continuous scalability.
+Solution: Replace the hardwired `AuthoritativeQualityWeight` with `DefaultQualityWeight` only as invalid-data fallback. Runtime now stages each frame with `min(HomeostasisBrain.GlobalQualityWeight, ExosuitTuningDTO.GlobalQualityWeight)`, and Burst jobs resolve quality from input/tuning with the same cap. Standalone SDF jobs use their explicit `GlobalQualityWeight` parameter capped by tuning.
+Rejected Alternatives: Reading `HomeostasisBrain` from Burst was rejected because jobs must stay pure unmanaged kernels. Treating editor tuning quality as the sole source was rejected because the project-wide thermal dictator must be able to reduce fidelity continuously at runtime. Binary low/high switches were rejected by doctrine.
+Scalability potential: Low now reaches the nearest-SDF, widened-epsilon, reduced-substep path; Middle blends toward trilinear and extra probes; High and Ultra consume the same DTOs but pay for finite-difference normals and max substeps. Quality changes do not alter ownership, DTO layout, save identity, or rollback route.
+Hardware Impact: Static route fix. On weak devices, reachable low quality avoids trilinear and finite-difference SDF taps and trends to two substeps. Profiler proof remains blocked by the external missing-source compile wall.
+
+## Decision 37: Atomic Scanner Aggregate Upsert
+
+Problem: The editor inquisition updated the shared `PHYSICS_OPTIMIZATION_REPORT.json` with unlocked read/modify/write and direct `File.WriteAllText`, so concurrent agent scanners could clobber each other's nodes or leave stale proof.
+Solution: Add a lock-file guarded aggregate read/modify/write path and temp-file atomic replace. The dedicated SHINOBU report write also uses the atomic helper, while the aggregate merge holds the lock for both read and write.
+Rejected Alternatives: Leaving only the dedicated JSON was rejected because the shared aggregate remains an editor scanner contract. Locking only the final write was rejected because it still allows stale read/modify/write clobber.
+Scalability potential: No runtime quality effect. This improves proof reliability under the 20+ agent concurrency model.
+Hardware Impact: Editor-only file IO. No frame-time or Burst solver cost.

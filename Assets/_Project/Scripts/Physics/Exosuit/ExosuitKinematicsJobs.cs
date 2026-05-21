@@ -10,7 +10,7 @@ namespace Hecton8.Physics.Exosuit
 {
     internal static class ExosuitMathGuards
     {
-        public const float AuthoritativeQualityWeight = 1f;
+        public const float DefaultQualityWeight = 1f;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float SanitizeFloat(float value, float fallback)
@@ -22,6 +22,21 @@ namespace Hecton8.Physics.Exosuit
         public static float SanitizeNonNegative(float value)
         {
             return math.select(math.max(0.0f, value), 0.0f, !math.isfinite(value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SanitizeQualityWeight(float value, float fallback)
+        {
+            float safeFallback = math.saturate(math.select(DefaultQualityWeight, fallback, math.isfinite(fallback)));
+            return math.saturate(math.select(value, safeFallback, math.isfinite(value)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveQualityWeight(float inputQualityWeight, float tuningQualityWeight)
+        {
+            float tuningQuality = SanitizeQualityWeight(tuningQualityWeight, DefaultQualityWeight);
+            float inputQuality = SanitizeQualityWeight(inputQualityWeight, tuningQuality);
+            return math.saturate(math.min(inputQuality, tuningQuality));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -53,7 +68,7 @@ namespace Hecton8.Physics.Exosuit
             tuning.CurrentMass = math.select(tuning.BaseMass, math.max(1.0f, currentMass), currentMass > 0.0f);
             tuning.Radius = math.clamp(SanitizeNonNegative(tuning.Radius), 0.25f, 5.0f);
             tuning.SdfEpsilonMeters = math.clamp(SanitizeNonNegative(tuning.SdfEpsilonMeters), 0.005f, 0.25f);
-            tuning.GlobalQualityWeight = AuthoritativeQualityWeight;
+            tuning.GlobalQualityWeight = SanitizeQualityWeight(tuning.GlobalQualityWeight, DefaultQualityWeight);
             tuning.MaxSubsteps = math.clamp(tuning.MaxSubsteps, 2u, 8u);
             return tuning;
         }
@@ -207,11 +222,10 @@ namespace Hecton8.Physics.Exosuit
             ExosuitStateDTO state = State[0];
             ExosuitTuningDTO tuning = SanitizeTuning(Tuning[0]);
             ExosuitFrameInputDTO input = Input[0];
+            input.GlobalQualityWeight = ExosuitMathGuards.ResolveQualityWeight(input.GlobalQualityWeight, tuning.GlobalQualityWeight);
             if (ProceduralWeightMilli > 0u)
-            {
                 ApplyProceduralMockInput(ref input, ProceduralWeightMilli, StableEntityHash, SectorHash);
-                Input[0] = input;
-            }
+            Input[0] = input;
             MockTerrainSDF terrain = Terrain[0];
             ExosuitSolverOutput previousOutput = Output[0];
             MockFlowField flow = Flow.IsCreated && Flow.Length > 0 ? Flow[0] : default;
@@ -224,7 +238,7 @@ namespace Hecton8.Physics.Exosuit
             float3 angularVelocity = SanitizeFloat3(state.AngularVelocity, float3.zero);
             uint previousMask = state.Flags;
             uint mask = ExosuitStateFlags.Active;
-            float quality = ExosuitMathGuards.AuthoritativeQualityWeight;
+            float quality = input.GlobalQualityWeight;
             bool voxelSdfAvailable = IsVoxelSdfPayloadValid();
             if (voxelSdfAvailable)
                 mask |= ExosuitStateFlags.VoxelSdfSampled;
@@ -710,7 +724,7 @@ namespace Hecton8.Physics.Exosuit
             tuning.ClampRange = math.max(tuning.Radius, SanitizeNonNegative(tuning.ClampRange));
             tuning.HydraulicLatencySeconds = math.clamp(SanitizeNonNegative(tuning.HydraulicLatencySeconds), 0.05f, 3.0f);
             tuning.PurgeImpulse = math.clamp(SanitizeNonNegative(tuning.PurgeImpulse), 0.0f, 80.0f);
-            tuning.GlobalQualityWeight = ExosuitMathGuards.AuthoritativeQualityWeight;
+            tuning.GlobalQualityWeight = ExosuitMathGuards.SanitizeQualityWeight(tuning.GlobalQualityWeight, ExosuitMathGuards.DefaultQualityWeight);
             tuning.FootstepStrideMeters = math.clamp(SanitizeNonNegative(tuning.FootstepStrideMeters), 0.25f, 12.0f);
             tuning.MaxSpeedMetersPerSecond = math.clamp(SanitizeNonNegative(tuning.MaxSpeedMetersPerSecond), 0.25f, 40.0f);
             tuning.CrushDepthMeters = math.max(1.0f, SanitizeNonNegative(tuning.CrushDepthMeters));
@@ -1261,7 +1275,7 @@ namespace Hecton8.Physics.Exosuit
                 (float)(state.AUP_Position.x - cameraAup.x),
                 (float)(state.AUP_Position.y - cameraAup.y),
                 (float)(state.AUP_Position.z - cameraAup.z)), float3.zero);
-            float quality = ExosuitMathGuards.AuthoritativeQualityWeight;
+            float quality = ExosuitMathGuards.ResolveQualityWeight(GlobalQualityWeight, tuning.GlobalQualityWeight);
             float sdfEpsilon = tuning.SdfEpsilonMeters;
             float radius = math.max(0.25f, tuning.Radius) + math.lerp(sdfEpsilon * 1.5f, sdfEpsilon * 0.55f, quality);
             int maxSubsteps = math.clamp((int)tuning.MaxSubsteps, 2, 8);

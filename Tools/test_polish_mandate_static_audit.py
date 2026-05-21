@@ -52,6 +52,9 @@ public struct RiskJob
             self.assertEqual(cats["privateNativeCollectionField"]["matches"], 1)
             self.assertEqual(cats["unityRandom"]["matches"], 1)
             self.assertEqual(cats["unityTimeCritical"]["matches"], 1)
+            self.assertEqual(cats["unityTimeDelta"]["matches"], 1)
+            self.assertEqual(cats["unityTimeBuildPlayerRuntime"]["matches"], 1)
+            self.assertEqual(cats["unityTimeRiskGameplayDelta"]["matches"], 1)
             self.assertEqual(cats["binaryHardwareSwitch"]["matches"], 1)
             self.assertEqual(cats["jobHandleComplete"]["matches"], 1)
 
@@ -325,6 +328,37 @@ public sealed class NativeApi
             self.assertEqual(cats["nativeApiRiskRuntimeReturnMutableView"]["matches"], 1)
             self.assertEqual(cats["nativeApiRiskRuntimeOutRefMutableView"]["matches"], 1)
             self.assertEqual(cats["nativeApiRiskRuntimeDiagnosticNamedMutableView"]["matches"], 1)
+
+    def test_classifies_unity_time_risk_buckets(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            src = root / "TimeRoutes.cs"
+            src.write_text(
+                """
+using UnityEngine;
+
+public sealed class TimeRoutes
+{
+    public void Tick()
+    {
+        int frame = Time.frameCount;
+        if (Time.time < _nextWarningLogTime) return;
+        float dt = Time.fixedDeltaTime;
+    }
+}
+""",
+                encoding="utf-8",
+            )
+
+            payload = audit.build_payload(root)
+            cats = payload["categories"]
+            self.assertEqual(cats["unityTimeCritical"]["matches"], 3)
+            self.assertEqual(cats["unityTimeFrameCount"]["matches"], 1)
+            self.assertEqual(cats["unityTimeWallClock"]["matches"], 1)
+            self.assertEqual(cats["unityTimeDelta"]["matches"], 1)
+            self.assertEqual(cats["unityTimeRiskFrameStampOrTelemetry"]["matches"], 1)
+            self.assertEqual(cats["unityTimeRiskCooldownOrPerfLog"]["matches"], 1)
+            self.assertEqual(cats["unityTimeRiskGameplayDelta"]["matches"], 1)
 
 
 if __name__ == "__main__":

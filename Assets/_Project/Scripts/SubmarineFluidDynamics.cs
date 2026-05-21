@@ -4441,7 +4441,7 @@ namespace Hecton8.Physics
             _isBrineSubmerged = insideBrine;
             if (_isBrineSubmerged)
             {
-                _brineSubmersionTime += math.max(0f, Time.fixedDeltaTime);
+                _brineSubmersionTime += math.max(0f, _currentFixedDeltaTime);
             }
             else
             {

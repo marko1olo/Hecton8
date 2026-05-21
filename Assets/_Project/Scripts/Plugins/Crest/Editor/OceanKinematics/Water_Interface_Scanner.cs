@@ -37,6 +37,7 @@ namespace Hecton8.Physics.Editor
         {
             string[] guids = AssetDatabase.FindAssets("t:MonoScript", new[] { "Assets/_Project/Scripts" });
             StringBuilder findings = new StringBuilder(4096);
+            StringBuilder legacyManagedCallers = new StringBuilder(512);
             int directOceanRendererLookups = 0;
             int managedWaterQueries = 0;
             int scanned = 0;
@@ -60,9 +61,14 @@ namespace Hecton8.Physics.Editor
                     {
                         int line = ResolveLine(text, index);
                         if (Patterns[p].Contains("OceanRenderer"))
+                        {
                             directOceanRendererLookups++;
+                        }
                         else
+                        {
                             managedWaterQueries++;
+                            AppendUniqueJsonString(legacyManagedCallers, assetPath);
+                        }
 
                         AppendFinding(findings, assetPath, line, Patterns[p]);
                         index = text.IndexOf(Patterns[p], index + Patterns[p].Length, StringComparison.Ordinal);
@@ -90,6 +96,9 @@ namespace Hecton8.Physics.Editor
                                "  \"directOceanRendererLookups\": " + directOceanRendererLookups.ToString() + ",\n" +
                                "  \"managedWaterQueries\": " + managedWaterQueries.ToString() + ",\n" +
                                "  \"oopWaterQueriesEradicated\": " + (directOceanRendererLookups == 0 && managedWaterQueries == 0 ? "true" : "false") + ",\n" +
+                               "  \"ownerBoundary\": \"If managedWaterQueries is nonzero, the remaining callers are outside the SHINOBU_261 Crest adapter write scope and require Player/Flora owner migration or integrator authorization.\",\n" +
+                               "  \"requiredMigration\": \"Move remaining callers to Vault-backed OceanKinematicsSampleRequestDTO queues, OceanMacroStateDTO reads, or an owner-approved nonblocking batch bridge; do not add per-frame Crest/OceanRenderer calls.\",\n" +
+                               "  \"legacyManagedCallers\": [\n" + legacyManagedCallers.ToString() + "\n  ],\n" +
                                "  \"findings\": [\n" + findings.ToString() + "\n  ]\n" +
                                "}\n";
 
@@ -176,6 +185,21 @@ namespace Hecton8.Physics.Editor
             builder.Append(", \"pattern\": \"");
             builder.Append(Escape(pattern));
             builder.Append("\" }");
+        }
+
+        private static void AppendUniqueJsonString(StringBuilder builder, string path)
+        {
+            string escaped = Escape(path);
+            string needle = "\"" + escaped + "\"";
+            if (builder.ToString().IndexOf(needle, StringComparison.Ordinal) >= 0)
+                return;
+
+            if (builder.Length > 0)
+                builder.Append(",\n");
+
+            builder.Append("    \"");
+            builder.Append(escaped);
+            builder.Append("\"");
         }
 
         private static int ResolveLine(string text, int index)

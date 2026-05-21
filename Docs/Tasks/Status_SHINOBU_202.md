@@ -3971,3 +3971,21 @@ Mandates read before coding:
 - `git diff --check` passed for `SomaticKinematicsRuntime.cs`.
 - Build not relaunched under the explicit no-rebuild command discipline.
 - Note: `SomaticKinematicsRuntime.cs` was tracked and clean before this loop; this loop claims only the retained Vault descriptor route, GameplayPlayer-owned release/tombstone policy, DataVault rebind release path, byref helper removal, and job field `[NoAlias]` proof.
+
+## Loop 222 - VR Somatic Provider Descriptor Route
+- [x] Replaced the VR Somatic provider Vault wrapper with descriptor-backed native views.
+  DOD practice: blackbox, head collision command/hit/sample, root sync input/output, hand target/physical position, comfort write/read, derivatives, history, comfort profiles, profile lookup, comfort telemetry, mock sickness, and comfort CSV scratch routes now store `VaultGenerationHandle<T>` descriptors inside `VaultNativeArray<T>` and open through exact BufferID, `SystemID.GameplayPlayer`, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated` proof.
+  Rejected: keeping the wrapper around `VaultBufferHandle<T>`, `GetBufferHandle`, retained handle `.IsCreated`, direct `.Resolve()`, and implicit pointer-era resolve because the provider spans scheduled capsule casts, root sync jobs, hand kinematics, comfort kernels, blackbox dumps, and DataVault replacement.
+  Estimate: descriptor proof runs at buffer ensure, root/hand/head job setup, comfort seed/kernel setup, shader/blackbox write, telemetry dump, and wrapper indexer boundaries; VR DTO strides, BufferIDs, job math, shader property IDs, and SignalBus/GlobalSignals payloads are unchanged.
+- [x] Added GameplayPlayer-owned release and DataVault hot-swap route.
+  DOD practice: provider disable, inactive runtime, destroy, and DataVault hot-swap complete pending provider/comfort jobs, release all descriptor-backed GameplayPlayer lanes through `ReleaseBuffer(in handle)`, and tombstone route state before reacquisition. The hot-swap listener performs this at the service boundary, not inside `ResolveDataVault` or any read accessor.
+  Rejected: hiding DataVault identity checks inside `ResolveDataVault` because that would add completion/release side effects to a read accessor. Rewriting comfort profile math, capsule sweep composition, root-sync horizon lock, hand ghosting, shader scalar publication, or blackbox schema was rejected as outside this stale pointer route loop.
+  Estimate: cold lifecycle and phase-boundary only; no BufferID, DTO layout, save identity, shader property, signal route, telemetry stride, binary payload format, or gameplay authority change.
+
+## Compile State Update 216
+- Focused scan on `VRSomaticProvider.cs` and `VRSomaticProvider.Comfort.cs` found no executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `GetBuffer<T>`, direct `TryGetBuffer(...)`, `TryGetLatestCreated`, word-boundary `ResolveBuffer`, `ResolvePointer`, `.Resolve(...)`, `TryGetBufferGeneration`, `VaultGenerationID`, or `GetElementAsRef` hits.
+- Descriptor route scan confirmed expected `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `AsNativeArray`, `Release()`, `ReleaseBuffer(in _handle)`, `RegisterHotSwapListener`, and `OnGlobalRegistryServiceReplaced`.
+- Brace counts are balanced: `VRSomaticProvider.cs` `281/281`; `VRSomaticProvider.Comfort.cs` `132/132`; EOF checks passed.
+- `git diff --check` passed for both VR Somatic provider files.
+- Build not relaunched under the explicit no-rebuild command discipline.
+- Note: `git status --short` does not currently show these two provider files after the patch, even though the on-disk scans verify the descriptor-backed route. This loop claims the audited route migration and documentation evidence, not repository index ownership.

@@ -139,7 +139,7 @@ namespace Hecton8.Physics.Exosuit.Editor
             json.Append("\n  ]\n");
             json.Append("}\n");
             string reportJson = json.ToString();
-            File.WriteAllText(reportPath, reportJson);
+            WriteTextAtomic(reportPath, reportJson);
             TryUpsertAggregateReport(aggregateReportPath, reportJson);
             AssetDatabase.Refresh();
             if (forbiddenHits || !layoutOk)
@@ -152,32 +152,89 @@ namespace Hecton8.Physics.Exosuit.Editor
         {
             const string NodeKey = "\"shinobu276ExosuitKinematicsScanner\"";
             string indentedReport = reportJson.TrimEnd().Replace("\n", "\n  ");
-            if (!File.Exists(aggregateReportPath))
+            string lockPath = aggregateReportPath + ".lock";
+            for (int attempt = 0; attempt < 20; attempt++)
             {
-                File.WriteAllText(aggregateReportPath, "{\n  " + NodeKey + ": " + indentedReport + "\n}\n");
-                return;
+                try
+                {
+                    using (new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+                    {
+                        string nextAggregate = BuildAggregateReportText(aggregateReportPath, NodeKey, indentedReport);
+                        if (!string.IsNullOrEmpty(nextAggregate))
+                            WriteTextAtomicUnlocked(aggregateReportPath, nextAggregate);
+                        return;
+                    }
+                }
+                catch (IOException)
+                {
+                    if (attempt == 19)
+                        throw;
+                    System.Threading.Thread.Sleep(15);
+                }
             }
+        }
+
+        private static string BuildAggregateReportText(string aggregateReportPath, string nodeKey, string indentedReport)
+        {
+            if (!File.Exists(aggregateReportPath))
+                return "{\n  " + nodeKey + ": " + indentedReport + "\n}\n";
 
             string aggregate = File.ReadAllText(aggregateReportPath);
-            int keyIndex = aggregate.IndexOf(NodeKey, System.StringComparison.Ordinal);
+            int keyIndex = aggregate.IndexOf(nodeKey, System.StringComparison.Ordinal);
             if (keyIndex >= 0)
             {
                 int colon = aggregate.IndexOf(':', keyIndex);
                 int objectStart = colon >= 0 ? aggregate.IndexOf('{', colon) : -1;
                 int objectEnd = FindJsonObjectEnd(aggregate, objectStart);
-                if (objectStart >= 0 && objectEnd >= objectStart)
-                    File.WriteAllText(aggregateReportPath, aggregate.Substring(0, objectStart) + indentedReport + aggregate.Substring(objectEnd + 1));
-                return;
+                return objectStart >= 0 && objectEnd >= objectStart
+                    ? aggregate.Substring(0, objectStart) + indentedReport + aggregate.Substring(objectEnd + 1)
+                    : string.Empty;
             }
 
             int insert = aggregate.LastIndexOf('}');
             if (insert < 0)
-                return;
+                return string.Empty;
 
             string prefix = aggregate.Substring(0, insert).TrimEnd();
             bool needsComma = prefix.Length > 1 && prefix[prefix.Length - 1] != '{';
-            string node = (needsComma ? ",\n" : "\n") + "  " + NodeKey + ": " + indentedReport + "\n";
-            File.WriteAllText(aggregateReportPath, prefix + node + aggregate.Substring(insert));
+            string node = (needsComma ? ",\n" : "\n") + "  " + nodeKey + ": " + indentedReport + "\n";
+            return prefix + node + aggregate.Substring(insert);
+        }
+
+        private static void WriteTextAtomic(string path, string contents)
+        {
+            string directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            string lockPath = path + ".lock";
+            for (int attempt = 0; attempt < 20; attempt++)
+            {
+                try
+                {
+                    using (new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+                    {
+                        WriteTextAtomicUnlocked(path, contents);
+                        return;
+                    }
+                }
+                catch (IOException)
+                {
+                    if (attempt == 19)
+                        throw;
+                    System.Threading.Thread.Sleep(15);
+                }
+            }
+        }
+
+        private static void WriteTextAtomicUnlocked(string path, string contents)
+        {
+            string tempPath = path + ".tmp." + System.Guid.NewGuid().ToString("N");
+            File.WriteAllText(tempPath, contents);
+            if (File.Exists(path))
+                File.Replace(tempPath, path, null);
+            else
+                File.Move(tempPath, path);
         }
 
         private static int FindJsonObjectEnd(string text, int objectStart)

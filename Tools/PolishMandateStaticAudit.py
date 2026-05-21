@@ -155,6 +155,30 @@ NATIVE_API_DIAGNOSTIC_NAME_RE = re.compile(
     r"(?:ForEditor|Debug|Diagnostic|Readback|Tuner|Snapshot|Telemetry|Inspector|Gizmo)",
     re.IGNORECASE,
 )
+UNITY_TIME_KIND_KEYS = (
+    "unityTimeFrameCount",
+    "unityTimeDelta",
+    "unityTimeWallClock",
+)
+UNITY_TIME_BUILD_SURFACE_KEYS = (
+    "unityTimeBuildPlayerRuntime",
+    "unityTimeBuildEditorOnly",
+    "unityTimeBuildQaDevProof",
+)
+UNITY_TIME_RISK_BUCKET_KEYS = (
+    "unityTimeRiskEditorOrProof",
+    "unityTimeRiskFrameStampOrTelemetry",
+    "unityTimeRiskCooldownOrPerfLog",
+    "unityTimeRiskGameplayDelta",
+    "unityTimeRiskGameplayWallClock",
+)
+UNITY_TIME_FRAME_RE = re.compile(r"\bTime\.frameCount\b")
+UNITY_TIME_DELTA_RE = re.compile(r"\bTime\.(?:deltaTime|fixedDeltaTime)\b")
+UNITY_TIME_WALL_RE = re.compile(r"\bTime\.time\b")
+UNITY_TIME_DIAGNOSTIC_RE = re.compile(
+    r"(?:warning|warn|log|debug|perf|profile|watchdog|cooldown|next|telemetry|dump|diagnostic)",
+    re.IGNORECASE,
+)
 STRING_LITERAL_RE = re.compile(
     r"""
     (?:
@@ -426,6 +450,50 @@ def record_native_api_exposure_classification(
     results[risk].append(finding)
 
 
+def classify_unity_time_kind(scan_code: str) -> str:
+    if UNITY_TIME_FRAME_RE.search(scan_code) is not None:
+        return "unityTimeFrameCount"
+    if UNITY_TIME_DELTA_RE.search(scan_code) is not None:
+        return "unityTimeDelta"
+    return "unityTimeWallClock"
+
+
+def classify_unity_time_build_surface(rel: str) -> str:
+    private_surface = classify_private_native_build_surface(rel)
+    if private_surface == "privateNativeBuildEditorOnly":
+        return "unityTimeBuildEditorOnly"
+    if private_surface == "privateNativeBuildQaDevProof":
+        return "unityTimeBuildQaDevProof"
+    return "unityTimeBuildPlayerRuntime"
+
+
+def classify_unity_time_primary_risk(raw_line: str, scan_code: str, kind: str, build_surface: str) -> str:
+    if build_surface != "unityTimeBuildPlayerRuntime":
+        return "unityTimeRiskEditorOrProof"
+    if kind == "unityTimeFrameCount":
+        return "unityTimeRiskFrameStampOrTelemetry"
+    if UNITY_TIME_DIAGNOSTIC_RE.search(raw_line) is not None:
+        return "unityTimeRiskCooldownOrPerfLog"
+    if kind == "unityTimeDelta":
+        return "unityTimeRiskGameplayDelta"
+    return "unityTimeRiskGameplayWallClock"
+
+
+def record_unity_time_classification(
+    results: dict[str, list[Finding]],
+    finding: Finding,
+    rel: str,
+    raw_line: str,
+    scan_code: str,
+) -> None:
+    kind = classify_unity_time_kind(scan_code)
+    build_surface = classify_unity_time_build_surface(rel)
+    risk = classify_unity_time_primary_risk(raw_line, scan_code, kind, build_surface)
+    results[kind].append(finding)
+    results[build_surface].append(finding)
+    results[risk].append(finding)
+
+
 def empty_results() -> dict[str, list[Finding]]:
     results: dict[str, list[Finding]] = {key: [] for key in LINE_PATTERNS}
     results.update(
@@ -446,6 +514,9 @@ def empty_results() -> dict[str, list[Finding]]:
         *NATIVE_API_EXPOSURE_KIND_KEYS,
         *NATIVE_API_EXPOSURE_BUILD_SURFACE_KEYS,
         *NATIVE_API_EXPOSURE_RISK_BUCKET_KEYS,
+        *UNITY_TIME_KIND_KEYS,
+        *UNITY_TIME_BUILD_SURFACE_KEYS,
+        *UNITY_TIME_RISK_BUCKET_KEYS,
     ):
         results[key] = []
     return results
@@ -501,6 +572,8 @@ def record_line_patterns(
                     scan_code,
                     lines,
                 )
+            if key == "unityTimeCritical":
+                record_unity_time_classification(results, finding, rel, raw_line, scan_code)
 
     if is_binary_hardware_switch_line(scan_code):
         results["binaryHardwareSwitch"].append(Finding(rel, line_number, raw_line.strip()))

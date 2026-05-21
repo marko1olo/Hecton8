@@ -562,6 +562,12 @@ namespace Hecton8.Editor.FloraAmbientSway
                 !runtime.Contains("new " + "CalculateFloraSwayParametersJob") &&
                 !runtime.Contains("new " + "float3") &&
                 !runtime.Contains("new " + "float4");
+            string forbiddenVisualFloatFast = "FloatMode." + "Fast";
+            bool burstFloatMode =
+                CountOccurrences(runtime, "FloatMode = FloatMode.Deterministic") >= 4 &&
+                CountOccurrences(runtime, "FloatPrecision = FloatPrecision.Standard") >= 4 &&
+                CountOccurrences(runtime, "CompileSynchronously = true") >= 4 &&
+                !runtime.Contains(forbiddenVisualFloatFast);
             bool burstFunctionPointers =
                 runtime.Contains("BurstCompiler.CompileFunctionPointer<GenerateMockAmbientFlowKernelDelegate>") &&
                 runtime.Contains("BurstCompiler.CompileFunctionPointer<CalculateFloraSwayParametersKernelDelegate>") &&
@@ -589,7 +595,7 @@ namespace Hecton8.Editor.FloraAmbientSway
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway.meta") &&
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway/FloraAmbientSwayEditorTools.cs.meta") &&
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway/Hecton8.World.FloraAmbientSway.Editor.asmdef.meta");
-            bool pass = layout && dispatcher && fmod && upload && shaderQuality && telemetry && readAccessorPurity && runtimeQualityFailClosed && unsafeDtoMutation && hotOwnerMutationAndMath && hotValueNewHygiene && burstFunctionPointers && aotFunctionPointerAbi && asmdefBoundary && metaIdentity;
+            bool pass = layout && dispatcher && fmod && upload && shaderQuality && telemetry && readAccessorPurity && runtimeQualityFailClosed && unsafeDtoMutation && hotOwnerMutationAndMath && hotValueNewHygiene && burstFloatMode && burstFunctionPointers && aotFunctionPointerAbi && asmdefBoundary && metaIdentity;
             if (!pass)
             {
                 Debug.LogError(
@@ -607,6 +613,7 @@ namespace Hecton8.Editor.FloraAmbientSway
                     " unsafeDtoMutation=" + unsafeDtoMutation +
                     " hotOwnerMutationAndMath=" + hotOwnerMutationAndMath +
                     " hotValueNewHygiene=" + hotValueNewHygiene +
+                    " burstFloatMode=" + burstFloatMode +
                     " burstFunctionPointers=" + burstFunctionPointers +
                     " aotFunctionPointerAbi=" + aotFunctionPointerAbi +
                     " asmdefBoundary=" + asmdefBoundary +

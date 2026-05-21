@@ -465,6 +465,7 @@ namespace Hecton8.AI
         private int _simulationBucketId;
         private int _simulationBucketSlowMask = -1;
         private float _simulationBucketInterpolationAlpha;
+        private float _lastFixedTickDeltaSeconds = 0.02f;
         private Vector3 _cachedDesiredDirection;
         private AIState _currentStateCache;
         private Transform _currentCullingPlayerTransform;
@@ -2887,6 +2888,8 @@ namespace Hecton8.AI
 
         public void FixedTick(float fdt)
         {
+            _lastFixedTickDeltaSeconds = math.max(math.select(0.02f, fdt, math.isfinite(fdt)), 0.0001f);
+
             if (_isDead)
             {
                 ApplyDeathSpiralFixedStep(fdt);
@@ -3403,7 +3406,7 @@ namespace Hecton8.AI
             if (!math.isfinite(displacementSq) || displacementSq <= 0.000001f)
                 return false;
 
-            float fixedDeltaTime = math.max(Time.fixedDeltaTime, 0.0001f);
+            float fixedDeltaTime = math.max(_lastFixedTickDeltaSeconds, 0.0001f);
             Vector3 impliedVelocity = displacement * math.rcp(fixedDeltaTime);
             if (!KinematicCcdMath.ShouldSchedule(new float3(impliedVelocity.x, impliedVelocity.y, impliedVelocity.z)))
                 return false;
