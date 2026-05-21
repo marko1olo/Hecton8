@@ -67,6 +67,60 @@ Remaining blocked/pending:
   <QUALITY status="DRS shader uses continuous scale-deficit curve; no binary low-tier switch added" />
 </SELF_AUDIT>
 
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="LeviathanTerrainIkKernelAuthority">
+  <WHAT_WAS_WRONG>
+    `LeviathanTerrainIkJob` internally collapsed segment count, iteration count, SDF hugging, and telemetry state from `GlobalQualityWeight`. A future caller could reintroduce hardware-dependent terrain contact even after runtime pinning.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed low-tier runtime and telemetry constants, pinned kernel quality to 1.0, removed the quality segment cap, removed the quality iteration cap, and made SDF use depend only on explicit runtime flag plus valid SDF payload.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Visual bone upload density, debug draw, shader deformation, and optional telemetry can scale. Segment topology, SDF terrain hug, and collider proxy truth cannot.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. This pass removes stale branches but intentionally preserves full IK authority work on weak devices.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `RuntimeFlagLowTier`, `TelemetryFlagLowTier`, `survivalCollapse`, `qualitySegmentBudget`, `continuousIterations`, or `lowTier` in the terrain IK job route. `git diff --check` passed with line-ending warnings only. Build skipped because CPU was 97% with active `dotnet` and `csc`.
+  </VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="VRHandPresenceAuthority">
+  <WHAT_WAS_WRONG>
+    `VRPhysicalHandPresenceJob` had hardware-tier bits that could force screen-space fallback on active VR hands or allow SDF projection through a high-tier flag. That changed hand position, lock state, haptic scrape, and interaction feedback by device tier.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed `RuntimeFlagLowTier` and `RuntimeFlagHighTier` from the hand-presence constants. VR fallback now depends only on `RuntimeFlagVrActive`; SDF projection depends only on the explicit `RuntimeFlagSdfProjection` capability bit.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Visual ghost opacity, controller mesh quality, hand material response, haptic presentation scaling, and optional telemetry are valid presentation lanes. Physical lock/sliding/SDF contact is not faked by hardware tier.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. The pass removes two tier checks but intentionally preserves the physical solve on weak VR devices.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `RuntimeFlagLowTier`, `RuntimeFlagHighTier`, or low-tier branch in `VRPhysicalHandPresenceIkJobs.cs`. `git diff --check` passed with line-ending warnings only. Build skipped because CPU was 79% with active `dotnet` and `csc`.
+  </VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="ProceduralBiteKernelAuthority">
+  <WHAT_WAS_WRONG>
+    `ProceduralBiteJob` still accepted low-tier and stress-fallback flags that could skip mandible solving, force a snap blend, scale the head bone differently, and emit low-tier fake result flags.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the low-tier/stress-fallback constants and all branch consumers from the bite kernel. The job now always solves mandibles and uses deterministic three-frame blending; system stress remains only in telemetry fields.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Bite sparks, hull dents, tentacle wrap VFX, material response, and non-authority telemetry density remain presentation lanes. Jaw contact and mandible pose are not faked from hardware or stress.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. This intentionally removes the cheaper fallback path to preserve bite truth; the branch and stale fake result path are gone.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `RuntimeFlagLowTier`, `RuntimeFlagSystemStressFallback`, `ResultFlagLowTierFake`, `StressFallbackThreshold01`, `lowTier`, or `stressFallback` in the procedural bite kernel route. `git diff --check` passed with line-ending warnings only. Build skipped because CPU was 99% with active `dotnet` and `csc`.
+  </VERIFICATION>
+</SELF_AUDIT>
+
 <SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="OceanFluidAuthority">
   <WHAT_WAS_WRONG>
     `HectonFluidEngine` used hardware tier and low-memory state to change ocean physics truth: CPU flow quality, Gerstner wave budget, buoyancy surface normals, tidal shear, maelstrom count/tangent velocity/clamp, and splashdown impulse field scheduling all varied by device.

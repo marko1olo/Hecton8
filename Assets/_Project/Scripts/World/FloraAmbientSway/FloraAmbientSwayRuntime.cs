@@ -583,8 +583,14 @@ namespace Hecton8.World.FloraAmbientSway
                    UnsafeUtility.AlignOf<FloraSwayParamsDTO>() >= 4 &&
                    telemetrySize == (int)SwayTelemetryEntrySizeBytes &&
                    profileSize == 32 &&
-                   Marshal.OffsetOf(typeof(FloraSwayParamsDTO), nameof(FloraSwayParamsDTO.GlobalFlowVector)).ToInt32() == 0 &&
-                   Marshal.OffsetOf(typeof(FloraSwayParamsDTO), nameof(FloraSwayParamsDTO.SwayMathParams)).ToInt32() == 16;
+                   GetFieldOffset<FloraSwayParamsDTO>(nameof(FloraSwayParamsDTO.GlobalFlowVector)) == 0 &&
+                   GetFieldOffset<FloraSwayParamsDTO>(nameof(FloraSwayParamsDTO.SwayMathParams)) == 16;
+        }
+
+        private static int GetFieldOffset<T>(string fieldName) where T : struct
+        {
+            System.Reflection.FieldInfo field = typeof(T).GetField(fieldName);
+            return field == null ? -1 : UnsafeUtility.GetFieldOffset(field);
         }
 
         public static bool TryParseBiomeProfiles(ReadOnlySpan<byte> csvBytes, NativeArray<FloraBiomeSwayProfileDTO> profiles, out int count)

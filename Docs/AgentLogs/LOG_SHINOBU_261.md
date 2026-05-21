@@ -655,3 +655,23 @@ What was wrong: runtime and proof files changed after the last gate, and one his
 What was done: scrubbed the stale token from `Status_SHINOBU_261.md`; strict stale-token scan returned `STALE_TOKENS_CLEAR`, runtime forbidden-pattern scan returned `RUNTIME_FORBIDDEN_CLEAR`, JSON reports parsed, scoped comment/string-aware brace scan returned `SCOPED_CS_BRACES_OK`, and scoped `git diff --check` reported only LF-to-CRLF repository warnings.
 Cinematic Cheats used: none; this is proof verification for the Dear Lie cache-maintenance patch.
 Exact Microseconds saved: 0 runtime us. Build not launched: CPU average 51 with active `csc` (`Id=16044`) and `dotnet` (`Id=34832`).
+
+## Runtime Patch: Queued Evaluators Use Batch Jobs
+What was wrong: queued water evaluators scheduled a budget-sized `IJobParallelFor` after the drain job, so empty/sparse queues still paid per-index tail checks until the packed counter stopped each lane.
+What was done: converted `GenerateMockOceanWavesJob`, `EvaluateAnalyticalWavesJob`, and `ResolveDearLieCachedResultsJob` to `IJobParallelForBatch`; all direct and queued call sites now use `ScheduleBatch`. Each batch reads `QueueCounterPacked` once and skips whole tail ranges.
+Cinematic Cheats used: none; this protects the Dear Lie and analytical evaluators from scheduler tail waste without changing the visual fake.
+Exact Microseconds saved: no measured profiler claim. A 50k empty budget changes from up to 50k element no-op checks to about 782 batch skips with the current 64-lane high-count batch size.
+
+## Verification: Post Batch Evaluator Patch
+What was wrong: runtime job interfaces and scheduling calls changed and needed a source-local gate before any compile attempt.
+What was done: scoped batch-schedule scan returned `BATCH_SCHEDULE_STATIC_CLEAR`; scoped brace scan returned `SCOPED_CS_BRACES_OK`; runtime forbidden-pattern scan returned `RUNTIME_FORBIDDEN_CLEAR`; stale-token scan returned `STALE_TOKENS_CLEAR`; JSON reports parsed; scoped `git diff --check` reported only LF-to-CRLF repository warnings.
+Cinematic Cheats used: none.
+Exact Microseconds saved: 0 runtime us for verification. Build not launched: CPU average 99 with active `csc` (`Id=38028`) and `dotnet` (`Id=22280`).
+
+<SELF_AUDIT_REVISION id="SHINOBU_261_CURRENT_VERDICT_2026_05_21">
+  <task id="01" status="[PARTIAL_BLOCKED_BY_OWNER_BOUNDARY]">SHINOBU_261 queued Vault/Burst water route is batch-owned; whole-project OOP water eradication still depends on Player/Flora owners migrating four legacy managed call sites.</task>
+  <task id="19" status="[FAIL_BLOCKED_BY_DEPENDENCY]">Current sidecar proof remains `oopWaterQueriesEradicated=false` until `HectonPlayerMovement` and `FloraInteractionManager` stop calling `GetWaterHeight`/`GetWaveNormal`/`GetSurfaceFlow` directly.</task>
+  <queued_evaluator_tail status="[PASS]">Analytical, cached Dear Lie, and mock evaluators use `IJobParallelForBatch`/`ScheduleBatch` and skip empty tail ranges by reading `QueueCounterPacked` once per batch.</queued_evaluator_tail>
+  <residual_exact_deferred_schedule status="[PENDING_DISPATCHER_ROUTE]">Exact packed-count parallel scheduling would require deferred-list or dispatcher support outside this domain; no unsafe main-thread `NativeQueue.Count` read was introduced.</residual_exact_deferred_schedule>
+  <compile status="[BLOCKED_BY_CPU_GATE]">Latest compile gate sample: CPU average 99 with active `csc` (`Id=39656`) and `dotnet` (`Id=22280`); no build launched.</compile>
+</SELF_AUDIT_REVISION>

@@ -444,7 +444,7 @@ namespace Hecton8.AI
         private const float LeviathanBreachAirDragBypassSeconds = 1.5f;
         private const float MinimumEggClutchCooldownSeconds = 300f;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private static float _nextSlowTickWatchdogLogTime;
+        private static int _nextSlowTickWatchdogLogFrame;
 #endif
         
         // --- LOD & Stagger ---
@@ -643,7 +643,6 @@ namespace Hecton8.AI
         private HectonAtmosphereManager _atmosphereRuntime;
         private SargassumMicroFaunaBoids _sargassumMicroFauna;
         private ISimulationBucketer _simulationBucketerRuntime;
-        private byte _scalabilityTierProfileByte;
 
         // ══════════════════════════════════════════════════════════
         //  SERIALIZATION MIGRATION (Option B Data Preservation)
@@ -1115,7 +1114,6 @@ namespace Hecton8.AI
             _atmosphereRuntime = GlobalRegistry.Atmosphere;
             _sargassumMicroFauna = GlobalRegistry.SargassumMicroFauna;
             _simulationBucketerRuntime = GlobalRegistry.SimulationBucketer;
-            _scalabilityTierProfileByte = GlobalRegistry.ScalabilityTierProfileByte;
             RefreshCachedEcosystemDirectorReference();
         }
 
@@ -3015,12 +3013,12 @@ namespace Hecton8.AI
             _combatMobilityScale = math.min(
                 math.clamp(speedScale, 0.05f, 1f),
                 math.clamp(_combatMobilityScale, 0.05f, 1f));
-            _combatMobilityUntilTime = math.max(_combatMobilityUntilTime, Time.time + durationSeconds);
+            _combatMobilityUntilTime = math.max(_combatMobilityUntilTime, _cognitionTimeSeconds + durationSeconds);
         }
 
         private float ResolveCombatMobilitySpeedMultiplier()
         {
-            if (_combatMobilityUntilTime <= Time.time)
+            if (_combatMobilityUntilTime <= _cognitionTimeSeconds)
             {
                 _combatMobilityScale = 1f;
                 return 1f;
@@ -4379,7 +4377,7 @@ namespace Hecton8.AI
         private void ConsumeRetinalBlindPresentationSignals()
         {
             int retinalSlot = CreatureUtilityBrain.ResolveSlot(in _utilityBrain);
-            if (retinalSlot < 0 || _scalabilityTierProfileByte < 2)
+            if (retinalSlot < 0)
                 return;
 
             ReadOnlySpan<FaunaStateChangedSignal> signals = SignalBus<FaunaStateChangedSignal>.GetFrameSnapshot();
@@ -4403,7 +4401,7 @@ namespace Hecton8.AI
 
         private float ResolveRetinalBlindBiolumStrobe01()
         {
-            if (_scalabilityTierProfileByte < 2 || _cognitionTimeSeconds >= _retinalBlindBiolumUntilTime)
+            if (_cognitionTimeSeconds >= _retinalBlindBiolumUntilTime)
                 return 0f;
 
             int retinalSlot = math.max(0, CreatureUtilityBrain.ResolveSlot(in _utilityBrain));
@@ -4411,7 +4409,18 @@ namespace Hecton8.AI
             float primary = math.saturate(0.5f + (0.5f * RetinalExposureMath.SignedTriangle(phase)));
             float secondaryPhase = (_cognitionTimeSeconds * RetinalBlindBiolumSecondaryFrequency) + ((retinalSlot & 31) * 0.381966f) + 0.37f;
             float secondary = math.saturate(0.5f + (0.5f * RetinalExposureMath.SignedTriangle(secondaryPhase)));
-            return math.saturate(RetinalBlindBiolumMinimum01 + ((1f - RetinalBlindBiolumMinimum01) * math.max(primary, secondary)));
+            float quality = ResolveRetinalBlindPresentationQuality01();
+            float intensityFloor = math.lerp(0.35f, 1f, quality);
+            return math.saturate(
+                RetinalBlindBiolumMinimum01 +
+                ((1f - RetinalBlindBiolumMinimum01) * math.max(primary, secondary) * intensityFloor));
+        }
+
+        private static float ResolveRetinalBlindPresentationQuality01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            quality = math.isfinite(quality) ? math.saturate(quality) : 0f;
+            return quality * quality * (3f - 2f * quality);
         }
 
         private void ApplyFaunaPresentationShaderState(float biolumDim01, float deathDitherFade01, float corpseBloatAge01, float hitFlash01, float decayAmount01 = 0f)
@@ -4706,11 +4715,12 @@ namespace Hecton8.AI
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+            int frame = Time.frameCount;
             if (_slowTickAccumulator >= SlowTickIntervalSeconds &&
                 iterationCount >= MaxSlowTicksPerDispatcherTick &&
-                Time.time >= _nextSlowTickWatchdogLogTime)
+                frame >= _nextSlowTickWatchdogLogFrame)
             {
-                _nextSlowTickWatchdogLogTime = Time.time + 5f;
+                _nextSlowTickWatchdogLogFrame = frame + 300;
                 Debug.LogError("FaunaBrain slow-tick watchdog tripped. Cadence backlog was clamped.", this);
             }
 #endif
@@ -6817,7 +6827,7 @@ namespace Hecton8.AI
                 in positionAup,
                 IsLargeThreatForHibernation(),
                 IsPredatorForHibernation(),
-                Time.time,
+                ReadDispatcherTimeSeconds(),
                 CurrentHunger01);
 
             if (!registry.TryCacheFaunaHibernationState(in cachedState))
@@ -6847,6 +6857,16 @@ namespace Hecton8.AI
             return isAggressive ||
                    _utilityBrain.IsActivePredator != 0 ||
                    (_speciesProfile != null && _speciesProfile.baseAggro >= 0.45f);
+        }
+
+        private static float ReadDispatcherTimeSeconds()
+        {
+            SystemDispatcher dispatcher = SystemDispatcher.ActiveRuntimeInstance;
+            double seconds = dispatcher != null ? dispatcher.DilatedTimeSeconds : 0d;
+            if (!math.isfinite(seconds) || seconds <= 0d)
+                return 0f;
+
+            return seconds > float.MaxValue ? float.MaxValue : (float)seconds;
         }
 
         private void CacheLogicalLodComponents()

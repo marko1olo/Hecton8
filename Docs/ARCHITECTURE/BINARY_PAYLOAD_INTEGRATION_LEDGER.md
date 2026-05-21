@@ -4,6 +4,14 @@ Date: 2026-05-18
 Owner lane: H8BIN_GRAVEYARD_AUDITOR
 Status: STATIC SOURCE / FILESYSTEM LEDGER, RUNTIME PENDING
 
+## 2026-05-22 - SHINOBU_270 Visor AR Descriptor Release Route
+
+- Owner: `SHINOBU_270 / VISOR_AR_STENCIL_RENDERER`, Echelon 8 Presentation & UX visor-HUD visual route. Evidence class: STATIC_SOURCE / STATIC_DOC only; Unity import, Play Mode, Memory Profiler, Frame Debugger, player-build, and compile proof remain pending.
+- BufferIDs unchanged: `73180` `VisorHudParamsDTO`, `73181` `ARWaypointOverlay.StencilTargetSourceDTO`, `73182` `VisorArTargetDTO`, `73183` `VisorHudDigitParamsDTO`, `73184` `VisorTelemetryEntry`, `73185` `VisorHudProfileDTO`, and `73186` CSV scratch bytes remain visual-only UI/SystemID presentation lanes excluded from rollback/Merkle hashing.
+- Lifecycle route delta: `HectonVisorARStencilRendererFeature` now releases all seven owned `VaultGenerationHandle<T>` descriptors through `IDataVault.ReleaseBuffer(in handle)` on renderer disposal, DataVault service replacement, and cold service rebind before tombstoning local handles. The previous descriptor-only clear helper was removed.
+- Binary payload impact: route-only. No DTO layout, BufferID, CBuffer stride, StructuredBuffer stride, shader property ID, telemetry dump ABI, CSV byte contract, stencil lane, rollback exclusion, or SignalBus ABI changed.
+- Verification: targeted SHINOBU_270 forbidden-token scan returned no `GlobalSignals`, `FromRuntimePosition`, shader global setters, `Canvas.ForceUpdateCanvases`, `TryGetLatestCreated`, Burst/job/tiny-run wrappers, `.Complete()`, persistent runtime `NativeArray`, or `_CameraDepthTexture`. Build was not relaunched because active `dotnet.exe`/`csc.exe` processes and CPU gate blocked it; generated `Hecton8.Core.csproj` remains stale until Unity regenerates/imports new visor scripts.
+
 ## 2026-05-21 - SHINOBU_278 Coop Input Prediction Descriptor Refresh And Scanner Widening
 
 - Owner route unchanged: `Hecton8.Core.InputDispatcher` owns local predicted input truth lanes `75000..75001`; rollback consumes them through generation descriptors and does not create them.

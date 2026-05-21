@@ -396,3 +396,11 @@ Solution: Re-ran targeted forbidden-token scan and diff check, then sampled buil
 Rejected Alternatives: Launching a competing compiler, killing unrelated compiler work, building against stale generated project files, or claiming compile proof from static scans.
 Scalability potential: No runtime route change.
 Hardware Impact: Protects shared workstation CPU/IO. Compile remains PENDING VERIFICATION until project files regenerate/import SHINOBU_270 scripts and the build gate is legally open.
+
+### D049 Documentation Verification Gate After Vault Patch
+
+Problem: The source patch and documentation updates needed a final verification pass, but compile is still gated by active compiler work and generated-project staleness.
+Solution: Ran `git diff --check` on patched source/docs; it returned only Git LF-to-CRLF warning for the ledger, no whitespace defects. Re-sampled compiler and CPU gates: active `dotnet` PID 22280 and `csc` PID 13460 were present; CPU was 43% by CIM but 85.74%, 72.45%, 95.18% by processor counter samples. Build was not launched.
+Rejected Alternatives: Treating one low CIM sample as permission while another compiler was active, launching a second compiler, or building the stale generated `Hecton8.Core.csproj`.
+Scalability potential: No runtime route change.
+Hardware Impact: Protects shared workstation CPU/IO. Compile remains PENDING VERIFICATION.

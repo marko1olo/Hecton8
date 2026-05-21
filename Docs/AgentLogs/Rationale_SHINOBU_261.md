@@ -458,6 +458,18 @@ Rejected Alternatives: Pretending to have applied a missing polish document was 
 Scalability potential: Runtime behavior unchanged.
 Hardware Impact: 0 runtime us.
 
+Problem: Queued evaluator scheduling still used a budget-sized `IJobParallelFor` after the drain job, so empty or sparse queues could still pay per-index no-op checks up to the drain budget while waiting on `QueueCounterPacked`.
+Solution: Converted `GenerateMockOceanWavesJob`, `EvaluateAnalyticalWavesJob`, and `ResolveDearLieCachedResultsJob` to `IJobParallelForBatch`. Scheduler call sites now use `ScheduleBatch`; every batch resolves the packed counter once, clamps the batch end, and skips the entire tail range when `startIndex >= packedCount`.
+Rejected Alternatives: Reading `NativeQueue.Count` on the main thread was rejected because producer jobs can still be unresolved behind `inputDeps`. A new deferred NativeList/Vault lane was rejected for this patch because it changes ownership and dispatcher contracts beyond SHINOBU_261. Serial evaluation was rejected because it destroys high-tier throughput for packed 50k query frames.
+Scalability potential: Low devices and empty/sparse frames avoid per-index tail checks; middle/high/ultra packed frames keep parallel evaluator throughput. This is not a binary quality switch: the same batch path handles the full continuum while `GlobalQualityWeight` still controls wave fidelity.
+Hardware Impact: Tail no-op work drops from per-index to per-batch. With the current batch resolver, a 50k empty budget becomes roughly 782 batch skips instead of 50k element checks. No profiler microseconds claimed yet.
+
+Problem: The batch-scheduling patch changed runtime job interfaces and scheduler calls after the previous proof gate.
+Solution: Re-ran scoped batch-schedule scan, comment/string-aware C# brace scan, runtime forbidden-pattern scan, stale-token scan, root/sidecar JSON parsing, scoped diff whitespace, and CPU/process gate. Static gates passed; build remained blocked by CPU/process policy.
+Rejected Alternatives: Treating the interface conversion as low risk without source scans was rejected. Launching compile was rejected because CPU average was 99 and active `csc`/`dotnet` processes were present.
+Scalability potential: Runtime scaling behavior follows the batch evaluator patch described above.
+Hardware Impact: 0 runtime us for verification itself. Build contention avoided.
+
 Problem: The readback/coalescing patches and stale-token status scrub changed both runtime and proof artifacts after the previous gate. A verifier bug also caused the first brace scan attempt to fail before source inspection.
 Solution: Re-ran strict stale-token scan, runtime forbidden-pattern scan, root/sidecar JSON parsing, scoped comment/string-aware C# brace scan, scoped diff whitespace, and CPU/process gate. The source/proof gates passed; the brace checker was corrected and returned `SCOPED_CS_BRACES_OK`.
 Rejected Alternatives: Treating the PowerShell checker parse error as a source failure was rejected. Launching a build was rejected because CPU average was 51 and active `csc`/`dotnet` processes were present.

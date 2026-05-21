@@ -24,11 +24,9 @@ namespace Hecton8.Animation.IK
         public const uint TelemetryFlagSdf = 1u << 1;
         public const uint TelemetryFlagMapMagic = 1u << 2;
         public const uint TelemetryFlagTailWhip = 1u << 3;
-        public const uint TelemetryFlagLowTier = 1u << 4;
         public const uint TelemetryFlagInvalid = 1u << 31;
         public const uint RuntimeFlagSdfHugging = 1u << 0;
         public const uint RuntimeFlagTerrainFallback = 1u << 1;
-        public const uint RuntimeFlagLowTier = 1u << 2;
     }
 
     public static class LeviathanTerrainIkLayout
@@ -432,18 +430,11 @@ namespace Hecton8.Animation.IK
             }
 
             int maxUsableSegments = math.min(LeviathanTerrainIkConstants.MaxSegments, math.min(SegmentPositions.Length, LeviathanBones.Length));
-            float qualityWeight = SanitizeQualityWeight(GlobalQualityWeight);
-            float qualityCurve = Smooth01(qualityWeight);
-            float survivalCollapse = 1f - math.step(0.3f, qualityWeight);
-            bool lowTier = survivalCollapse > 0.5f;
-            int qualitySegmentBudget = math.clamp(
-                (int)math.round(math.lerp(LeviathanTerrainIkConstants.LowTierSegments, LeviathanTerrainIkConstants.MaxSegments, qualityCurve)),
-                2,
-                maxUsableSegments);
-            int requested = math.min(RequestedSegmentCount, qualitySegmentBudget);
+            const float qualityWeight = 1f;
+            const float qualityCurve = 1f;
+            int requested = RequestedSegmentCount;
             int activeCount = math.clamp(requested, 2, maxUsableSegments);
-            int continuousIterations = (int)math.round(math.lerp(1f, 10f, qualityCurve));
-            int iterations = math.clamp(math.min(math.max(1, ConstraintIterations), continuousIterations), 1, 10);
+            int iterations = math.clamp(math.max(1, ConstraintIterations), 1, 10);
             float dt = math.select(0f, math.min(DeltaTime, 0.05f), math.isfinite(DeltaTime) && DeltaTime > 0f);
             float damping = SanitizeFiniteClamp(Damping, 0.87f, 0f, 1f);
             float segmentLength = SanitizePositiveFinite(SegmentLength, LeviathanTerrainIkConstants.DefaultSegmentLength, LeviathanTerrainIkConstants.MinSegmentLength);
@@ -459,8 +450,6 @@ namespace Hecton8.Animation.IK
             float3 intended = SanitizeFinite(IntendedVelocity, float3.zero);
             float maxTerrainPush = 0f;
             uint telemetryFlags = LeviathanTerrainIkConstants.TelemetryFlagActive;
-            if (lowTier)
-                telemetryFlags |= LeviathanTerrainIkConstants.TelemetryFlagLowTier;
 
             MoveHead(dt, segmentLength, intended, ownerForward);
             IntegrateFollowers(activeCount, dt, damping, intended, ownerForward, up, swimFrequency, swimAmplitude, qualityCurve);
@@ -478,8 +467,7 @@ namespace Hecton8.Animation.IK
             float sdfRange = SanitizePositiveFinite(VoxelSdfRange, 0f, 0f);
             float3 sdfCellSize = SanitizePositiveFinite(VoxelSdfCellSize, new float3(0.0001f), new float3(0.0001f));
             float3 sdfGradientStep = math.max(sdfCellSize, new float3(0.05f));
-            bool canUseSdf = !lowTier &&
-                             (RuntimeFlags & LeviathanTerrainIkConstants.RuntimeFlagSdfHugging) != 0u &&
+            bool canUseSdf = (RuntimeFlags & LeviathanTerrainIkConstants.RuntimeFlagSdfHugging) != 0u &&
                              VoxelSdfTexture3D.IsCreated &&
                              math.all(math.isfinite(VoxelSdfOrigin)) &&
                              math.all(math.isfinite(sdfCellSize)) &&

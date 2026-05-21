@@ -629,3 +629,44 @@ Build gate:
 - Active compiler processes found: `dotnet` PID 34832 and `csc` PID 15644.
 - CPU gate stayed closed: CIM CPU 100%; processor counter samples 90.05%, 82.47%, 86.72%.
 - Compile remains PENDING VERIFICATION; generated `Hecton8.Core.csproj` is still stale until Unity regenerates/imports SHINOBU_270 new scripts.
+
+Follow-up verification:
+- `git diff --check` on patched source/docs returned only Git LF-to-CRLF warning for the binary payload ledger.
+- Later build gate found active compiler processes again: `dotnet` PID 22280 and `csc` PID 13460.
+- CPU samples were mixed but still illegal for build: CIM CPU 43%; processor counter samples 85.74%, 72.45%, 95.18%.
+- Build remains PENDING VERIFICATION.
+
+<SELF_AUDIT agent_id="SHINOBU_270" evidence="STATIC_SOURCE" verification="PENDING_UNITY_IMPORT_AND_BUILD">
+  <task_reconciliation>
+    <task id="01" result="[PASS]" note="HUD/AR archaeology integrated with SuitHUDV4CanvasOverlay and ARWaypointOverlay"/>
+    <task id="02" result="[PASS]" note="Canvas runtime suppression is renderer-owned and fail-open"/>
+    <task id="03" result="[PASS]" note="primary unmanaged DTOs use raw public fields"/>
+    <task id="04" result="[PASS]" note="64-byte explicit layout guards exist"/>
+    <task id="05" result="[PASS]" note="mock HUD data path remains visual-only"/>
+    <task id="06" result="[PASS]" note="stencil mask pass writes lane bit 0"/>
+    <task id="07" result="[PASS]" note="single RenderGraph AR resolve after transparents"/>
+    <task id="08" result="[PASS]" note="shader-side seven-segment digit Dear Lie"/>
+    <task id="09" result="[PASS]" note="AUP target-camera double subtraction before float projection"/>
+    <task id="10" result="[PASS]" note="GlobalQualityWeight drives continuous shader ALU"/>
+    <task id="11" result="[PASS]" note="double-buffered GraphicsBuffer LockBufferForWrite upload"/>
+    <task id="12" result="[PASS]" note="breath fog is shader scalar/noise, no CPU particles"/>
+    <task id="13" result="[PASS]" note="AUP targeting guarded against absolute-float projection"/>
+    <task id="14" result="[PASS]" note="73180..73186 excluded from rollback truth"/>
+    <task id="15" result="[PASS]" note="300-frame 64-byte telemetry ring and raw dump path"/>
+    <task id="16" result="[PASS]" note="editor tuner route exists; runtime unaffected"/>
+    <task id="17" result="[PASS]" note="cold CSV profile parser uses scratch lane"/>
+    <task id="18" result="[PASS]" note="editor gizmo uses bounded stack span and AUP math"/>
+    <task id="19" result="[PASS]" note="HUDCanvasInquisition preserves shared report object"/>
+    <task id="20" result="[PASS]" note="static self-audit updated after Vault lifecycle patch"/>
+  </task_reconciliation>
+  <struct_layout>
+    <dto name="VisorHudParamsDTO" size="64" fields="TargetCoordinates@0:16,VitalStats@16:16,VisorGlitchParams@32:16,QualityAndTime@48:16" padding="0" alignment="64-byte"/>
+    <dto name="VisorArTargetDTO" size="64" fields="ScreenAndFlags@0:16,ColorAndPulse@16:16,LocalMetersAndDistance@32:16,ShapeParams@48:16" padding="0" alignment="64-byte"/>
+    <dto name="VisorTelemetryEntry" size="64" fields="FrameIndex@0:4,Flags@4:4,TargetCount@8:4,QualityWeight@12:4,ProjectionUs@16:4,EstimatedGpuUs@20:4,FirstDepth@24:4,StateHash@28:4,O2@32:4,CO2@36:4,Fog@40:4,StencilScale@44:4,LayoutHash@48:4,VaultGeneration@52:4,CameraW@56:4,CameraH@60:4" padding="0" alignment="64-byte"/>
+  </struct_layout>
+  <scalability curve="continuous">GlobalQualityWeight scales scanline density, chroma offset, curvature, target scale, and fog blend in shader; below 0.3 it collapses toward flat linework/noise-light projection without changing DTO layout, BufferID, save identity, or rollback authority.</scalability>
+  <h_phi status="vault-owned">No private persistent NativeArray/List/HashMap allocations in SHINOBU_270 runtime. Vault BufferIDs 73180..73186 are acquired through generation descriptors and now released via IDataVault.ReleaseBuffer on dispose, DataVault hot-swap, and cold rebind.</h_phi>
+  <dependency_graph jobs="no retained Burst jobs">Tiny same-frame jobs were rejected for bounded 16-target visual math; therefore NoAlias is not applicable to retained Burst kernels in this domain. RenderGraph consumes cached player context, DataVault descriptors, camera color/depth/stencil, and outputs the AR resolve plus telemetry rows.</dependency_graph>
+  <compile_guard status="PENDING_VERIFICATION">No new sibling runtime assembly reference was added. Hecton8.Core.csproj is generated and stale for new visor scripts; Unity project regeneration/import is required before dotnet proof is meaningful.</compile_guard>
+  <dear_lie complexity_before="Canvas/TMP rebuild plus transparent UI overdraw" complexity_after="O(pixels_inside_stencil + targets<=16)">Digits, fog, scanlines, and brackets are shader-side optical fakes; no physical breath fog, CPU text layout, particles, or per-target GameObjects.</dear_lie>
+</SELF_AUDIT>

@@ -25,16 +25,12 @@ namespace Hecton8.Animation.Fauna
         public const float DefaultJawReachMeters = 10f;
         public const float DefaultJawOpenMeters = 0.8f;
         public const float MinLengthSq = 0.000001f;
-        public const float StressFallbackThreshold01 = 0.8f;
         public const uint RuntimeFlagStrikeActive = 1u << 0;
-        public const uint RuntimeFlagLowTier = 1u << 1;
         public const uint RuntimeFlagHighTier = 1u << 2;
         public const uint RuntimeFlagUltraTier = 1u << 3;
-        public const uint RuntimeFlagSystemStressFallback = 1u << 4;
         public const uint ResultFlagSolved = 1u << 0;
         public const uint ResultFlagContact = 1u << 1;
         public const uint ResultFlagMiss = 1u << 2;
-        public const uint ResultFlagLowTierFake = 1u << 3;
         public const uint ResultFlagHighTierWrap = 1u << 4;
         public const uint ResultFlagAudioJawSnap = 1u << 5;
         public const uint ResultFlagFeedback = 1u << 6;
@@ -156,12 +152,9 @@ namespace Hecton8.Animation.Fauna
             int targetIndex = math.clamp(TargetIndex, 0, JawIkTargets.Length - 1);
             JawIkTarget target = JawIkTargets[targetIndex];
             float systemStress = math.saturate(math.select(0f, SystemStress01, math.isfinite(SystemStress01)));
-            bool stressFallback = systemStress > ProceduralBiteIkConstants.StressFallbackThreshold01;
             bool strikeActive = (RuntimeFlags & ProceduralBiteIkConstants.RuntimeFlagStrikeActive) != 0u && target.TargetHash != 0u;
-            bool lowTier = stressFallback || (RuntimeFlags & ProceduralBiteIkConstants.RuntimeFlagLowTier) != 0u;
-            bool highTier = !lowTier &&
-                            ((RuntimeFlags & ProceduralBiteIkConstants.RuntimeFlagHighTier) != 0u ||
-                             (RuntimeFlags & ProceduralBiteIkConstants.RuntimeFlagUltraTier) != 0u);
+            bool highTier = (RuntimeFlags & ProceduralBiteIkConstants.RuntimeFlagHighTier) != 0u ||
+                            (RuntimeFlags & ProceduralBiteIkConstants.RuntimeFlagUltraTier) != 0u;
 
             float3 forward = NormalizeSafe(PredatorForward, new float3(0f, 0f, 1f));
             float3 up = NormalizeSafe(PredatorUp, new float3(0f, 1f, 0f));
@@ -210,14 +203,10 @@ namespace Hecton8.Animation.Fauna
                     : ProceduralBiteIkConstants.ResultFlagMiss;
             }
 
-            if (lowTier)
-                resultFlags |= ProceduralBiteIkConstants.ResultFlagLowTierFake;
-            if (stressFallback)
-                resultFlags |= ProceduralBiteIkConstants.RuntimeFlagSystemStressFallback;
             if (strikeActive && (resultFlags & ProceduralBiteIkConstants.ResultFlagMiss) != 0u)
                 desiredTipLocal = ApplySnapMissRecoveryLocal(desiredTipLocal, jawOpen, segmentLength);
 
-            float blend = lowTier ? 1f : ResolveThreeFrameBlend(DeltaTime);
+            float blend = ResolveThreeFrameBlend(DeltaTime);
             float3 desiredTipWorld = LocalToWorldDelta(desiredTipLocal, right, up, forward) + PredatorPosition;
             float3 smoothedTip = SanitizeFinite(math.lerp(previous.JawTipPosition, desiredTipWorld, blend), desiredTipWorld);
             if (!math.all(math.isfinite(previous.JawTipPosition)) || math.lengthsq(previous.JawTipPosition) <= ProceduralBiteIkConstants.MinLengthSq)
@@ -228,14 +217,13 @@ namespace Hecton8.Animation.Fauna
             if (math.all(math.isfinite(previous.HeadRotation.value)) && math.lengthsq(previous.HeadRotation.value) > ProceduralBiteIkConstants.MinLengthSq)
                 headRotation = FastNlerp(previous.HeadRotation, headRotation, blend);
 
-            WriteHeadBone(rootWorld, headRotation, lowTier, bodyRadius, segmentLength);
+            WriteHeadBone(rootWorld, headRotation, bodyRadius, segmentLength);
 
             float3 upperWorld = rootWorld;
             float3 lowerWorld = rootWorld;
             float3 wrap0 = smoothedTip;
             float3 wrap1 = smoothedTip;
-            if (!lowTier)
-                SolveMandibles(rootWorld, smoothedTip, aimWorld, up, right, jawReach, jawOpen, bodyRadius, segmentLength, blend, previous, out upperWorld, out lowerWorld);
+            SolveMandibles(rootWorld, smoothedTip, aimWorld, up, right, jawReach, jawOpen, bodyRadius, segmentLength, blend, previous, out upperWorld, out lowerWorld);
 
             if (highTier && strikeActive)
             {
@@ -331,12 +319,11 @@ namespace Hecton8.Animation.Fauna
             return SanitizeFinite(math.lerp(aim, visualRecoil, 0.35f), desiredTipLocal);
         }
 
-        private void WriteHeadBone(float3 rootWorld, quaternion rotation, bool lowTier, float bodyRadius, float segmentLength)
+        private void WriteHeadBone(float3 rootWorld, quaternion rotation, float bodyRadius, float segmentLength)
         {
             int index = math.clamp(HeadBoneIndex, 0, LeviathanBones.Length - 1);
-            float zScale = lowTier ? segmentLength * 1.08f : segmentLength;
             LeviathanBoneDTO dto = default;
-            dto.LocalToWorld = float4x4.TRS(rootWorld, rotation, new float3(bodyRadius, bodyRadius, zScale));
+            dto.LocalToWorld = float4x4.TRS(rootWorld, rotation, new float3(bodyRadius, bodyRadius, segmentLength));
             LeviathanBones[index] = dto;
         }
 

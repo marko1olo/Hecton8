@@ -826,3 +826,27 @@ Solution: Added canonical fluid authority constants. CPU flow, water height, Ger
 Rejected Alternatives: Keeping a strongest-whirlpool shortcut or low-tier tangent removal was rejected because it changes force direction and velocity magnitude. Keeping reduced wave counts was rejected because water height and buoyancy forces become hardware-dependent. Keeping binary advection low-tier presentation was rejected because the project requires continuous quality shedding for VFX lanes.
 Scalability potential: Low/Middle/High/Ultra share ocean surface, buoyancy force, current, maelstrom, and splashdown authority. Weak devices may reduce VFX wake/advection capacity continuously via `GlobalQualityWeight`; high-tier devices get full dynamic wake presentation without changing force truth.
 Hardware Impact: 0 us speed claim. Weak devices spend canonical fluid authority work; one hot low-memory registry poll and several binary low-tier branches were removed from the frame path.
+
+## Procedural Bite IK Kernel Fake Eviction
+
+Problem: `ProceduralBiteJob` still contained a low-tier/stress-fallback branch after the runtime route was pinned. If any stale producer set those public flags, the kernel would skip mandibles, force a 1-frame blend, stretch the head bone, and mark the solve as a low-tier fake.
+Solution: Removed the low-tier and stress-fallback constants and branch. The job now always solves mandibles and uses the three-frame blend. System stress is retained only in DTO/telemetry fields for black-box forensics. High-tier/Ultra flags still enable wrap/visual-overkill appendages explicitly.
+Rejected Alternatives: Leaving dormant flags was rejected because public constants become future hidden authority switches. Mapping stress into a smoother blend was rejected because bite contact and feedback must not vary with frame pressure.
+Scalability potential: Low/Middle/High/Ultra share jaw contact, head scale, mandible positions, and bite feedback. Device savings must remain presentation-only: sparks, dents, shader response, tentacle VFX density, and telemetry cadence.
+Hardware Impact: 0 us speed claim. Weak devices spend the full jaw solve; removed a branch and stale fake result path from the Burst kernel.
+
+## VR Hand Presence Hardware Fallback Removal
+
+Problem: `VRPhysicalHandPresenceJob` accepted a `RuntimeFlagLowTier` bit that forced the non-VR screen-space fallback even when VR was active. It also allowed SDF hand projection through a `RuntimeFlagHighTier` bit, which tied contact richness to hardware tier instead of explicit surface data.
+Solution: Removed the low/high tier constants from the hand-presence contract. The fallback path now triggers only when VR is inactive, and SDF projection is enabled only by the explicit `RuntimeFlagSdfProjection` capability bit. Surface-plane projection remains an explicit capability path.
+Rejected Alternatives: Keeping low-tier screen-space fallback for weak VR devices was rejected because it changes hand position, haptic scrape, lock state, and interaction feedback. Keeping high-tier as an SDF shortcut was rejected because capability and hardware tier are different facts.
+Scalability potential: Low/Middle/High/Ultra share VR hand contact truth. Device savings must come from visual ghost opacity, controller mesh detail, haptic amplitude smoothing, optional telemetry cadence, or shader VFX, not from disabling physical hand presence.
+Hardware Impact: 0 us speed claim. Weak devices retain the same physical hand solve; two stale hardware flag checks were removed from the job.
+
+## Leviathan Terrain IK Kernel Authority Hardening
+
+Problem: `LeviathanTerrainIkJob` still had an internal quality collapse path that capped segment count, capped constraint iterations, disabled SDF hugging, and marked low-tier telemetry based on `GlobalQualityWeight`. Runtime had been pinned, but the kernel itself remained unsafe for future callers.
+Solution: The terrain IK kernel now pins authority quality to 1.0, uses `RequestedSegmentCount` and `ConstraintIterations` directly within hard bounds, keeps SDF eligibility tied only to explicit payload/capability validity, and removes low-tier runtime/telemetry constants.
+Rejected Alternatives: Trusting the runtime to always pass quality 1.0 was rejected because the kernel is a shared Burst contract and must be self-defending. Keeping low-tier telemetry was rejected because it no longer corresponds to a real authority state.
+Scalability potential: Low/Middle/High/Ultra share terrain pose, collision proxy, SDF hug, and tail-follow topology. Device savings must be purchased through visual-only bone upload density, material VFX, debug draw, or optional telemetry cadence.
+Hardware Impact: 0 us speed claim. Weak devices retain full authority IK topology; stale segment/iteration/SDF quality clamps were removed.

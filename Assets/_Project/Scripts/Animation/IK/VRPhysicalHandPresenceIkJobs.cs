@@ -36,8 +36,6 @@ namespace Hecton8.Animation.IK
         public const uint RuntimeFlagGrip = 1u << 1;
         public const uint RuntimeFlagSurfacePlane = 1u << 2;
         public const uint RuntimeFlagSdfProjection = 1u << 3;
-        public const uint RuntimeFlagLowTier = 1u << 4;
-        public const uint RuntimeFlagHighTier = 1u << 5;
         public const uint RuntimeFlagInteractableAupValid = 1u << 6;
         public const uint RuntimeFlagLeftHand = 1u << 7;
 
@@ -539,7 +537,6 @@ namespace Hecton8.Animation.IK
             uint flags = 0u;
 
             bool vrActive = (input.RuntimeFlags & VRPhysicalHandPresenceConstants.RuntimeFlagVrActive) != 0u;
-            bool lowTier = (input.RuntimeFlags & VRPhysicalHandPresenceConstants.RuntimeFlagLowTier) != 0u;
             bool gripInput = input.Grip01 > 0.5f ||
                              (input.RuntimeFlags & VRPhysicalHandPresenceConstants.RuntimeFlagGrip) != 0u ||
                              (input.GripInputMask != 0u && (input.UniversalInputFlags & input.GripInputMask) != 0u);
@@ -553,7 +550,7 @@ namespace Hecton8.Animation.IK
             if (!math.all(math.isfinite(previousActual)))
                 previousActual = controller;
 
-            if (!vrActive || lowTier)
+            if (!vrActive)
             {
                 flags |= VRPhysicalHandPresenceConstants.OutputFlagScreenSpaceFallback;
                 float3 fallbackGhostPosition = controller;
@@ -592,7 +589,7 @@ namespace Hecton8.Animation.IK
             bool usedPlane = false;
 
             float localClearance = SanitizePositiveFinite(input.HandClearance, clearance, 0f);
-            bool allowSdfProjection = (input.RuntimeFlags & (VRPhysicalHandPresenceConstants.RuntimeFlagSdfProjection | VRPhysicalHandPresenceConstants.RuntimeFlagHighTier)) != 0u;
+            bool allowSdfProjection = (input.RuntimeFlags & VRPhysicalHandPresenceConstants.RuntimeFlagSdfProjection) != 0u;
             if (gripInput && canUseSdf &&
                 allowSdfProjection &&
                 TrySampleSdfTrilinear(controller, invCellSize, SdfRange, out float density) &&
