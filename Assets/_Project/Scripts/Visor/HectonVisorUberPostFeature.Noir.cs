@@ -195,12 +195,12 @@ namespace Hecton8.Visor
         private GraphicsBuffer _noirConstantsBufferA;
         private GraphicsBuffer _noirConstantsBufferB;
         private GraphicsBuffer _activeNoirConstantsBuffer;
-        private VaultBufferHandle<NoirPostProcessDTO> _noirConstantsHandle;
-        private VaultBufferHandle<NoirPostProcessInputDTO> _noirInputHandle;
-        private VaultBufferHandle<NoirTelemetryEntry> _noirTelemetryHandle;
-        private VaultBufferHandle<NoirPostProcessTuningDTO> _noirTuningHandle;
-        private VaultBufferHandle<NoirColorProfileDTO> _noirColorProfileHandle;
-        private VaultBufferHandle<byte> _noirCsvScratchHandle;
+        private VaultGenerationHandle<NoirPostProcessDTO> _noirConstantsHandle;
+        private VaultGenerationHandle<NoirPostProcessInputDTO> _noirInputHandle;
+        private VaultGenerationHandle<NoirTelemetryEntry> _noirTelemetryHandle;
+        private VaultGenerationHandle<NoirPostProcessTuningDTO> _noirTuningHandle;
+        private VaultGenerationHandle<NoirColorProfileDTO> _noirColorProfileHandle;
+        private VaultGenerationHandle<byte> _noirCsvScratchHandle;
         private NoirPostProcessDTO _lastNoirConstants;
         private NoirColorProfileDTO _cachedNoirColorProfile;
         private readonly NoirColorProfileDTO[] _noirColorProfileCache = new NoirColorProfileDTO[NoirColorProfileCapacity]; // COLD ALLOC: NoirColorProfileDTO[32] - color CSV snapshot for LateFrame profile selection without Vault profile reads - owner: HectonVisorUberPostFeature
@@ -285,16 +285,15 @@ namespace Hecton8.Visor
         {
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault != null &&
-                vault.TryGetBufferHandle<NoirPostProcessDTO>(
+                vault.TryGetGenerationHandle<NoirPostProcessDTO>(
                     NoirConstantsVaultId,
-                    out VaultBufferHandle<NoirPostProcessDTO> handle) &&
+                    out VaultGenerationHandle<NoirPostProcessDTO> handle) &&
+                IsNoirVaultHandle(in handle, NoirConstantsVaultId) &&
                 vault.TryLockBuffer(NoirConstantsVaultId, SystemID.GraphicsScalability))
             {
                 try
                 {
-                    if (vault.TryResolveHandle(in handle, out NativeArray<NoirPostProcessDTO> buffer) &&
-                        buffer.IsCreated &&
-                        buffer.Length > 0)
+                    if (TryReadNoirVaultBuffer(vault, in handle, NoirConstantsVaultId, 1, out NativeArray<NoirPostProcessDTO> buffer))
                     {
                         constants = buffer[0];
                         return true;
@@ -316,21 +315,21 @@ namespace Hecton8.Visor
             if (vault == null)
                 return false;
 
-            VaultBufferHandle<NoirPostProcessTuningDTO> handle;
-            if (!vault.TryGetBufferHandle<NoirPostProcessTuningDTO>(NoirTuningVaultId, out handle))
+            VaultGenerationHandle<NoirPostProcessTuningDTO> handle;
+            if (!vault.TryGetGenerationHandle<NoirPostProcessTuningDTO>(NoirTuningVaultId, out handle) ||
+                !IsNoirVaultHandle(in handle, NoirTuningVaultId))
             {
                 if (vault.IsAllocationLocked)
                     return false;
 
-                handle = vault.GetBufferHandle<NoirPostProcessTuningDTO>(
+                handle = vault.GetGenerationHandle<NoirPostProcessTuningDTO>(
                     NoirTuningVaultId,
                     1,
                     SystemID.GraphicsScalability,
                     NativeArrayOptions.UninitializedMemory);
             }
 
-            if (!handle.IsCreated ||
-                handle.Length <= 0 ||
+            if (!IsNoirVaultHandle(in handle, NoirTuningVaultId) ||
                 !vault.TryAcquireWriteLock(in handle, SystemID.GraphicsScalability, out NativeArray<NoirPostProcessTuningDTO> tuningBuffer))
             {
                 return false;
@@ -616,59 +615,12 @@ namespace Hecton8.Visor
             if (_dataVault == null)
                 return false;
 
-            if (!_noirConstantsHandle.IsCreated)
-            {
-                _noirConstantsHandle = _dataVault.GetBufferHandle<NoirPostProcessDTO>(
-                    NoirConstantsVaultId,
-                    1,
-                    SystemID.GraphicsScalability,
-                    NativeArrayOptions.UninitializedMemory);
-            }
-
-            if (!_noirInputHandle.IsCreated)
-            {
-                _noirInputHandle = _dataVault.GetBufferHandle<NoirPostProcessInputDTO>(
-                    NoirInputVaultId,
-                    1,
-                    SystemID.GraphicsScalability,
-                    NativeArrayOptions.UninitializedMemory);
-            }
-
-            if (!_noirTelemetryHandle.IsCreated)
-            {
-                _noirTelemetryHandle = _dataVault.GetBufferHandle<NoirTelemetryEntry>(
-                    NoirTelemetryVaultId,
-                    NoirTelemetryCapacity,
-                    SystemID.GraphicsScalability,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_noirTuningHandle.IsCreated)
-            {
-                _noirTuningHandle = _dataVault.GetBufferHandle<NoirPostProcessTuningDTO>(
-                    NoirTuningVaultId,
-                    1,
-                    SystemID.GraphicsScalability,
-                    NativeArrayOptions.UninitializedMemory);
-            }
-
-            if (!_noirColorProfileHandle.IsCreated)
-            {
-                _noirColorProfileHandle = _dataVault.GetBufferHandle<NoirColorProfileDTO>(
-                    NoirColorProfilesVaultId,
-                    NoirColorProfileCapacity,
-                    SystemID.GraphicsScalability,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_noirCsvScratchHandle.IsCreated)
-            {
-                _noirCsvScratchHandle = _dataVault.GetBufferHandle<byte>(
-                    NoirCsvScratchVaultId,
-                    NoirCsvScratchBytes,
-                    SystemID.GraphicsScalability,
-                    NativeArrayOptions.UninitializedMemory);
-            }
+            _ = EnsureNoirVaultHandle(ref _noirConstantsHandle, NoirConstantsVaultId, 1, NativeArrayOptions.UninitializedMemory);
+            _ = EnsureNoirVaultHandle(ref _noirInputHandle, NoirInputVaultId, 1, NativeArrayOptions.UninitializedMemory);
+            _ = EnsureNoirVaultHandle(ref _noirTelemetryHandle, NoirTelemetryVaultId, NoirTelemetryCapacity, NativeArrayOptions.ClearMemory);
+            _ = EnsureNoirVaultHandle(ref _noirTuningHandle, NoirTuningVaultId, 1, NativeArrayOptions.UninitializedMemory);
+            _ = EnsureNoirVaultHandle(ref _noirColorProfileHandle, NoirColorProfilesVaultId, NoirColorProfileCapacity, NativeArrayOptions.ClearMemory);
+            _ = EnsureNoirVaultHandle(ref _noirCsvScratchHandle, NoirCsvScratchVaultId, NoirCsvScratchBytes, NativeArrayOptions.UninitializedMemory);
 
             return NoirVaultHandlesReady();
         }
@@ -676,12 +628,12 @@ namespace Hecton8.Visor
         private bool NoirVaultHandlesReady()
         {
             return _dataVault != null &&
-                   _noirConstantsHandle.IsCreated &&
-                   _noirInputHandle.IsCreated &&
-                   _noirTelemetryHandle.IsCreated &&
-                   _noirTuningHandle.IsCreated &&
-                   _noirColorProfileHandle.IsCreated &&
-                   _noirCsvScratchHandle.IsCreated;
+                   IsNoirVaultHandle(in _noirConstantsHandle, NoirConstantsVaultId) &&
+                   IsNoirVaultHandle(in _noirInputHandle, NoirInputVaultId) &&
+                   IsNoirVaultHandle(in _noirTelemetryHandle, NoirTelemetryVaultId) &&
+                   IsNoirVaultHandle(in _noirTuningHandle, NoirTuningVaultId) &&
+                   IsNoirVaultHandle(in _noirColorProfileHandle, NoirColorProfilesVaultId) &&
+                   IsNoirVaultHandle(in _noirCsvScratchHandle, NoirCsvScratchVaultId);
         }
 
         private void ClearNoirVaultHandles()
@@ -702,23 +654,107 @@ namespace Hecton8.Visor
 
         private void ReleaseNoirVaultHandles(IDataVault vault)
         {
-            if (vault != null)
-            {
-                if (_noirConstantsHandle.IsCreated)
-                    vault.ReleaseBuffer(in _noirConstantsHandle);
-                if (_noirInputHandle.IsCreated)
-                    vault.ReleaseBuffer(in _noirInputHandle);
-                if (_noirTelemetryHandle.IsCreated)
-                    vault.ReleaseBuffer(in _noirTelemetryHandle);
-                if (_noirTuningHandle.IsCreated)
-                    vault.ReleaseBuffer(in _noirTuningHandle);
-                if (_noirColorProfileHandle.IsCreated)
-                    vault.ReleaseBuffer(in _noirColorProfileHandle);
-                if (_noirCsvScratchHandle.IsCreated)
-                    vault.ReleaseBuffer(in _noirCsvScratchHandle);
-            }
+            ReleaseNoirVaultHandle(vault, ref _noirConstantsHandle, NoirConstantsVaultId);
+            ReleaseNoirVaultHandle(vault, ref _noirInputHandle, NoirInputVaultId);
+            ReleaseNoirVaultHandle(vault, ref _noirTelemetryHandle, NoirTelemetryVaultId);
+            ReleaseNoirVaultHandle(vault, ref _noirTuningHandle, NoirTuningVaultId);
+            ReleaseNoirVaultHandle(vault, ref _noirColorProfileHandle, NoirColorProfilesVaultId);
+            ReleaseNoirVaultHandle(vault, ref _noirCsvScratchHandle, NoirCsvScratchVaultId);
 
             ClearNoirVaultHandles();
+        }
+
+        private bool EnsureNoirVaultHandle<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options)
+            where T : struct
+        {
+            if (_dataVault == null || requiredLength <= 0)
+            {
+                handle = default;
+                return false;
+            }
+
+            if (TryReadNoirVaultBuffer(_dataVault, in handle, bufferId, requiredLength, out NativeArray<T> _))
+                return true;
+
+            handle = _dataVault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.GraphicsScalability,
+                options);
+
+            return TryReadNoirVaultBuffer(_dataVault, in handle, bufferId, requiredLength, out NativeArray<T> _);
+        }
+
+        private static void ReleaseNoirVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId)
+            where T : struct
+        {
+            if (vault != null && IsNoirVaultHandle(in handle, bufferId))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static bool TryResolveNoirVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            return TryOpenNoirVaultBuffer(vault, in handle, bufferId, requiredLength, readOnly: false, out buffer);
+        }
+
+        private static bool TryReadNoirVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            return TryOpenNoirVaultBuffer(vault, in handle, bufferId, requiredLength, readOnly: true, out buffer);
+        }
+
+        private static bool TryOpenNoirVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            bool readOnly,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength < 0 ||
+                !IsNoirVaultHandle(in handle, bufferId))
+            {
+                return false;
+            }
+
+            bool opened = readOnly
+                ? vault.TryReadHandle(in handle, out buffer)
+                : vault.TryResolveHandle(in handle, out buffer);
+
+            return opened &&
+                   buffer.IsCreated &&
+                   (requiredLength == 0 || buffer.Length >= requiredLength);
+        }
+
+        private static bool IsNoirVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)SystemID.GraphicsScalability &&
+                   handle.Generation != 0u;
         }
 
         private unsafe bool TryUpdateNoirConstants()
@@ -726,15 +762,9 @@ namespace Hecton8.Visor
             if (!NoirVaultHandlesReady())
                 return false;
 
-            if (!_dataVault.TryResolveHandle(in _noirInputHandle, out NativeArray<NoirPostProcessInputDTO> inputArray) ||
-                !_dataVault.TryResolveHandle(in _noirTuningHandle, out NativeArray<NoirPostProcessTuningDTO> tuningArray) ||
-                !_dataVault.TryResolveHandle(in _noirConstantsHandle, out NativeArray<NoirPostProcessDTO> constantsArray) ||
-                !inputArray.IsCreated ||
-                !tuningArray.IsCreated ||
-                !constantsArray.IsCreated ||
-                inputArray.Length <= 0 ||
-                tuningArray.Length <= 0 ||
-                constantsArray.Length <= 0)
+            if (!TryResolveNoirVaultBuffer(_dataVault, in _noirInputHandle, NoirInputVaultId, 1, out NativeArray<NoirPostProcessInputDTO> inputArray) ||
+                !TryResolveNoirVaultBuffer(_dataVault, in _noirTuningHandle, NoirTuningVaultId, 1, out NativeArray<NoirPostProcessTuningDTO> tuningArray) ||
+                !TryResolveNoirVaultBuffer(_dataVault, in _noirConstantsHandle, NoirConstantsVaultId, 1, out NativeArray<NoirPostProcessDTO> constantsArray))
             {
                 return false;
             }
@@ -918,9 +948,7 @@ namespace Hecton8.Visor
             bool validConstants)
         {
             if (!NoirVaultHandlesReady() ||
-                !_dataVault.TryResolveHandle(in _noirTelemetryHandle, out NativeArray<NoirTelemetryEntry> telemetry) ||
-                !telemetry.IsCreated ||
-                telemetry.Length <= 0)
+                !TryResolveNoirVaultBuffer(_dataVault, in _noirTelemetryHandle, NoirTelemetryVaultId, NoirTelemetryCapacity, out NativeArray<NoirTelemetryEntry> telemetry))
             {
                 return;
             }
@@ -951,10 +979,7 @@ namespace Hecton8.Visor
         private unsafe bool TryDumpNoirTelemetry()
         {
             if (_dataVault == null ||
-                !_noirTelemetryHandle.IsCreated ||
-                !_dataVault.TryResolveHandle(in _noirTelemetryHandle, out NativeArray<NoirTelemetryEntry> telemetry) ||
-                !telemetry.IsCreated ||
-                telemetry.Length <= 0)
+                !TryReadNoirVaultBuffer(_dataVault, in _noirTelemetryHandle, NoirTelemetryVaultId, NoirTelemetryCapacity, out NativeArray<NoirTelemetryEntry> telemetry))
             {
                 return false;
             }
@@ -1063,12 +1088,8 @@ namespace Hecton8.Visor
                 }
                 profileLocked = true;
 
-                if (!_dataVault.TryResolveHandle(in _noirCsvScratchHandle, out NativeArray<byte> scratch) ||
-                    !_dataVault.TryResolveHandle(in _noirColorProfileHandle, out NativeArray<NoirColorProfileDTO> profiles) ||
-                    !scratch.IsCreated ||
-                    !profiles.IsCreated ||
-                    scratch.Length <= 0 ||
-                    profiles.Length <= 0)
+                if (!TryResolveNoirVaultBuffer(_dataVault, in _noirCsvScratchHandle, NoirCsvScratchVaultId, NoirCsvScratchBytes, out NativeArray<byte> scratch) ||
+                    !TryResolveNoirVaultBuffer(_dataVault, in _noirColorProfileHandle, NoirColorProfilesVaultId, NoirColorProfileCapacity, out NativeArray<NoirColorProfileDTO> profiles))
                 {
                     return false;
                 }

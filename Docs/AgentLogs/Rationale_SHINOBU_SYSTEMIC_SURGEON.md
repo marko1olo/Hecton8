@@ -938,3 +938,11 @@ Solution: Updated the smoke tester to assert `ResolveGlobalQualityWeight01()` an
 Rejected Alternatives: Leaving the smoke tester stale was rejected because CI proof must encode the current contract. Deleting the smoke assertions was rejected because the audio bridge still needs a regression guard against reintroducing binary scalability drains.
 Scalability potential: Low/Middle/High/Ultra audio presentation now has a test-enforced continuous quality route for Prologue plasma and Vocal radio degradation.
 Hardware Impact: 0 us runtime. Editor-only proof update; `dotnet build .\Assembly-CSharp.csproj --no-restore --nologo -m:1` returned 0 errors and 132 pre-existing warnings.
+
+## Player Critical Audio Quality Continuum
+
+Problem: `PlayerCriticalProceduralAudioRenderer` cached `GlobalRegistry.ScalabilityTier`, `GlobalRegistry.QualityTier`, and `GlobalRegistry.H8_LOW_MEMORY_PROFILE`, then drained scalability snapshots to switch granular voice count, sonar SDF probes, reverb DSP tier, and kinetic impact fallback behavior by binary hardware identity.
+Solution: Removed the cached tier/profile fields, scalability snapshot drain, payload handler, and low-tier kinetic fallback gate. The renderer now caches a per-frame continuous `HomeostasisBrain.GlobalQualityWeight`, smooths it with a polynomial curve, and uses that curve for granular voice capacity, sonar probe count, reverb tier selection, and a fade-in cheap impact layer.
+Rejected Alternatives: Keeping scalability signals as an audio metadata lane was rejected because the renderer used them as branch selectors. Preserving clip-only kinetic fallback was rejected because it changed impact presentation discontinuously; the clip is now a minimum-quality layer, not an exclusive hardware route.
+Scalability potential: Low devices keep a cheap impact layer, lower granular voice ceiling, and fewer sonar probes; middle devices interpolate; high/ultra reach full voice/probe counts and native convolution. Impact truth and signal admission remain unchanged.
+Hardware Impact: 0 us speed claim. Removed a per-frame scalability snapshot scan and three cold hardware registry fields from the critical audio presentation path.

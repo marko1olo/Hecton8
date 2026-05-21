@@ -831,3 +831,12 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - Byref mutations now derive from already-resolved local views via `ElementRef`; retained handle byref helpers are gone from the file.
 - Teardown completes the active navigation job, stops/joins the file writer, unregisters tick lanes, unlocks all 16 runtime buffer IDs, releases acquired descriptors through `ReleaseBuffer(in handle)`, and tombstones local state.
 - This entry claims only QA watchdog Vault route cleanup. `WatchdogStateDTO`, `TelemetrySnapshotDTO`, `Shinobu38RouteWaypointDTO`, `MockRebaseSignal`, `Shinobu38TuningDTO`, `Shinobu38MockVaultDTO`, `Shinobu38WatchdogTelemetryEntry`, file writer DTOs, waypoint ingest DTO, BufferIDs `70580..70594`, `BufferID.ShinobuInputCurrentDto`, file output schemas, AUP-local math, and QA authority route are unchanged by this loop.
+
+## 2026-05-22 Player Kinematics Resurfaced Direct Route Update
+
+- `Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs` again has no `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, direct `GetBuffer<T>`, direct `TryGetBuffer(...)`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits.
+- `BufferID.VoxelSdfTexture3D` fallback now borrows the WorldStreaming-owned payload through transient `TryGetGenerationHandle` plus `TryReadHandle`, exact BufferID, exact `SystemID.WorldStreaming`, nonzero generation, and expected voxel count.
+- `BufferID.PlayerKinematicState` now uses a cached `VaultGenerationHandle<LockstepPlayerKinematicState>` for mutation and a transient pure read descriptor when allocation is not allowed.
+- `PlayerKinematicsBodyJob` and `PlayerKinematicsHandPlacementJob` now carry `[NoAlias]` on non-overlapping native lanes.
+- This entry corrects the old Loop 77 audit gap. It does not claim a generic `VaultBufferBinding<T>` refcount/release policy change; that ownership behavior remains a separate audited route.
+- This entry claims only player kinematics resurfaced direct-route cleanup. `LockstepPlayerKinematicState`, `PlayerKinematicsRuntimeTelemetryEntry`, `PlayerKinematicsSyncState`, `SdfSqueezeResult`, BufferIDs, SDF byte payload format, AUP conversion, KCC squeeze math, hand IK, telemetry dump format, shader property IDs, SignalBus payloads, and GameplayPlayer/WorldStreaming authority are unchanged by this loop.

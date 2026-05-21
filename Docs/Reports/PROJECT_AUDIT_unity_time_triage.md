@@ -243,3 +243,21 @@ Updated static counts from that artifact:
 - `unityTimeRiskGameplayDelta`: 1
 
 Residual note: `git show HEAD` already contained the foveated clock route for lock/importance comparison; the working tree had regressed to `Time.time` at inspection time. The net diff against `HEAD` is the runtime-reset clock clear.
+
+## 2026-05-22 PersistentWorldRegistry Follow-Up
+
+`PersistentWorldRegistry` no longer uses direct `Time.time` for fauna egg hatch restore or hibernation state creation. It owns `_worldClockSeconds`, advances it from dispatcher `Tick(float dt)`, and uses that value for the fauna record path.
+
+Focused proof:
+
+- `rg -n "Time\.time\b" Assets/_Project/Scripts/World/PersistentWorldRegistry.cs` returns no rows.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_time_after_persistent_world_clock.json`.
+
+Updated static counts from that artifact:
+
+- `unityTimeCritical`: 910
+- `unityTimeWallClock`: 66
+- `unityTimeRiskGameplayWallClock`: 32
+- `unityTimeRiskGameplayDelta`: 1
+
+Residual note: `PersistentWorldRegistry` still has `Time.unscaledTime` in sector override unload/commit and tombstone sweep cadence. That should be handled as a cold IO/paging scheduler route, not mixed into fauna state timing.

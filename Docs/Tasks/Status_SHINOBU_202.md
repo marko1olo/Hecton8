@@ -4058,3 +4058,20 @@ Mandates read before coding:
 - Brace count is balanced: `Shinobu38QaWatchdogRuntime.cs` `237/237`.
 - `git diff --check` passed for `Shinobu38QaWatchdogRuntime.cs`.
 - Build not relaunched under the explicit no-rebuild command discipline.
+
+## Loop 227 - Player Kinematics Resurfaced Direct Vault Route Closure
+- [x] Replaced resurfaced direct SDF/player-state Vault opens in `PlayerKinematicsRuntime.cs`.
+  DOD practice: `BufferID.VoxelSdfTexture3D` now opens through transient `TryGetGenerationHandle` plus pure `TryReadHandle` with exact `SystemID.WorldStreaming`, nonzero generation, and expected SDF length. `BufferID.PlayerKinematicState` now opens through a cached generation descriptor for mutation and transient pure read for the pre-squeeze sample; no `GetBuffer<T>` or `TryGetBuffer(...)` path remains.
+  Rejected: trusting the old Loop 77 report because the current disk was authoritative and showed direct `TryGetBuffer<byte>` and `GetBuffer<LockstepPlayerKinematicState>` calls. Releasing/changing the generic `VaultBufferBinding<T>` refcount policy was rejected for this loop because prior owner semantics were deliberately descriptor-clear-only and need a separate ownership audit.
+  Estimate: removes one hot dictionary-style direct buffer open from SDF payload fallback and two direct lockstep-state opens from the squeeze path. Runtime cost becomes one descriptor validation at the same phase boundary; no per-voxel or per-entity validation is added.
+- [x] Added Burst aliasing proof to player kinematics local kernels.
+  DOD practice: `PlayerKinematicsBodyJob` and `PlayerKinematicsHandPlacementJob` now mark non-overlapping `NativeArray<T>` lanes with `[NoAlias]` while preserving deterministic Burst flags.
+  Rejected: scheduling these one-row KCC truth kernels as jobs because this file already documents direct `Execute()` as the accepted no-fake-schedule path.
+  Estimate: compiler metadata only; no DTO layout, BufferID, save identity, SDF sampling, AUP conversion, hand IK, telemetry schema, or SignalBus route change.
+
+## Compile State Update 221
+- Focused legacy/direct route scan on `PlayerKinematicsRuntime.cs` found no `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `GetBuffer<T>`, `TryGetBuffer(...)`, `TryGetLatestCreated`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits.
+- Descriptor route scan confirmed expected `VaultGenerationHandle<T>`, `TryGetGenerationHandle`, `TryResolveHandle`, `TryReadHandle`, `TryOpenPlayerKinematicStateView`, `TryReadExistingVaultView`, and `[NoAlias]` hits.
+- Brace count is balanced: `PlayerKinematicsRuntime.cs` `380/380`.
+- `git diff --check` passed for `PlayerKinematicsRuntime.cs`; CRLF warning only.
+- Build not relaunched under the explicit no-rebuild command discipline.

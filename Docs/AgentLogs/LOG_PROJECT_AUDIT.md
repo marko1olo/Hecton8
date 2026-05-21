@@ -336,3 +336,15 @@ Cinematic Cheats used: Existing foveated simulation remains a cadence fake: scor
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped from `unityTimeCritical=915` to `913`, from `unityTimeWallClock=71` to `69`, and from `unityTimeRiskGameplayWallClock=37` to `35`.
 
 Evidence: Focused `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs` returns no rows. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_foveated_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_foveated_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=913`, `unityTimeWallClock=69`, and `unityTimeRiskGameplayWallClock=35`. `git diff --check -- Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs` reports only LF-to-CRLF warning. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - PersistentWorldRegistry Fauna-State Clock
+
+What was wrong: `PersistentWorldRegistry` used `Time.time` to decide when cached fauna eggs hatch and to stamp hibernation records created from hatched/equilibrium fauna. That path affects saved temporary entity state.
+
+What was done: Added bounded `_worldClockSeconds`, advanced from dispatcher `Tick(float dt)`. Egg hatch comparison and hibernation sleep-start creation now use `ResolveWorldClockSeconds()`. `Time.unscaledTime` remains only in sector override/paging commit cadence and tombstone scheduling.
+
+Cinematic Cheats used: Existing persistent ecology remains a record fake: hibernated/egg/equilibrium entity records stand in for fully simulated off-screen fauna.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped from `unityTimeCritical=913` to `910`, from `unityTimeWallClock=69` to `66`, and from `unityTimeRiskGameplayWallClock=35` to `32`.
+
+Evidence: Focused `rg -n "Time\.time\b" Assets/_Project/Scripts/World/PersistentWorldRegistry.cs` returns no rows. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_persistent_world_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_persistent_world_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=910`, `unityTimeWallClock=66`, and `unityTimeRiskGameplayWallClock=32`. `git diff --check -- Assets/_Project/Scripts/World/PersistentWorldRegistry.cs` reports only LF-to-CRLF warning. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

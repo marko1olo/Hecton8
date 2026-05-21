@@ -5337,3 +5337,28 @@ Static verification:
 - Focused scan found no executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits in `Shinobu38QaWatchdogRuntime.cs`.
 - Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `ReleaseWatchdogVaultHandles`, `ReleaseWatchdogVaultHandle`, `ReleaseBuffer(in handle)`, and `ElementRef`.
 - Brace count is `237/237`; `git diff --check` passed. Build was not relaunched.
+
+## 2026-05-22 - Loop 227 - Player Kinematics Resurfaced Direct Vault Route Closure
+
+What was wrong:
+- The current `PlayerKinematicsRuntime.cs` no longer matched the old Loop 77 claim.
+- `SnapshotSdfPayload` used direct `TryGetBuffer<byte>` for `BufferID.VoxelSdfTexture3D`.
+- `TryReadPlayerKinematicStateFromVault` and `WritePlayerKinematicStateToVault` used direct `GetBuffer<LockstepPlayerKinematicState>` for `BufferID.PlayerKinematicState`.
+- The local body and hand placement Burst kernels were missing explicit `[NoAlias]` proof on non-overlapping `NativeArray<T>` lanes.
+
+What was done:
+- Added descriptor helpers that validate BufferID, optional owner, nonzero generation, required length, and `TryReadHandle`/`TryResolveHandle` before returning phase-local native views.
+- Routed `VoxelSdfTexture3D` through transient WorldStreaming descriptor readback.
+- Routed `PlayerKinematicState` through a cached generation descriptor for mutation and transient pure read when allocation is not allowed.
+- Added `[NoAlias]` to `PlayerKinematicsBodyJob` and `PlayerKinematicsHandPlacementJob` native lanes.
+
+Cinematic cheats used:
+- Existing KCC behavior remains fake-first: SDF byte sampling and deterministic quality-weight sample collapse replace mesh colliders, terrain raycasts, and full physics recovery. No new simulation was introduced.
+
+Exact microseconds saved:
+- No measured runtime speedup claimed. The useful result is route correctness: direct buffer opens are replaced by descriptor validation at SDF fallback and SDF squeeze state boundaries. `[NoAlias]` gives Burst the aliasing proof it needs without adding work.
+
+Static verification:
+- Focused scan found no `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `GetBuffer<T>`, `TryGetBuffer(...)`, `TryGetLatestCreated`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits in `PlayerKinematicsRuntime.cs`.
+- Descriptor scan confirms `VaultGenerationHandle<T>`, `TryGetGenerationHandle`, `TryResolveHandle`, `TryReadHandle`, `TryOpenPlayerKinematicStateView`, `TryReadExistingVaultView`, and `[NoAlias]`.
+- Brace count is `380/380`; `git diff --check` passed with CRLF warning only. Build was not relaunched.

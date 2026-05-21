@@ -67,6 +67,24 @@ Remaining blocked/pending:
   <QUALITY status="DRS shader uses continuous scale-deficit curve; no binary low-tier switch added" />
 </SELF_AUDIT>
 
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="PlayerCriticalAudioQualityContinuum">
+  <WHAT_WAS_WRONG>
+    `PlayerCriticalProceduralAudioRenderer` used cached scalability tier, quality tier, low-memory profile, and scalability signal drains to select audio presentation budgets and kinetic impact fallback behavior. That made critical audio presentation branch on binary hardware identity.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Replaced the tier/profile cache with a per-frame continuous `HomeostasisBrain.GlobalQualityWeight` cache. Granular voice count, sonar SDF probe count, reverb DSP tier, and the cheap impact clip layer now consume the smooth quality curve. The old hardware fallback resolver and scalability snapshot drain were removed.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Kinetic impact clip playback is now a low-cost audio layer faded by minimum-quality weight instead of an exclusive low-tier replacement. Granular plasma/noise and sonar probe richness remain presentation fakes scaled by continuous quality.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. Removed one per-frame scalability signal snapshot scan and binary branch state; presentation budgets now scale continuously.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no remaining scalability event alias, drain/handler, cached tier/profile fields, low-tier kinetic fallback resolver, or direct scalability/low-memory registry read in `PlayerCriticalProceduralAudioRenderer.cs`. `git diff --check` passed for the renderer and audio smoke tester. Build skipped because resident `VBCSCompiler` was active after the previous successful build.
+  </VERIFICATION>
+</SELF_AUDIT>
+
 <SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="AudioSmokeProofRealignment">
   <WHAT_WAS_WRONG>
     `AdvancedAcousticsSmokeTester` still encoded the old binary scalability contract for Prologue acoustic and Vocal warning routes. It required scalability snapshot drains, low-memory registry seeds, and payload handlers that the runtime sanitation removed.

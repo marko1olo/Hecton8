@@ -380,3 +380,36 @@ Exact microseconds saved:
 Verification:
 - `loop12_02` is not accepted as compile proof because it ended with `EXIT_CODE=-1`.
 - Next required action: rerun `dotnet build Hecton8.slnx` with normal verbosity and full diagnostic markers.
+
+## 2026-05-22 Ultra-Polish Loop 12.2 Project-Wide Compile Closure
+
+What was wrong:
+- RenderGraph visor passes used `RasterCommandBuffer.SetGlobalTexture(int, Texture/Texture2DArray)`, which is illegal for static assets in the current RenderGraph API.
+- Stale MSBuild node reuse produced an empty `EXIT_CODE=-1` failure surface.
+- Core had a wrong `HomeostasisBrain` namespace reference.
+- Editor build had duplicate contract assembly identity plus missing helper sources from the generated project overlay.
+- Editor local faults blocked compile: unassigned `rowCount` and unavailable `Mix(...)` helper.
+
+What was done:
+- Bound static visor textures through `Material.SetTexture(...)` before raster execution.
+- Shut down build servers and ran subsequent builds with `/nr:false /p:UseSharedCompilation=false`.
+- Corrected `VocalWarningSystem` to use `Hecton8.Core.HomeostasisBrain.GlobalQualityWeight`.
+- Removed the extra editor-side manual `Hecton8.Core.Contracts` reference.
+- Added targeted compile includes for `HectonMaterialChannelPackValidator`, `LocalizationEditorJsonTableParser`, and `SignalCorridorMockSignalGenerators`.
+- Initialized `rowCount` in `ScreenSpaceDecalTunerWindow`.
+- Added local `MixTelemetryHash(...)` in `GeologyForgeGenerator`.
+
+Cinematic cheats used:
+- None in the compile repair itself. The SHINOBU_271 runtime route remains the existing cinematic cheat: SDF projection plus AUP-local math and arm clamp instead of physical SpringJoint/ConfigurableJoint hand simulation.
+
+Exact microseconds saved:
+- Compile repair runtime savings: 0 microseconds.
+- SHINOBU_271 runtime savings remain from the earlier hand-physics removal path: estimated 20-120 microseconds on contact-heavy low-end frames, pending profiler capture.
+
+Verification:
+- `Docs/AgentLogs/Build_SHINOBU_271_core_default_loop12_20.log`: `Build succeeded`, `29 Warning(s)`, `0 Error(s)`.
+- `Docs/AgentLogs/Build_SHINOBU_271_editor_loop12_21.log`: `Build succeeded`, `15 Warning(s)`, `0 Error(s)`.
+- `Docs/AgentLogs/Build_SHINOBU_271_assembly_firstpass_loop12_22.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`.
+- `Docs/AgentLogs/Build_SHINOBU_271_solution_loop12_23.log`: `Build succeeded`, `14 Warning(s)`, `0 Error(s)`, `EXIT_CODE=0`, elapsed `00:00:28.55`.
+- Remaining warnings are obsolete API/migration warnings in `Assembly-CSharp-Editor.csproj` and `MapMagic.Settings.csproj`; they are not compile errors.
+- `git diff --check` returned no whitespace errors, only CRLF normalization warnings.

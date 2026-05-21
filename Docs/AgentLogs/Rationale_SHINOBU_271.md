@@ -351,3 +351,45 @@ Solution: Verified no `dotnet`, `csc`, or `VBCSCompiler` processes remained, sca
 Rejected Alternatives: Claiming success because no errors were printed, or editing code without a concrete failing file/target. `EXIT_CODE=-1` is a hard failure signal; blind edits create churn.
 Scalability potential: Runtime behavior unchanged. The compile-repair loop stays evidence-based.
 Hardware Impact: 0 runtime microseconds.
+
+Problem: RenderGraph raster passes attempted to bind static `Texture` and `Texture2DArray` assets through `RasterCommandBuffer.SetGlobalTexture(int, ...)`, but the URP RenderGraph API only accepts `TextureHandle` for that command path.
+Solution: Move the static asset bindings to the pass material with `Material.SetTexture(...)` before drawing. The raster command buffer now only sees legal RenderGraph resources.
+Rejected Alternatives: Creating transient `TextureHandle` wrappers for static assets, changing shader property ownership, or downgrading the pass to a legacy command-buffer path. Wrappers would add lifetime ambiguity; shader ownership changes are unrelated; legacy rendering would undo the RenderGraph route.
+Scalability potential: Runtime visual quality is unchanged. Low through Ultra tiers keep the same shader input route; the fix only makes the existing pass compile and execute through the current render pipeline.
+Hardware Impact: 0 runtime microseconds claimed. It removes a compile-time API break without changing draw count or shader work.
+
+Problem: `loop12_15` returned `EXIT_CODE=-1` with an empty diagnostic surface while stale MSBuild node-reuse and shared compiler processes existed from previous attempts.
+Solution: Ran `dotnet build-server shutdown`, then used `/nr:false /p:UseSharedCompilation=false` for subsequent builds. This forced cold compiler state and exposed the real C# blocker in `VocalWarningSystem`.
+Rejected Alternatives: Continuing to edit against an empty `-1` log, killing unrelated processes, or relying on node reuse after a stale failure. Empty logs do not identify a code fault; unrelated process kills risk other agents; stale build servers make proof non-repeatable.
+Scalability potential: Runtime unchanged. Build proof becomes deterministic enough for multi-agent integration.
+Hardware Impact: Runtime gain is 0 microseconds. Iteration gain is avoiding false compile-wall loops from stale compiler nodes.
+
+Problem: `VocalWarningSystem` referenced `Hecton8.Gameplay.HomeostasisBrain.GlobalQualityWeight`, but the actual `HomeostasisBrain` owner namespace is `Hecton8.Core`.
+Solution: Corrected the reference to `Hecton8.Core.HomeostasisBrain.GlobalQualityWeight`.
+Rejected Alternatives: Adding a gameplay alias class, moving `HomeostasisBrain`, or suppressing the quality read. Alias/move would create duplicate authority; suppression would remove the existing continuous quality input.
+Scalability potential: The continuous `GlobalQualityWeight` route remains intact across weak, middle, high, and ultra devices.
+Hardware Impact: 0 runtime microseconds; compile correctness only.
+
+Problem: `Hecton8.Editor` saw duplicate `SignalLaneTelemetry` and `HectonPhysicsContract` types because it referenced both `Hecton8.Core` and an extra manual `Hecton8.Core.Contracts` DLL under the current generated project graph.
+Solution: Removed the extra editor-only manual contracts reference in `Directory.Build.targets`. The editor build consumes the contracts through the current `Hecton8.Core` reference shape instead of injecting a second assembly identity.
+Rejected Alternatives: Renaming contract types, cloning DTOs, or removing the `Hecton8.Core` editor reference. Renames/clones break ABI; removing Core breaks editor tools that need runtime services.
+Scalability potential: Runtime unchanged. Compile-wall hygiene improves by preventing duplicate assembly identity in editor-only builds.
+Hardware Impact: 0 runtime microseconds.
+
+Problem: `Hecton8.Editor` and `Hecton8.Core` generated project overlays missed source files that exist on disk and are required by active editor/core call sites: `HectonMaterialChannelPackValidator`, `LocalizationEditorJsonTableParser`, and `MockSignalGenerators`.
+Solution: Added targeted `Directory.Build.targets` compile includes. `MockSignalGenerators` is included in `Hecton8.Core` because it depends on `Hecton8.Core.GlobalSignals`; editor parser/validator sources are included only for `Hecton8.Editor`.
+Rejected Alternatives: Creating replacement stubs, moving files, or deleting call sites. Stubs create false APIs; moves churn Unity metadata; deleting call sites removes existing tools.
+Scalability potential: Runtime unchanged for editor helpers. The mock signal generator remains available for deterministic test/fallback paths without creating a separate sibling dependency.
+Hardware Impact: 0 runtime microseconds; build integration only.
+
+Problem: Editor compile then exposed two local C# faults: `rowCount` could be read unassigned in `ScreenSpaceDecalTunerWindow`, and `GeologyForgeGenerator` called an unavailable `Mix(...)` helper.
+Solution: Initialized `rowCount` before the CSV load branch and added a local `MixTelemetryHash(uint)` helper for GeologyForge telemetry hashing.
+Rejected Alternatives: Widening helper visibility from another file, suppressing telemetry hash output, or restructuring the editor flow. Cross-file helper exposure adds dependency surface; suppressing telemetry weakens black-box evidence; restructuring would be disproportionate to the fault.
+Scalability potential: Runtime unchanged. Editor telemetry remains deterministic and cheap on low-end development machines and still informative on high-tier machines.
+Hardware Impact: 0 runtime microseconds.
+
+Problem: Final project-wide proof needed a captured solution exit code after all narrow blockers were repaired.
+Solution: Ran targeted project builds first, then `dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true`. `Build_SHINOBU_271_solution_loop12_23.log` reports `Build succeeded`, `14 Warning(s)`, `0 Error(s)`, `EXIT_CODE=0`.
+Rejected Alternatives: Stopping after narrow project builds, claiming success from earlier ambiguous logs, or fixing obsolete warnings outside the active error path. Narrow builds do not prove solution graph closure; ambiguous logs are invalid proof; warning cleanup would expand scope after the requested compile errors were removed.
+Scalability potential: Runtime unchanged. Build scalability is improved by keeping the repair set to exact compiler blockers and avoiding broad refactors.
+Hardware Impact: Runtime microseconds saved: 0. Integration impact: solution now compiles from the current generated graph with remaining warnings only.

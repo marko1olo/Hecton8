@@ -899,7 +899,7 @@ namespace Hecton8.World
 
         private void RegisterRecentCutHeatStamp(Vector3 positionWS, float radiusWS, float strength)
         {
-            float currentTime = Time.time;
+            float currentTime = ResolveThermalShaderClockSeconds();
             float lifetime = Mathf.Max(0.01f, shaderScarLifetime);
             int targetIndex = -1;
             float weakestScore = float.MaxValue;
@@ -944,6 +944,11 @@ namespace Hecton8.World
                 0,
                 PlasmaCutThermalDeltaCelsius * Mathf.Clamp01(strength));
             _recentCutHeatDirty = true;
+        }
+
+        private static float ResolveThermalShaderClockSeconds()
+        {
+            return Time.timeSinceLevelLoad;
         }
 
         private void EmitDebrisBurst(Vector3 positionWS, Vector3 directionWS, float cutStrength, float bubbleWeight)
@@ -1266,7 +1271,7 @@ namespace Hecton8.World
                 return;
 
             _recentCutHeatCount = 0;
-            float currentTime = Time.time;
+            float currentTime = ResolveThermalShaderClockSeconds();
             for (int i = 0; i < RecentStampCapacity; i++)
             {
                 RecentCutHeatStamp stamp = _recentCutHeatStamps[i];

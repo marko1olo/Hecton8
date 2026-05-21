@@ -3,8 +3,8 @@
 Agent: SHINOBU_271
 Domain: VR_INTERACTION_KINEMATIC_BRIDGE
 Task count: 20
-Current loop: 9 / 5 strict loops complete; compile-rebuild gate and error repair in progress
-Verification state: LOOP 9 HOT SIGNAL DETERMINISM PATCHED; RESTORE DONE; COMPILE RETRY AUTHORIZED BY USER BUT STILL GATED BY CPU/csc/dotnet RULE. Previous narrow `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false` reached CSC and failed on missing `Assets/_Project/Scripts/IBuildPlacementRule.cs`, referenced by `Hecton8.Core.csproj`.
+Current loop: 12 / 5 strict loops complete; user-authorized project-wide rebuild repair reached solution green.
+Verification state: LOOP 12 SOLUTION BUILD GREEN. `dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true` returned `EXIT_CODE=0` in `Docs/AgentLogs/Build_SHINOBU_271_solution_loop12_23.log` with `14 Warning(s)`, `0 Error(s)`. Remaining warnings are existing obsolete API/migration warnings in `Assembly-CSharp-Editor.csproj` and `MapMagic.Settings.csproj`.
 
 ## Mandates Read
 
@@ -134,4 +134,12 @@ Load-shed fallback: continuous GlobalQualityWeight now drives a 2..8 presentatio
 - [x] Hardened generated metadata prune: `HectonPruneMissingGeneratedCompileItems` now also removes missing `@(None)` and `@(Content)` rows before `CoreCompile`, covering stale shader/text metadata without fake files. DOD: `Directory.Build.targets` parses as XML after the change.
 - [x] Attempted gated solution rebuild `loop11_05`; 30 samples over roughly 10 minutes stayed above the 50% CPU gate (`73-100%`), with `dotnet/csc/VBCSCompiler=0`, so no build was launched. Gate log: `Docs/AgentLogs/Build_SHINOBU_271_solution_loop11_05_gate.log`.
 - [x] CPU gate explicitly overridden by user for project-wide repair. `loop12_01` override build wrapper was invalid because PowerShell parsed `$log.tmp` as a null property path; recorded as no proof. `loop12_02` used a corrected temp log and returned `EXIT_CODE=-1`, but the captured minimal log contains no `: error`, `MSB####`, `CSC : error`, `Exception`, or `FAILED` lines and no compiler process remains. DOD: not accepted as compile proof; next step is a verbose solution build log to expose the real failing target/process path.
-- [ ] Next solution rebuild is active under user CPU-gate override and must use corrected verbose logging before any code change.
+- [x] Stale build-server state isolated: `loop12_15` produced `EXIT_CODE=-1` with no diagnostic output; `dotnet build-server shutdown` succeeded in `Build_SHINOBU_271_buildserver_shutdown_loop12_16.log`, and subsequent builds used `/nr:false /p:UseSharedCompilation=false`.
+- [x] RenderGraph texture binding repaired: static textures are now assigned through material-local `SetTexture(...)` before raster execution instead of illegal `RasterCommandBuffer.SetGlobalTexture(int, Texture/Texture2DArray)` calls.
+- [x] Core namespace blocker repaired: `VocalWarningSystem` now resolves `HomeostasisBrain.GlobalQualityWeight` through `Hecton8.Core`, matching the owning namespace.
+- [x] Editor duplicate contract blocker repaired: `Hecton8.Editor` no longer receives a second manual `Hecton8.Core.Contracts` reference while already consuming `Hecton8.Core`; missing editor helper source overlays were restored through `Directory.Build.targets`.
+- [x] Editor helper blockers repaired: `LocalizationEditorJsonTableParser` and `HectonMaterialChannelPackValidator` are included for editor builds; `MockSignalGenerators` is included in `Hecton8.Core` where its `GlobalSignals` dependency exists.
+- [x] Local compile faults repaired: `ScreenSpaceDecalTunerWindow` has deterministic `rowCount` initialization, and `GeologyForgeGenerator` uses a local `MixTelemetryHash(...)` helper instead of an unavailable cross-file helper.
+- [x] Narrow project proofs green: `Hecton8.Core.csproj` (`loop12_20`) succeeded with `29 Warning(s)`, `0 Error(s)`; `Hecton8.Editor.csproj` (`loop12_21`) succeeded with `15 Warning(s)`, `0 Error(s)`; `Assembly-CSharp-firstpass.csproj` (`loop12_22`) succeeded with `0 Warning(s)`, `0 Error(s)`.
+- [x] Solution proof green: `Hecton8.slnx` (`loop12_23`) succeeded with `14 Warning(s)`, `0 Error(s)`, elapsed `00:00:28.55`.
+- [x] Post-build hygiene: `git diff --check` returned no whitespace errors; only CRLF normalization warnings in already-modified working-copy files.
