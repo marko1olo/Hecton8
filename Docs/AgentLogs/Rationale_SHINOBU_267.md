@@ -481,3 +481,15 @@ Route impact: Keeps the early-route flora phase scalar stable across clients wit
 Proof required: Static source/self-audit now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, and save/load diff remain pending.
 Parked work rejected: Generic Fast-mode substitution, build launch under CPU/csc/dotnet gate, and rewriting historical log entries.
 Static verification: SHINOBU_267 XML extraction remains 15929 chars; runtime has `DeterministicCount=4`, `FastCount=0`, `StandardPrecisionCount=4`, `CompileSyncCount=4`; owned forbidden scan is clean for `FloatMode.Fast`, `parameters[0]`, `.Run()`, `.Complete()`, direct kernel `Execute()`, vector upload, random, `foreach`, and `Pack=1`; runtime/editor/shader brace and full preprocessor balances are zero; asmdef/report JSON parse passed; `git diff --check` reported no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=1, csc=1.
+
+## Polish Pass 44 Decisions
+Problem: P43 locked deterministic Burst mode in source and self-audit, but the central flora route docs still only implied deterministic attributes or omitted the XML-specific reason. Integrators read `FLORA_PROCEDURAL_SWAY_FIELD.md` and `BINARY_PAYLOAD_INTEGRATION_LEDGER.md` before agent logs.
+Solution: Updated both central SHINOBU_267 route cards to state that Task 06 locks all four owned Burst surfaces to `CompileSynchronously=true`, `FloatMode.Deterministic`, and `FloatPrecision.Standard`, while explicitly preserving the save/WAL/rollback/gameplay-authority exclusion.
+Rejected Alternatives: Leaving the explanation in logs only was rejected because central route docs are the integration surface. Rewriting unrelated ledger entries was rejected.
+Scalability potential: No runtime behavior change. Quality curves and shader ALU gates remain continuous; the doc patch only protects the deterministic time-scalar route from incorrect future optimization.
+Hardware Impact: Documentation-only, 0 runtime us.
+First 20 Minutes moment: World load and swim readability on the selected Copper Wire route biome.
+Route impact: Central docs now match the source/self-audit lock used by the early-route flora presentation lane.
+Proof required: Static doc/source scan now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, and save/load diff remain pending.
+Parked work rejected: Rewriting unrelated payload ledger sections, launching build under CPU gate, and changing DTO/shader ABI.
+Static verification: Doc scan shows both central SHINOBU_267 docs contain `CompileSynchronously=true`, `FloatMode.Deterministic`, and `FloatPrecision.Standard` on the flora route; asmdef/report JSON parse passed; focused `git diff --check` reported no whitespace errors. Build not launched because CPU preflight reported 100%, dotnet=0, csc=0.
