@@ -4505,3 +4505,13 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - `HectonHazardManager` added a fixed cold `int[1024]` compatibility table for untyped radiation facade IDs. This is managed cold routing metadata only and is not serialized, snapshotted, or exposed as a native payload.
 - Editor scanner path ownership moved to `RadiationShieldingReportPaths`; generated SHINOBU_274 JSON now includes microsecond estimate metadata. Report schema change is diagnostic-only and does not affect runtime payloads.
 - Verification: focused `git diff --check` passed with line-ending warnings only; build was not relaunched because CPU sampled at 100 percent.
+
+## 2026-05-21 - SHINOBU_202 Diegetic Visor Descriptor Route
+
+- Migrated `Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs` visor VFX Vault lanes away from retained `VaultBufferHandle<T>`, `GetBufferHandle`, `.Resolve(vault)`, retained handle checks, and `GetElementAsRef`.
+- Current route: visor state, tuning, mock physiology, mock environment, GPU globals, telemetry ring, telemetry cursor, CSV scratch, binary probe scratch, and NaN flags store `VaultGenerationHandle<T>` descriptors and open through helpers requiring exact BufferID, `SystemID.Vfx`, nonzero generation, successful `TryResolveHandle` or pure `TryReadHandle`, `IsCreated`, and required length.
+- Lifecycle route: disable and DataVault replacement complete scheduled visor work, release all ten nonzero VFX-owned descriptors through `ReleaseBuffer(in handle)`, and tombstone route state before rebinding.
+- Pure read route: `TryGetPreview` now resolves only existing descriptors through `TryReadHandle` and does not initialize native state, allocate/grow buffers, publish signals, complete jobs, or search the scene.
+- Binary payload impact for this SHINOBU_202 loop: route-only. No DTO layout, BufferID, save identity, `VisorStateDTO` 16-byte stride, `VisorLensTuningDTO` 128-byte stride, `MockPhysiologySignal` 32-byte stride, `MockVisorEnvironmentSignal` 48-byte stride, `DiegeticVisorLensGpuGlobalsDTO` 64-byte stride, `VisorLensTelemetryEntry` 64-byte stride, CBuffer stride, shader property ID, CSV byte contract, fixed-binary probe contract, telemetry dump format, SignalBus ABI, or Vfx authority changed by this loop.
+- Preexisting same-file diffs in `DiegeticVisorLensRuntime.cs` are not claimed by this descriptor-route entry.
+- Verification: focused legacy/direct-buffer/global-generation scan clean; descriptor scan confirmed generation helper, pure read, and release routes; brace count `155/155`; `git diff --check` passed with CRLF warning only. Build was not relaunched.
