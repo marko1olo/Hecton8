@@ -71,16 +71,16 @@ namespace Hecton8.Gameplay
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct PlayerKinematicsBodyJob : IJob
     {
-        public NativeArray<float3> Positions;
-        public NativeArray<float3> Velocities;
-        public NativeArray<float3> IntendedMovement;
-        public NativeArray<float3> FlowVelocity;
-        public NativeArray<float3> LastValidPositions;
-        [ReadOnly] public NativeArray<WhirlpoolFlow> ActiveMaelstroms;
-        [ReadOnly] public NativeArray<byte> VoxelSdfTexture3D;
-        public NativeArray<PlayerKinematicsRuntimeTelemetryEntry> Telemetry;
-        public NativeArray<int> TelemetryWriteIndex;
-        public NativeArray<int> FaultFlags;
+        [NoAlias] public NativeArray<float3> Positions;
+        [NoAlias] public NativeArray<float3> Velocities;
+        [NoAlias] public NativeArray<float3> IntendedMovement;
+        [NoAlias] public NativeArray<float3> FlowVelocity;
+        [NoAlias] public NativeArray<float3> LastValidPositions;
+        [ReadOnly, NoAlias] public NativeArray<WhirlpoolFlow> ActiveMaelstroms;
+        [ReadOnly, NoAlias] public NativeArray<byte> VoxelSdfTexture3D;
+        [NoAlias] public NativeArray<PlayerKinematicsRuntimeTelemetryEntry> Telemetry;
+        [NoAlias] public NativeArray<int> TelemetryWriteIndex;
+        [NoAlias] public NativeArray<int> FaultFlags;
         public int ActiveMaelstromCount;
         public int3 VoxelSdfDimensions;
         public float DeltaTime;
@@ -425,8 +425,8 @@ namespace Hecton8.Gameplay
         public const byte RuntimeFlagReducedProbeSet = 1 << 0;
         public const byte RuntimeFlagImpact = 1 << 1;
 
-        [ReadOnly] public NativeArray<RaycastHit> Hits;
-        public NativeArray<PlayerKinematicsHandTarget> Targets;
+        [ReadOnly, NoAlias] public NativeArray<RaycastHit> Hits;
+        [NoAlias] public NativeArray<PlayerKinematicsHandTarget> Targets;
         public float3 SourcePosition;
         public float3 SourceForward;
         public float3 SourceRight;
@@ -927,6 +927,7 @@ namespace Hecton8.Gameplay
         private VaultBufferBinding<RaycastCommand> _handProbeCommands = new VaultBufferBinding<RaycastCommand>(BufferID.PlayerKinematicHandProbeCommands, EnvironmentProbeCount, OwnerSystemId);
         private VaultBufferBinding<RaycastHit> _handProbeHits = new VaultBufferBinding<RaycastHit>(BufferID.PlayerKinematicHandProbeHits, EnvironmentProbeCount, OwnerSystemId);
         private VaultBufferBinding<SdfSqueezeResult> _sdfSqueezeResults = new VaultBufferBinding<SdfSqueezeResult>(BufferID.PlayerKinematicSdfSqueezeResults, EntityCount, OwnerSystemId);
+        private VaultGenerationHandle<LockstepPlayerKinematicState> _playerKinematicStateHandle;
         private VaultGenerationHandle<BulkheadCollisionResultDTO> _bulkheadCollisionResultsHandle;
         private JobHandle _handProbeHandle;
         private JobHandle _handPlacementHandle;
@@ -1520,6 +1521,7 @@ namespace Hecton8.Gameplay
             _ = _handProbeCommands.Ensure(dataVault);
             _ = _handProbeHits.Ensure(dataVault);
             _ = _sdfSqueezeResults.Ensure(dataVault);
+            _ = TryOpenPlayerKinematicStateView(allowAllocate: true, readOnly: false, out _);
             TryBindBulkheadCollisionResultHandle(dataVault);
             if (!HasKinematicsStorage() || !HasSyncStateWriteStorage())
                 return;
@@ -1552,6 +1554,7 @@ namespace Hecton8.Gameplay
             _handProbeCommands.ReleaseView();
             _handProbeHits.ReleaseView();
             _sdfSqueezeResults.ReleaseView();
+            _playerKinematicStateHandle = default;
             _bulkheadCollisionResultsHandle = default;
             _nextBulkheadCollisionHandleBindFrame = 0u;
             ResetDeterminismSessionState();
@@ -1910,9 +1913,12 @@ namespace Hecton8.Gameplay
             NativeArray<byte> resolvedSdf = publishedSdf;
             var dataVault = _dataVault;
             if (dataVault != null &&
-                dataVault.TryGetBuffer<byte>(BufferID.VoxelSdfTexture3D, out NativeArray<byte> vaultSdf) &&
-                vaultSdf.IsCreated &&
-                vaultSdf.Length >= expectedLength)
+                TryReadExistingVaultView(
+                    dataVault,
+                    BufferID.VoxelSdfTexture3D,
+                    SystemID.WorldStreaming,
+                    expectedLength,
+                    out NativeArray<byte> vaultSdf))
             {
                 resolvedSdf = vaultSdf;
             }
@@ -2117,16 +2123,7 @@ namespace Hecton8.Gameplay
         private bool TryReadPlayerKinematicStateFromVault(out AbsoluteUniversePosition aup)
         {
             aup = default;
-            IDataVault dataVault = _dataVault;
-            if (dataVault == null)
-                return false;
-
-            NativeArray<LockstepPlayerKinematicState> stateBuffer = dataVault.GetBuffer<LockstepPlayerKinematicState>(
-                BufferID.PlayerKinematicState,
-                EntityCount,
-                SystemID.GameplayPlayer,
-                NativeArrayOptions.ClearMemory);
-            if (!stateBuffer.IsCreated || stateBuffer.Length <= 0)
+            if (!TryOpenPlayerKinematicStateView(allowAllocate: false, readOnly: true, out NativeArray<LockstepPlayerKinematicState> stateBuffer))
                 return false;
 
             LockstepPlayerKinematicState state = stateBuffer[0];
@@ -2153,16 +2150,7 @@ namespace Hecton8.Gameplay
 
         private void WritePlayerKinematicStateToVault(in AbsoluteUniversePosition aup, float3 velocity)
         {
-            IDataVault dataVault = _dataVault;
-            if (dataVault == null)
-                return;
-
-            NativeArray<LockstepPlayerKinematicState> stateBuffer = dataVault.GetBuffer<LockstepPlayerKinematicState>(
-                BufferID.PlayerKinematicState,
-                EntityCount,
-                SystemID.GameplayPlayer,
-                NativeArrayOptions.ClearMemory);
-            if (!stateBuffer.IsCreated || stateBuffer.Length <= 0)
+            if (!TryOpenPlayerKinematicStateView(allowAllocate: true, readOnly: false, out NativeArray<LockstepPlayerKinematicState> stateBuffer))
                 return;
 
             stateBuffer[0] = new LockstepPlayerKinematicState
@@ -2179,6 +2167,132 @@ namespace Hecton8.Gameplay
                 Flags = BodyFlagSdfSqueezeIntervention,
                 StableId = _sourceId
             };
+        }
+
+        private bool TryOpenPlayerKinematicStateView(
+            bool allowAllocate,
+            bool readOnly,
+            out NativeArray<LockstepPlayerKinematicState> stateBuffer)
+        {
+            stateBuffer = default;
+            IDataVault dataVault = _dataVault;
+            if (dataVault == null)
+                return false;
+
+            if (TryOpenVaultView(
+                    dataVault,
+                    in _playerKinematicStateHandle,
+                    BufferID.PlayerKinematicState,
+                    SystemID.Unknown,
+                    EntityCount,
+                    readOnly,
+                    out stateBuffer))
+            {
+                return true;
+            }
+
+            if (!allowAllocate)
+            {
+                return TryReadExistingVaultView(
+                    dataVault,
+                    BufferID.PlayerKinematicState,
+                    SystemID.Unknown,
+                    EntityCount,
+                    out stateBuffer);
+            }
+
+            if (!dataVault.TryGetGenerationHandle(
+                    BufferID.PlayerKinematicState,
+                    out _playerKinematicStateHandle) ||
+                !TryOpenVaultView(
+                    dataVault,
+                    in _playerKinematicStateHandle,
+                    BufferID.PlayerKinematicState,
+                    SystemID.Unknown,
+                    EntityCount,
+                    readOnly,
+                    out stateBuffer))
+            {
+                _playerKinematicStateHandle = dataVault.GetGenerationHandle<LockstepPlayerKinematicState>(
+                    BufferID.PlayerKinematicState,
+                    EntityCount,
+                    OwnerSystemId,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            return TryOpenVaultView(
+                dataVault,
+                in _playerKinematicStateHandle,
+                BufferID.PlayerKinematicState,
+                SystemID.Unknown,
+                EntityCount,
+                readOnly,
+                out stateBuffer);
+        }
+
+        private static bool TryReadExistingVaultView<T>(
+            IDataVault dataVault,
+            BufferID bufferId,
+            SystemID expectedOwner,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (dataVault == null ||
+                requiredLength < 0 ||
+                !dataVault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle))
+            {
+                return false;
+            }
+
+            return TryOpenVaultView(
+                dataVault,
+                in handle,
+                bufferId,
+                expectedOwner,
+                requiredLength,
+                readOnly: true,
+                out buffer);
+        }
+
+        private static bool TryOpenVaultView<T>(
+            IDataVault dataVault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            SystemID expectedOwner,
+            int requiredLength,
+            bool readOnly,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (dataVault == null ||
+                requiredLength < 0 ||
+                !IsExpectedVaultDescriptor(in handle, bufferId, expectedOwner))
+            {
+                return false;
+            }
+
+            bool opened = readOnly
+                ? dataVault.TryReadHandle(in handle, out buffer)
+                : dataVault.TryResolveHandle(in handle, out buffer);
+
+            return opened &&
+                   buffer.IsCreated &&
+                   (requiredLength == 0 || buffer.Length >= requiredLength);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsExpectedVaultDescriptor<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            SystemID expectedOwner)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.Generation != 0u &&
+                   (expectedOwner == SystemID.Unknown || handle.SystemID == (uint)expectedOwner);
         }
 
         private static byte ResolveSdfGradientProbeRequest()

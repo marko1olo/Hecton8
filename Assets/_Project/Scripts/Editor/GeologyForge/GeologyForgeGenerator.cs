@@ -496,11 +496,21 @@ namespace Hecton8.Editor.GeologyForge
                 Lod1Triangles = math.max(0, lod1Triangles),
                 Lod2Triangles = math.max(0, lod2Triangles),
                 WarningFlags = warningFlags,
-                StateHash = Mix(seed ^ ((uint)rawVertexCount * 0x9E3779B9u) ^ (stage * 0x85EBCA6Bu) ^ ((uint)lod0Triangles << 1) ^ ((uint)lod1Triangles << 2) ^ ((uint)lod2Triangles << 3)),
+                StateHash = MixTelemetryHash(seed ^ ((uint)rawVertexCount * 0x9E3779B9u) ^ (stage * 0x85EBCA6Bu) ^ ((uint)lod0Triangles << 1) ^ ((uint)lod1Triangles << 2) ^ ((uint)lod2Triangles << 3)),
                 DumpReason = (warningFlags & GeologyForgeConstants.WarningNonFiniteTelemetry) != 0u ? GeologyForgeConstants.DumpReasonNonFinite : 0u
             };
             cursor++;
             return warningFlags;
+        }
+
+        private static uint MixTelemetryHash(uint value)
+        {
+            value ^= value >> 16;
+            value *= 0x7FEB352Du;
+            value ^= value >> 15;
+            value *= 0x846CA68Bu;
+            value ^= value >> 16;
+            return value == 0u ? 1u : value;
         }
 
         private static void DumpBlackBox(NativeArray<GeologyBakeTelemetryEntry> telemetry, int cursor, uint reason)

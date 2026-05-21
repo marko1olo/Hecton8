@@ -779,6 +779,7 @@ namespace Hecton8.World
         private const int TombstoneTimeToLiveDays = 3;
         private const double TombstoneInGameDaySeconds = 86400d;
         private const float TombstoneDecayFrostTickSeconds = 5f;
+        private const float WorldClockMaxSeconds = 16777215f;
         private const int MaxTombstoneDecayAppliesPerLateFrame = 128;
         private static readonly int3 ApexFaunaTombstoneChunkId = new int3(int.MinValue, 0, 0);
         private static readonly long HydrationFrameBudgetTicks = HydrationScheduler.FrameBudgetTicks;
@@ -915,6 +916,7 @@ namespace Hecton8.World
         private bool _playerSectorValid;
         private bool _sectorOverrideCommitInFlight;
         private float _nextSectorOverrideCommitTime;
+        private float _worldClockSeconds;
         private string _indexedSectorSavePath;
         private string _indexedSectorOverrideDirectory;
         private List<SaveBinaryStorage.IndexedSectorEntryInfo> _indexedSectorDirectory;
@@ -1074,6 +1076,7 @@ namespace Hecton8.World
             chunkSizeMeters = math.max(16, chunkSizeMeters);
             hydrationRadiusInChunks = math.clamp(hydrationRadiusInChunks, 0, 2);
             _hydrationFrameCounter = 0;
+            _worldClockSeconds = 0f;
 
             // COLD ALLOC: NativeList<PersistentWorldItemRecord>[maxTrackedItems] â€” persistent dropped-item record store â€” owner: PersistentWorldRegistry
             _records = new NativeList<PersistentWorldItemRecord>(maxTrackedItems, DataVaultExemptPersistentRecordAllocator);
@@ -1389,8 +1392,22 @@ namespace Hecton8.World
 
         public void Tick(float dt)
         {
+            AdvanceWorldClock(dt);
             _resolvedItemCatalog?.DrainDeferredWorldPrefabReleases(4);
             DrainDehydrateQueue(MaxDehydrationsPerTick);
+        }
+
+        private void AdvanceWorldClock(float deltaTime)
+        {
+            if (!math.isfinite(deltaTime) || deltaTime <= 0f)
+                return;
+
+            _worldClockSeconds = math.min(WorldClockMaxSeconds, _worldClockSeconds + deltaTime);
+        }
+
+        private float ResolveWorldClockSeconds()
+        {
+            return _worldClockSeconds;
         }
 
         public void LateFrameTick()
@@ -4001,7 +4018,7 @@ namespace Hecton8.World
                         {
                             AbsoluteUniversePosition eggAup = AbsoluteUniversePosition.FromAlignedBlit(in entityState.Position);
                             if (AbsoluteUniversePosition.DistanceSq(in eggAup, in playerAup) > restoreRadiusSq ||
-                                GetFaunaEggHatchTimeSeconds(in entityState) > Time.time)
+                                GetFaunaEggHatchTimeSeconds(in entityState) > ResolveWorldClockSeconds())
                             {
                                 _entityStateScratch.Add(entityState);
                                 continue;
@@ -4014,7 +4031,7 @@ namespace Hecton8.World
                                 in eggAup,
                                 false,
                                 false,
-                                Time.time,
+                                ResolveWorldClockSeconds(),
                                 0.15f));
                             _entityStateByInstanceUid.Remove(entityState.InstanceUid);
                             restoredCount++;
@@ -4549,7 +4566,7 @@ namespace Hecton8.World
                     in seededAup,
                     false,
                     predator,
-                    Time.time,
+                    ResolveWorldClockSeconds(),
                     GetFaunaHibernationHunger01(in template));
 
                 _entityStateScratch.Add(seededState);

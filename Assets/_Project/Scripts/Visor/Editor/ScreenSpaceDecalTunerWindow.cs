@@ -207,7 +207,8 @@ namespace Hecton8.Visor.Editor
             _lastCsvAttempted = true;
             _lastCsvHeaderHash32 = ComputeCsvHeaderHash32(selected);
             bool schemaMatches = _lastCsvHeaderHash32 == CsvSchemaHash32;
-            bool loaded = schemaMatches && DynamicDecalVaultRuntime.TryLoadMaterialProfilesCsv(selected, out int rowCount);
+            int rowCount = 0;
+            bool loaded = schemaMatches && DynamicDecalVaultRuntime.TryLoadMaterialProfilesCsv(selected, out rowCount);
             _lastCsvRows = loaded ? rowCount : 0;
             _lastCsvValid = loaded;
             _csvLabel.text = loaded

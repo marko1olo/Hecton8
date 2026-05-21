@@ -67,6 +67,24 @@ Remaining blocked/pending:
   <QUALITY status="DRS shader uses continuous scale-deficit curve; no binary low-tier switch added" />
 </SELF_AUDIT>
 
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="AudioSmokeProofRealignment">
+  <WHAT_WAS_WRONG>
+    `AdvancedAcousticsSmokeTester` still encoded the old binary scalability contract for Prologue acoustic and Vocal warning routes. It required scalability snapshot drains, low-memory registry seeds, and payload handlers that the runtime sanitation removed.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    The smoke tester now asserts continuous quality functions for Prologue and Vocal warning, and negative-checks the removed binary scalability snapshot and low-memory cache strings.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    The proof artifact now protects the intended Dear Lie: prologue granular plasma and vocal radio damage are presentation fakes scaled by continuous quality, not hardware tier identity.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    Editor-only test update. No runtime speed claim.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    `rg` found no removed Prologue/Vocal scalability strings in the patched runtime files. `git diff --check` passed for Prologue, Vocal, and the smoke tester. `dotnet build .\Assembly-CSharp.csproj --no-restore --nologo -m:1` returned 0 errors and 132 warnings.
+  </VERIFICATION>
+</SELF_AUDIT>
+
 <SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="PrologueAcousticQualityContinuum">
   <WHAT_WAS_WRONG>
     Prologue acoustic transition publication used low-memory/low-tier cached fields and scalability signal drains to disable granular plasma audio and publish a low-tier proxy flag. This made a presentation cue branch on binary hardware identity.

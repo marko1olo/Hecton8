@@ -225,3 +225,21 @@ Updated static counts from that artifact:
 - `unityTimeRiskGameplayDelta`: 1
 
 Residual note: `ApplyHydrodynamicStress` currently hardcodes `HectonQualityTier.Ultra` for module stress, but `binaryHardwareSwitch=0` remains green because this is not a low/high branch. The quality ownership of habitat analytical stress is separate debt from wall-clock ownership.
+
+## 2026-05-22 FoveatedSimulationManager Follow-Up
+
+`FoveatedSimulationManager` no longer has working-tree `Time.time` rows for tier0 combat lock expiry. The manager uses `ResolveFoveatedClockSeconds()` advanced from `BeginDispatcherFrame(float frameDeltaTime)`, and runtime reset now clears `_foveatedClockSeconds`.
+
+Focused proof:
+
+- `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs` returns no rows.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_time_after_foveated_clock.json`.
+
+Updated static counts from that artifact:
+
+- `unityTimeCritical`: 913
+- `unityTimeWallClock`: 69
+- `unityTimeRiskGameplayWallClock`: 35
+- `unityTimeRiskGameplayDelta`: 1
+
+Residual note: `git show HEAD` already contained the foveated clock route for lock/importance comparison; the working tree had regressed to `Time.time` at inspection time. The net diff against `HEAD` is the runtime-reset clock clear.

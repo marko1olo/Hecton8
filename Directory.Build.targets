@@ -124,6 +124,7 @@
     <Compile Include="Assets\_Project\Scripts\Core\Memory\VaultLegacyBinaryArchaeology.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\VaultLegacyBinaryArchaeology.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Memory\VaultMemoryContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\VaultMemoryContracts.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Memory\VaultMockSignalBus.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\VaultMockSignalBus.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Signals\SignalCorridorMockSignalGenerators.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Signals\SignalCorridorMockSignalGenerators.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Scheduling\BurstTokenBucketJobAdmissionService.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Scheduling\BurstTokenBucketJobAdmissionService.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Scheduling\JobAdmissionHash.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Scheduling\JobAdmissionHash.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Scheduling\JobAdmissionScheduleExtensions.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Scheduling\JobAdmissionScheduleExtensions.cs'))" />
@@ -301,6 +302,7 @@
     <Compile Include="Assets\_Project\Scripts\Editor\GeologyForge\GeologyVertexLayoutValidator.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Editor\GeologyForge\GeologyVertexLayoutValidator.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Editor\GeologyForge\RuntimeMeshGenerationScanner.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Editor\GeologyForge\RuntimeMeshGenerationScanner.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Editor\TextureChannelPacker\HectonMaterialChannelPackValidator.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Editor\TextureChannelPacker\HectonMaterialChannelPackValidator.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Editor\LocalizationEditorJsonTableParser.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Editor\LocalizationEditorJsonTableParser.cs'))" />
     <Reference Include="Unity.Collections" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Unity.Collections.dll') And !$([System.String]::Copy('@(Reference)').Contains('Unity.Collections'))">
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Unity.Collections.dll</HintPath>
       <Private>False</Private>

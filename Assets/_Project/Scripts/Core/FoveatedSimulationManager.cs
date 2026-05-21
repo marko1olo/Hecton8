@@ -873,6 +873,7 @@ namespace Hecton8.Core
             _tier2Count = 0;
             _homeostasisPressureTier = 0;
             _telemetryCursor = 0;
+            _foveatedClockSeconds = 0.0f;
             _importanceAccumulator = 0.0f;
             _activeDistanceMeters = DefaultActiveDistanceMeters;
             _frozenDistanceMeters = DefaultFrozenDistanceMeters;

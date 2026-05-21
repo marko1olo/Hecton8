@@ -930,3 +930,11 @@ Solution: Removed the low-memory/low-tier fields, scalability signal drain, bina
 Rejected Alternatives: Keeping the tier event as metadata was rejected because downstream audio can treat metadata as a branch key. Disabling granular plasma below a threshold was rejected because prologue audio should degrade continuously, not pop between completely absent and present.
 Scalability potential: Low devices get reduced granular plasma stress, middle devices interpolate, and high/ultra receive full granular overdrive. Transition timing, stage identity, splashdown, portal blend, and low-pass/LFE facts remain unchanged.
 Hardware Impact: 0 us speed claim. Removed one per-frame scalability signal scan and two cached binary hardware fields from the prologue audio route.
+
+## Audio Smoke Proof Realignment
+
+Problem: `AdvancedAcousticsSmokeTester` still required the exact Prologue and Vocal warning scalability signal drains, low-memory registry seed, and scalability payload handler that the runtime pass intentionally removed. The runtime was clean, but the proof artifact would reject the corrected architecture.
+Solution: Updated the smoke tester to assert `ResolveGlobalQualityWeight01()` and smooth quality-curve/radio-distortion routes, while negative-checking the removed `ConsumeScalabilitySignals`, `ReadOnlySpan<ScalabilityChangedEvent>`, low-memory cache policy, and hardware tier seed strings for Prologue/Vocal warning.
+Rejected Alternatives: Leaving the smoke tester stale was rejected because CI proof must encode the current contract. Deleting the smoke assertions was rejected because the audio bridge still needs a regression guard against reintroducing binary scalability drains.
+Scalability potential: Low/Middle/High/Ultra audio presentation now has a test-enforced continuous quality route for Prologue plasma and Vocal radio degradation.
+Hardware Impact: 0 us runtime. Editor-only proof update; `dotnet build .\Assembly-CSharp.csproj --no-restore --nologo -m:1` returned 0 errors and 132 pre-existing warnings.

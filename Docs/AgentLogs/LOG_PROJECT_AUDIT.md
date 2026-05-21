@@ -324,3 +324,15 @@ Cinematic Cheats used: Existing habitat stress remains analytical: graph stress,
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped from `unityTimeCritical=918` to `915`, from `unityTimeWallClock=73` to `71`, and from `unityTimeRiskGameplayWallClock=39` to `37`.
 
 Evidence: Focused `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/Construction/HabitatGraphManager.cs` returns no rows. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_habitat_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_habitat_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=915`, `unityTimeWallClock=71`, and `unityTimeRiskGameplayWallClock=37`. `git diff --check -- Assets/_Project/Scripts/Construction/HabitatGraphManager.cs` reports only LF-to-CRLF warning. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - FoveatedSimulationManager Clock Reconciliation
+
+What was wrong: The working tree contained `Time.time` in `FoveatedSimulationManager.LockTier0` and `ApplyImportanceResults`, affecting tier0 combat lock expiry and cadence classification.
+
+What was done: Reconciled those rows to the dispatcher-owned foveated clock route and added `_foveatedClockSeconds` reset in `ResetRuntimeState()`. The existing clock route was already present in `HEAD`; the net file diff to `HEAD` is the reset line.
+
+Cinematic Cheats used: Existing foveated simulation remains a cadence fake: scoring jobs, tiered tick intervals, and visual interpolation avoid per-target 60 Hz simulation at distance.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped from `unityTimeCritical=915` to `913`, from `unityTimeWallClock=71` to `69`, and from `unityTimeRiskGameplayWallClock=37` to `35`.
+
+Evidence: Focused `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs` returns no rows. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_foveated_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_foveated_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=913`, `unityTimeWallClock=69`, and `unityTimeRiskGameplayWallClock=35`. `git diff --check -- Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs` reports only LF-to-CRLF warning. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
