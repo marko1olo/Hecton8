@@ -4,7 +4,7 @@ Agent: SHINOBU_270
 Domain: ECHELON 8 Presentation & UX / Visor AR (HUD)
 Prompt role: VISOR_AR_STENCIL_RENDERER
 Task count: 20
-Status: TARGET UPLOAD MEMCPY PATCHED / VAULT LIFECYCLE PATCHED / STATIC SCAN CLEAN / GENERATED CSPROJ STALE / COMPILE BLOCKED BY CPU/PROJECT GATE
+Status: RENDERGRAPH FAIL-OPEN WATCHDOG PATCHED / TARGET UPLOAD MEMCPY PATCHED / VAULT LIFECYCLE PATCHED / STATIC SCAN CLEAN / GENERATED CSPROJ STALE / COMPILE BLOCKED BY CPU/PROJECT GATE
 
 ## Mandates Read
 
@@ -164,3 +164,10 @@ Status: TARGET UPLOAD MEMCPY PATCHED / VAULT LIFECYCLE PATCHED / STATIC SCAN CLE
 
 - [x] AR target GPU upload loop removed | Justification: `ArPass.UpdateGpuPayload` now copies the mapped `VisorArTargetDTO[16]` structured buffer through `UnsafeUtility.MemCpy` and clears unused mapped rows with `UnsafeUtility.MemClear`, matching the HUD/digit upload route already claimed in the rationale | Alternatives Rejected: keeping bounded per-row C# loops after claiming direct mapped-buffer MemCpy | Estimated impact: 1-3 us CPU variance reduction on low-end silicon pending profiler proof; primary value is evidence honesty and upload-route consistency
 - [x] Post-upload static verification rerun | Justification: targeted visor/UI/shader forbidden scan returned no `GlobalSignals`, `FromRuntimePosition`, shader global setters, `Canvas.ForceUpdateCanvases`, `TryGetLatestCreated`, Burst/job/tiny-run wrappers, `.Complete()`, persistent runtime `NativeArray`, or `_CameraDepthTexture`; `git diff --check` reports only Git LF-to-CRLF warning | Alternatives Rejected: declaring the prior rationale accurate without source correction | Estimated impact: proof only
+
+## Iteration 21: RenderGraph Suppression Fail-Open Watchdog
+
+- [x] Subagent P1 verified and patched | Justification: suppression no longer flips true in `AddRenderPasses`; it now marks a pending player-camera frame and flips true only from `ArPass.RecordRenderGraph` after the resolve destination is created and assigned to `resourceData.cameraColor` | Alternatives Rejected: enabling Canvas suppression before graph proof or restoring a Canvas/TMP active route | Estimated impact: correctness fail-open; protects the prior 250-750 us Canvas savings only on proven RenderGraph frames
+- [x] Same-frame watchdog added | Justification: `RenderPipelineManager.endCameraRendering` clears the pending renderer-owned suppression token if the authorized player camera reaches end-camera without an AR resolve record, covering compatibility/no-graph/drop paths that do not call the pass abort hooks | Alternatives Rejected: relying only on `RecordRenderGraph` abort cleanup or accepting one-frame blind HUD risk | Estimated impact: runtime 0 us steady path except one cold event delegate; prevents blind-HUD fail-closed state
+- [x] Post-watchdog verification rerun | Justification: targeted visor/UI/shader forbidden scan returned no hits; `git diff --check` reported only Git LF-to-CRLF warnings; generated `Hecton8.Core.csproj` still includes SuitHUD/ARWaypoint/old fluid feature but not the new SHINOBU_270 renderer/gizmo scripts | Alternatives Rejected: stale generated-project build proof or manual `.csproj` edits | Estimated impact: proof only
+- [x] Build gate resampled after watchdog patch | Justification: active `csc.exe`, multiple `dotnet.exe`, and `VBCSCompiler.exe` were present; CPU sampled 100% by CIM and processor counter, so `dotnet build` was not launched | Alternatives Rejected: launching a competing compiler under full CPU load | Estimated impact: protects shared workstation and avoids false compile proof

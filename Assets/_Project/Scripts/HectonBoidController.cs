@@ -95,6 +95,7 @@ namespace Hecton8.AI.GPU
         private const float AcousticPingMinLifetimeSeconds = 0.15f;
         private const float AcousticPingMaxLifetimeSeconds = 3.5f;
         private const float DefaultBoidCullingRadiusScale = 2.25f;
+        private const float BoidClockMaxSeconds = 16777215f;
 
         /// <summary>
         /// GPU-compatible boid data structure.
@@ -349,6 +350,7 @@ namespace Hecton8.AI.GPU
         /// Zero allocation swap â€” only integer arithmetic.
         /// </summary>
         private int _frameIndex;
+        private float _boidClockSeconds;
         private Vector3 _spatialGridOrigin;
         private Vector3Int _spatialGridResolution = Vector3Int.one;
         private float _spatialGridCellSize = 1f;
@@ -577,6 +579,7 @@ namespace Hecton8.AI.GPU
             using (ProfilerRegistry.AiTick.Auto())
             {
             if (!_initialized) return;
+            AdvanceBoidClock(deltaTime);
             EnsureRuntimeBufferCapacity();
 
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1286,7 +1289,7 @@ namespace Hecton8.AI.GPU
             cs.SetFloat(ShaderProps.PredatorPanicRadiusSq, predatorRadius * predatorRadius);
             cs.SetFloat(ShaderProps.PredatorWeight, Mathf.Max(0f, predatorEvasionWeight));
 
-            float pingActive = _activeAcousticPingParams.x > 0.0001f && Time.time <= _activeAcousticPingParams.z ? 1f : 0f;
+            float pingActive = _activeAcousticPingParams.x > 0.0001f && ResolveBoidClockSeconds() <= _activeAcousticPingParams.z ? 1f : 0f;
             _activeAcousticPingParams.w = pingActive;
             cs.SetVector(ShaderProps.AcousticPingAupRadius, _activeAcousticPingAupRadius);
             cs.SetVector(ShaderProps.AcousticPingParams, _activeAcousticPingParams);
@@ -1724,7 +1727,7 @@ namespace Hecton8.AI.GPU
         {
             ReadOnlySpan<AcousticPingSignal> signals = SignalBus<AcousticPingSignal>.GetFrameSnapshot();
             int start = Mathf.Max(0, signals.Length - MaxAcousticPingSignalsPerFrame);
-            float currentTime = Time.time;
+            float currentTime = ResolveBoidClockSeconds();
             for (int i = start; i < signals.Length; i++)
             {
                 ref readonly AcousticPingSignal signal = ref signals[i];
@@ -1743,9 +1746,22 @@ namespace Hecton8.AI.GPU
             }
         }
 
+        private void AdvanceBoidClock(float deltaTime)
+        {
+            if (!math.isfinite(deltaTime) || deltaTime <= 0f)
+                return;
+
+            _boidClockSeconds = math.min(BoidClockMaxSeconds, _boidClockSeconds + deltaTime);
+        }
+
+        private float ResolveBoidClockSeconds()
+        {
+            return _boidClockSeconds;
+        }
+
         public void RegisterAcousticPing(Vector3 aupPosition, float radiusMeters, float intensity01, float lifetimeSeconds)
         {
-            RegisterAcousticPing(aupPosition, radiusMeters, intensity01, lifetimeSeconds, Time.time);
+            RegisterAcousticPing(aupPosition, radiusMeters, intensity01, lifetimeSeconds, ResolveBoidClockSeconds());
         }
 
         private void RegisterAcousticPing(Vector3 aupPosition, float radiusMeters, float intensity01, float lifetimeSeconds, float currentTime)

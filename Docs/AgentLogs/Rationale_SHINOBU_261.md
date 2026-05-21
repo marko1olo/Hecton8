@@ -464,6 +464,12 @@ Rejected Alternatives: Leaving the shared root as a weaker stale summary was rej
 Scalability potential: Runtime unchanged. The proof artifact now consistently distinguishes SHINOBU_261's scalable Vault/Burst route from Player/Flora migration debt across both report surfaces.
 Hardware Impact: 0 runtime us. Build was not launched; latest CPU sample was 99.
 
+Problem: The shared-root scanner proof patch required verification after status/rationale/log edits, and compile was still not allowed under the live host load.
+Solution: Re-ran root and sidecar JSON parsing, verified `scannedScripts=2178` and four findings in the root SHINOBU_261 block, reran the runtime forbidden-pattern scan with case-sensitive raw trig matching, reran stale-token scan, and reran scoped diff whitespace. All static gates passed.
+Rejected Alternatives: Running `dotnet build` was rejected because CPU average was 88 with active `csc` and `dotnet`. Treating the root patch as harmless without parse/check proof was rejected because this shared report has already drifted under concurrent agents.
+Scalability potential: Runtime unchanged. Proof consistency protects the integration route by making the remaining Player/Flora migration debt visible in both dedicated and aggregate reports.
+Hardware Impact: 0 runtime us. Build contention avoided.
+
 Problem: Queued evaluator scheduling still used a budget-sized `IJobParallelFor` after the drain job, so empty or sparse queues could still pay per-index no-op checks up to the drain budget while waiting on `QueueCounterPacked`.
 Solution: Converted `GenerateMockOceanWavesJob`, `EvaluateAnalyticalWavesJob`, and `ResolveDearLieCachedResultsJob` to `IJobParallelForBatch`. Scheduler call sites now use `ScheduleBatch`; every batch resolves the packed counter once, clamps the batch end, and skips the entire tail range when `startIndex >= packedCount`.
 Rejected Alternatives: Reading `NativeQueue.Count` on the main thread was rejected because producer jobs can still be unresolved behind `inputDeps`. A new deferred NativeList/Vault lane was rejected for this patch because it changes ownership and dispatcher contracts beyond SHINOBU_261. Serial evaluation was rejected because it destroys high-tier throughput for packed 50k query frames.

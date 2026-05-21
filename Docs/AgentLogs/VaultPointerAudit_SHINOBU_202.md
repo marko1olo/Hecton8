@@ -812,3 +812,13 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - `QuestDagVault.ReleaseBuffers` releases all sixteen owned QuestDag descriptors through `ReleaseBuffer(in handle)` after resolver jobs are complete. Synchronous `Dispose()` completes active work before release; nonblocking `Dispose(JobHandle)` preserves the returned dependency fence and releases only when no active resolver job is pending.
 - Spatial-hash and graph resolver jobs now mark non-overlapping native lanes with `[NoAlias]`.
 - This entry claims only Quest DAG Vault route cleanup. `QuestNodeDTO`, `TriggerVolumeDTO`, `QuestNodeRuntimeDTO`, `QuestDagTelemetryEntry`, `StateChangedSignal`, `MockStoryEventSignal`, `MockPlayerPositionSignal`, `QuestDagMockItemAcquiredSignal`, `QuestDagLoadStats`, BufferIDs, OSHINO `.h8qdag.bin` binary schema, CSV override parser contract, SignalBus payloads, blackbox dump format, save-copy format, and QuestDag authority are unchanged by this loop.
+
+## 2026-05-22 Shinobu Metabolism Descriptor Route Update
+
+- `Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs` no longer has executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, `.ptr`, or `ChemicalInfluenceGrid.Chemical*` hits.
+- Metabolism states, entity AUPs, exertion speed, species rules, rule indices, telemetry ring, tuning, toxin samples, CSV scratch, staged physiology signals, and staged combat signals now use `VaultGenerationHandle<T>` descriptors.
+- Each owned route validates exact BufferID, `SystemID.GameplayPlayer`, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated` before returning a native view.
+- Disable, `Dispose`, and DataVault hot-swap release all eleven GameplayPlayer-owned descriptors through `ReleaseBuffer(in handle)` after active metabolism work and locks are finalized.
+- `GetStateRef` no longer uses the legacy retained-handle byref helper; it resolves a phase-local state view and derives the ref through `UnsafeUtility.ArrayElementAsRef`.
+- AISensory chemical readback buffers remain borrowed: metabolism opens fixed BufferIDs through `TryGetGenerationHandle` plus `TryReadHandle` and never releases those descriptors.
+- This entry claims only Shinobu Metabolism Vault route cleanup. `MetabolicStateDTO`, `MetabolicSpeciesRuleDTO`, `MetabolismTuningDTO`, `MetabolicTelemetryEntry`, `MetabolismShaderGlobalsDTO`, `MetabolismChemical*MirrorDTO`, BufferIDs, CSV parser contract, SignalBus payloads, shader property IDs, blackbox dump format, and GameplayPlayer authority are unchanged by this loop.

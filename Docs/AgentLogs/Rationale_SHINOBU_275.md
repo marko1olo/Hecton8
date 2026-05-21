@@ -337,3 +337,11 @@ Solution: Add editor-only bridge metadata labels for source CSV, schema `H8_VISO
 Rejected Alternatives: Leaving the facade as sliders only; claiming a production `.h8bin` bake that does not exist in this workspace; moving validation into runtime player paths; adding a new binary compiler in the visor domain during polish.
 Scalability potential: Low devices gain no runtime cost because this is editor-only. Middle/high/ultra keep the same visual-overkill material profile route once cold-loaded; quality scaling still changes capacity/refraction/fade only and does not alter DTO layout or authority.
 Hardware Impact: No frame-time claim. The patch prevents bad authoring data from seeding the 71495 profile table and documents that `static_data.h8bin` remains unclaimed by this facade. Static scanner PASS is 2026-05-21T20:24:06Z. Compile remains blocked by host policy because CPU sampled 89% with `dotnet` PID 37944 and `VBCSCompiler` PID 9584 active.
+
+## Decision 043: Loop 25 Active RenderGraph Texture Binding Correction
+
+Problem: Focused render-binding verification contradicted the older Loop 22 claim: `DeferredDecalPass` still called `Material.SetTexture` for `_GlobalVisorWoundAtlas`, and `HectonVisorUberPostFeature` still called `Material.SetTexture` for crack, lens dirt, blue-noise, and VR comfort textures.
+Solution: Bind all five textures through `RasterCommandBuffer.SetGlobalTexture` using existing property IDs inside the RenderGraph raster functions. No shader property name, DTO, BufferID, or authority route changed.
+Rejected Alternatives: Keeping string-name material mutation because it is inside a render function; moving the bindings back to setup; adding new shader property IDs; widening pass data; claiming the stale Loop 22 proof as sufficient.
+Scalability potential: Low devices avoid material dirtiness/state mutation in the presentation render path. Middle/high/ultra keep the same texture-driven visor crack, dirt, blue-noise, and VR comfort visual detail with unchanged continuous quality gates.
+Hardware Impact: No measured frame-time claim. Expected effect is render-state risk reduction and fewer material dirty paths. Static scanner PASS is 2026-05-21T20:31:51Z. Compile remains blocked by host policy because CPU sampled 100% with 10 compiler processes.

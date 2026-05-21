@@ -126,3 +126,46 @@ Updated static counts from that artifact:
 - `unityTimeRiskGameplayDelta`: 1
 
 Residual note: replacing the corpse-bloat row requires a shader-side migration to a project-owned visual time global or a material property that is advanced by visual dispatcher time. A blind C# replacement would break the GPU fake.
+
+## 2026-05-22 Spectrum Sonar Shader-Time Follow-Up
+
+`SpectrumSystem` no longer uses direct `Time.time` for active sonar pulse, echo, reveal, or active geo timing. Those rows now flow through `ResolveUnityShaderTimeSeconds()` and use `Time.timeSinceLevelLoad`, which matches Unity shader `_Time.y`. This was required because `SonarGridOverlay`, `SuitVisor`, and `Hecton_CoreLit` compute sonar wave age from `_Time.y - pulseTime`.
+
+Two reveal consumers were also aligned to the same clock:
+
+- `HectonSonarPointCloudFeature` now retains screen/world history against `Time.timeSinceLevelLoad` instead of `Time.unscaledTime`.
+- `HectonMarineSnowRenderer` now compares sonar glow lifetime against `Time.timeSinceLevelLoad` instead of `Time.time`.
+
+Focused proof:
+
+- `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/Visor/SpectrumSystem.cs Assets/_Project/Scripts/Visor/HectonSonarPointCloudFeature.cs Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs` returns no rows.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_time_after_spectrum_shader_clock.json`.
+
+Updated static counts from that artifact:
+
+- `unityTimeCritical`: 927
+- `unityTimeWallClock`: 83
+- `unityTimeRiskGameplayWallClock`: 48
+- `unityTimeRiskGameplayDelta`: 1
+
+Residual note: this is not a project-owned visual-time migration. `Time.timeSinceLevelLoad` remains a Unity presentation clock, and the current static metric does not count it because the detector targets `Time.time\b`. The gain is removing direct gameplay-wall-clock classification and preventing mixed scaled/unscaled reveal clocks; a full cleanup would introduce a shared visual-time global consumed by the shaders.
+
+## 2026-05-22 Boid Acoustic Panic Clock Follow-Up
+
+`HectonBoidController` no longer uses direct Unity wall-clock time for acoustic ping panic. The controller now owns `_boidClockSeconds`, advances it from dispatcher `Tick(float deltaTime)`, and uses that value for acoustic ping registration and expiry.
+
+Why this was safe: `BoidSimulation.compute` reads `_AcousticPingParams.w` as an active flag. The compute shader does not compare `_AcousticPingParams.z` against Unity `_Time`; C# owns the lifetime check. That makes this unlike the sonar overlay shader path, where pulse age is calculated in HLSL.
+
+Focused proof:
+
+- `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/HectonBoidController.cs` returns no rows.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_time_after_boid_clock.json`.
+
+Updated static counts from that artifact:
+
+- `unityTimeCritical`: 926
+- `unityTimeWallClock`: 80
+- `unityTimeRiskGameplayWallClock`: 45
+- `unityTimeRiskGameplayDelta`: 1
+
+Residual note: this did not change boid GPU buffers, `BoidData` stride, compute shader ABI, acoustic signal DTOs, or the SignalBus route. The remaining wall-clock owners should be inspected one at a time because some are presentation shader clocks and some are real owner-state timers.

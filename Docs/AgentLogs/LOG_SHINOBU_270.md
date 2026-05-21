@@ -89,6 +89,39 @@ Verification:
   <CompileStatus>BLOCKED_BY_CPU_GATE_100_PERCENT</CompileStatus>
 </SELF_AUDIT>
 
+## 2026-05-22 - RenderGraph Suppression Fail-Open Watchdog
+
+What was wrong:
+- Subagent audit found a real fail-closed route: `AddRenderPasses` enabled visor stencil presentation before the AR resolve `RecordRenderGraph` path proved output.
+- Existing abort cleanup handled explicit `RecordRenderGraph` failures, but compatibility/no-graph/drop paths could leave Canvas hidden with no AR resolve.
+
+What was done:
+- Removed pre-record `SetStencilPresentationActive(true)` from `AddRenderPasses`.
+- Added a pending player-camera frame token.
+- `ArPass.RecordRenderGraph` now calls `MarkStencilResolveRecorded()` only after creating the resolve texture and assigning `resourceData.cameraColor`.
+- Added a cold `RenderPipelineManager.endCameraRendering` watchdog that clears suppression if the authorized player camera ends without a matching resolve record.
+- Updated route docs, payload ledger, status, and rationale.
+
+Cinematic Cheats used:
+- Runtime visuals remain the same Dear Lie route: stencil mask plus shader-side seven-segment digits, scanlines, fog, and compacted AR brackets.
+- No Canvas/TMP route was restored as an active renderer; Canvas is only fail-open fallback when RenderGraph proof is absent.
+
+Exact Microseconds saved:
+- Steady successful frame: 0 us claimed from the watchdog patch.
+- Protected savings: 250-750 us Canvas rebuild/overdraw avoidance is now applied only to proven RenderGraph frames, not to unproven/no-output frames.
+
+Verification:
+- Targeted forbidden-token scan stayed clean after the patch.
+- `git diff --check` on the renderer reported only Git LF-to-CRLF warning.
+- Compile remains PENDING VERIFICATION until Unity regenerates/imports SHINOBU_270 scripts and the build gate is legally open.
+
+Post-watchdog gate:
+- Generated `Hecton8.Core.csproj` still includes `SuitHUDV4CanvasOverlay.cs`, `ARWaypointOverlay.cs`, and `HectonVisorFluidDistortionFeature.cs`, but not `HectonVisorARStencilRendererFeature.cs` or `HectonVisorStencilPreviewGizmo.cs`.
+- Build not launched.
+- Active compiler processes were present: `csc.exe`, multiple `dotnet.exe` processes, and `VBCSCompiler.exe`.
+- CPU gate was closed: CIM CPU 100%; processor counter samples were effectively 100%.
+- Compile remains PENDING VERIFICATION; Unity project regeneration/import is still required before external `dotnet build` covers the new SHINOBU_270 renderer scripts.
+
 ## 2026-05-22 - AR Target Upload MemCpy Patch
 
 What was wrong:

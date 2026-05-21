@@ -92,7 +92,7 @@ namespace Hecton8.Physics
         private const int MaxQueuedImpacts = 16;
         private const int MaxActiveBreaches = 64;
         private const int DeferredBreachAddCapacity = 16;
-        private const int LowTierVisibleBreachLimit = 8;
+        private const int MinVisibleBreachLimit = 8;
         private const int LeakPlumeParticleCapacity = MaxActiveBreaches * 4;
         private const int DamageControlTelemetryCapacity = 300;
         private const byte FullIntegrity = byte.MaxValue;
@@ -1430,10 +1430,16 @@ namespace Hecton8.Physics
         private int ResolveVisibleBreachCount()
         {
             int activeCount = math.clamp(_activeBreachCount, 0, MaxActiveBreaches);
-            if (GlobalRegistry.H8_LOW_MEMORY_PROFILE || GlobalRegistry.MathPrecision == MathPrecisionLevel.Low)
-                return math.min(activeCount, LowTierVisibleBreachLimit);
+            float quality = ResolveLeakPresentationQuality01();
+            float curve = quality * quality * (3f - 2f * quality);
+            int visibleBudget = (int)math.round(math.lerp(MinVisibleBreachLimit, MaxActiveBreaches, curve));
+            return math.min(activeCount, math.clamp(visibleBudget, MinVisibleBreachLimit, MaxActiveBreaches));
+        }
 
-            return activeCount;
+        private static float ResolveLeakPresentationQuality01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, quality, math.isfinite(quality)));
         }
 
         private bool EnsureLeakPlumeGpuResources()

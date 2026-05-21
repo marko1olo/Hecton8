@@ -578,10 +578,10 @@ namespace Hecton8.Visor
 
             private static void BindPostShaderParameters(RasterCommandBuffer cmd, PostPassData data)
             {
-                data.Material.SetTexture(ShaderConstants.CrackTextureName, data.CrackTexture);
-                data.Material.SetTexture(ShaderConstants.LensDirtTextureName, data.LensDirtTexture);
-                data.Material.SetTexture(ShaderConstants.BlueNoiseTextureName, data.BlueNoiseTexture);
-                data.Material.SetTexture(ShaderConstants.VrComfortMaskTextureName, data.VrComfortMaskTexture);
+                cmd.SetGlobalTexture(ShaderConstants.CrackTextureId, data.CrackTexture);
+                cmd.SetGlobalTexture(ShaderConstants.LensDirtTextureId, data.LensDirtTexture);
+                cmd.SetGlobalTexture(ShaderConstants.BlueNoiseTextureId, data.BlueNoiseTexture);
+                cmd.SetGlobalTexture(ShaderConstants.VrComfortMaskTextureId, data.VrComfortMaskTexture);
 
                 cmd.SetGlobalFloat(ShaderConstants.HealthFractionId, data.HealthFraction);
                 cmd.SetGlobalFloat(ShaderConstants.LocalTemperatureId, data.LocalTemperature);

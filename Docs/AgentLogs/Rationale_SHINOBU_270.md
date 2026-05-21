@@ -1,6 +1,6 @@
 # Rationale_SHINOBU_270
 
-Status: STATIC API RECHECK CLEAN / GENERATED CSPROJ STALE / COMPILE BLOCKED BY ACTIVE COMPILER AND CPU GATE
+Status: RENDERGRAPH FAIL-OPEN WATCHDOG PATCHED / STATIC API RECHECK CLEAN / GENERATED CSPROJ STALE / COMPILE BLOCKED BY ACTIVE COMPILER AND CPU GATE
 Domain: ECHELON 8 Presentation & UX / Visor AR (HUD)
 
 ## Mandate Selection
@@ -412,3 +412,19 @@ Solution: Added `CopyTargetsToMappedBuffer`, which clamps the source count, copi
 Rejected Alternatives: Keeping the loop because the count is only 16 was rejected because the code and evidence log would stay inconsistent. Reintroducing a Burst job was rejected because this is still a tiny same-frame visual payload and would add dispatch overhead.
 Scalability potential: Low devices reduce CPU copy variance while retaining flat stencil linework; Middle/High/Ultra keep the same continuous `GlobalQualityWeight` shader overkill path and target capacity.
 Hardware Impact: Expected i3/MX350 gain is small, roughly 1-3 us CPU variance reduction pending profiler proof. The larger impact is eliminating a false proof artifact in the upload path.
+
+### D051 RenderGraph Suppression Proof Gate
+
+Problem: A read-only subagent found that `AddRenderPasses` enabled stencil presentation before RenderGraph proved that the AR resolve pass had been recorded. Existing abort cleanup handled backbuffer/invalid-resource exits inside `RecordRenderGraph`, but compatibility/no-graph/drop paths could leave Canvas suppression active from a pending frame without a resolve.
+Solution: `AddRenderPasses` now writes only `_pendingStencilPresentationFrame`. `ArPass.RecordRenderGraph` calls `MarkStencilResolveRecorded()` only after it creates the resolve texture and assigns `resourceData.cameraColor`. A cold-registered `RenderPipelineManager.endCameraRendering` watchdog clears the pending token and releases Canvas suppression when the authorized player camera reaches end-camera without a matching resolve record.
+Rejected Alternatives: Keeping pre-record suppression, restoring Canvas/TMP as an active parallel renderer, or relying only on `RecordRenderGraph` abort hooks. A per-frame polling MonoBehaviour was rejected because it would add another hot owner.
+Scalability potential: Low devices keep fail-open safety if RenderGraph cannot prove output; Middle/High/Ultra still use the same stencil shader route and continuous `GlobalQualityWeight` ALU curve once resolve proof exists. DTO layout, BufferIDs, save identity, rollback exclusion, and shader resource names are unchanged.
+Hardware Impact: Steady successful frame cost is effectively 0 us aside from a cold event delegate and two integer frame-token writes. It prevents a blind HUD fail-closed state while preserving the 250-750 us Canvas rebuild/overdraw avoidance only on proven RenderGraph frames.
+
+### D052 Verification Gate After Suppression Watchdog
+
+Problem: The fail-open watchdog patch changed renderer lifetime/control flow and needed fresh proof, but the generated Unity project remains stale and the workstation is actively compiling other work.
+Solution: Re-ran the targeted forbidden-token scan, diff whitespace check, generated-project inclusion check, compiler-process gate, and CPU gate. The scan returned no visor/UI/shader risk-token hits. `git diff --check` reported only Git LF-to-CRLF warnings. `Hecton8.Core.csproj` still contains `SuitHUDV4CanvasOverlay.cs`, `ARWaypointOverlay.cs`, and `HectonVisorFluidDistortionFeature.cs`, but not `HectonVisorARStencilRendererFeature.cs` or `HectonVisorStencilPreviewGizmo.cs`.
+Rejected Alternatives: Launching `dotnet build` while active `csc.exe`/`dotnet.exe`/`VBCSCompiler.exe` processes exist, manually editing the generated `.csproj`, or treating stale generated project coverage as compile proof.
+Scalability potential: Runtime route unchanged: Low fail-opens to Canvas only when RenderGraph proof is absent; Middle/High/Ultra keep shader-side visor overkill once proof exists.
+Hardware Impact: Runtime 0 us. Build was not launched because active compilers were present and CPU sampled 100% by CIM plus processor counter; this protects shared IO/CPU and keeps compile proof PENDING VERIFICATION.

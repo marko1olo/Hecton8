@@ -1192,3 +1192,30 @@ Exact Microseconds saved:
   <PARKED_WORK_REJECTED>Build launch before it is useful, unrelated sibling-domain DTO cleanup, DTO size changes, and hot managed reflection.</PARKED_WORK_REJECTED>
   <STATIC_VERIFICATION>Owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; runtime has 29 `GetFieldOffset&lt;...&gt;` checks, explicit size constants for flow/tuning/profile DTOs, no `profileSize == 32` literal, no `Marshal.OffsetOf`, asmdef JSON parse passed, and `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because this was static ABI proof work.</STATIC_VERIFICATION>
 </SELF_AUDIT_DELTA>
+
+## 2026-05-22 - Polish Pass 52
+
+What was wrong:
+- Editor layout output still reported only three DTO sizes after P51 expanded validation to five DTOs.
+
+What was done:
+- Added a five-output `ValidateFloraSwayLayouts()` overload for Params/Flow/Tuning/Telemetry/Profile.
+- Kept the old three-output overload as a compatibility wrapper.
+- Updated layout menu and self-audit output to show all five measured sizes.
+
+Cinematic Cheats used:
+- No runtime simulation changed. Flora motion remains shader-side vertex displacement, not CPU transforms.
+
+Exact Microseconds saved:
+- 0 player us. Editor evidence only.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-22-P52_FIVE_SIZE_EDITOR_PROOF">
+  <TASK id="04" status="PASS">Editor layout proof now reports all five measured DTO sizes.</TASK>
+  <TASK id="16" status="PASS">Tuning DTO size is visible in the editor proof route used by the facade.</TASK>
+  <TASK id="20" status="PASS">Self-audit pass/fail logs now include Params, Flow, Tuning, Telemetry, and Profile measured sizes.</TASK>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Integrator-visible proof now covers every SHINOBU_267 binary row involved in the flora sway route.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static source/self-audit now; Unity Editor menu invocation remains pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Build launch before it is useful, removing the compatibility overload, and hardcoded measured-size strings.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>Runtime exposes both three-output and five-output validators; editor calls the five-output validator in the menu and self-audit; editor output contains measured `Flow=` and `Tuning=` lanes; owned scan reports no hardcoded `Flow=32`, `Tuning=32`, `Params=32`, `Telemetry=32`, or `Profile=32`; brace/preprocessor balances are zero; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=8, csc=1.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>

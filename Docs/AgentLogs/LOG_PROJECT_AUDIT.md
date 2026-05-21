@@ -264,3 +264,27 @@ Cinematic Cheats used: Existing corpse bloat remains the fake: material time and
 Exact Microseconds saved: 0 us measured. Static outcome: `unityTimeCritical` dropped from `936` to `932`; `unityTimeRiskGameplayWallClock` dropped from `56` to `53`.
 
 Evidence: Focused `rg -n "Time\.time|Time\.deltaTime|Time\.fixedDeltaTime" Assets/_Project/Scripts/Fauna/FaunaBrain.cs` leaves only `ArmCorpseBloatShaderTimer()` feeding `_CorpseBloatStartTime`. `python -X faulthandler Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_fauna_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_fauna_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=932`, `unityTimeWallClock=88`, and `unityTimeRiskGameplayWallClock=53`. `git diff --check -- Assets/_Project/Scripts/Fauna/FaunaBrain.cs` reports only LF-to-CRLF warning. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Spectrum Sonar Shader Clock Alignment
+
+What was wrong: `SpectrumSystem` used `Time.time` for active sonar pulse/reveal/echo timing, but those values are consumed by shaders that compute wave age from `_Time.y`. `HectonSonarPointCloudFeature` compared the same reveal global against `Time.unscaledTime`, and `HectonMarineSnowRenderer` compared it against `Time.time`, creating mixed visual clocks around one shader global.
+
+What was done: Added `ResolveUnityShaderTimeSeconds()` in `SpectrumSystem` and routed pulse, echo, reveal, and active-sonar geo timing through `Time.timeSinceLevelLoad`. Updated point-cloud history and marine-snow glow lifetime checks to compare `_SonarRevealExpireTime` against `Time.timeSinceLevelLoad` as well.
+
+Cinematic Cheats used: The existing sonar reveal remains a Dear Lie: shader wavefronts, point-cloud history, and marine-snow glow sell the ping instead of CPU fluid/acoustic propagation simulation. No physics, DTO, AUP, or SignalBus route changed.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped from `unityTimeCritical=932` to `927` and from `unityTimeRiskGameplayWallClock=53` to `48`. This is not a claim that Unity time is gone from presentation; `Time.timeSinceLevelLoad` remains the shader-compatible clock and is not counted by the current `Time.time\b` detector.
+
+Evidence: Focused `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/Visor/SpectrumSystem.cs Assets/_Project/Scripts/Visor/HectonSonarPointCloudFeature.cs Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs` returns no rows. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_spectrum_shader_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_spectrum_shader_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=927`, `unityTimeWallClock=83`, and `unityTimeRiskGameplayWallClock=48`. `git diff --check` on the touched sonar files reports only LF-to-CRLF warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - HectonBoidController Acoustic Owner Clock
+
+What was wrong: `HectonBoidController` used `Time.time` to expire acoustic ping panic and timestamp acoustic signal consumption. This path is not a shader `_Time` bridge: `BoidSimulation.compute` consumes `_AcousticPingParams.w` as an active flag, and C# decides whether the shockwave is alive.
+
+What was done: Added `_boidClockSeconds`, advanced from dispatcher `Tick(float deltaTime)` with finite guards. Acoustic ping registration and expiry now use `ResolveBoidClockSeconds()`. The boid GPU struct, ping-pong buffers, compute shader ABI, and acoustic signal DTO were not changed.
+
+Cinematic Cheats used: Existing fish panic remains a GPU fake: one acoustic shockwave vector and scalar active flag drive flock scattering instead of CPU per-fish acoustic physics.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped from `unityTimeRiskGameplayWallClock=48` to `45`, and from `unityTimeWallClock=83` to `80`. `unityTimeCritical` is now `926`.
+
+Evidence: Focused `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/HectonBoidController.cs` returns no rows. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_boid_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_boid_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=926`, `unityTimeWallClock=80`, and `unityTimeRiskGameplayWallClock=45`. `git diff --check -- Assets/_Project/Scripts/HectonBoidController.cs` reports only LF-to-CRLF warning. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

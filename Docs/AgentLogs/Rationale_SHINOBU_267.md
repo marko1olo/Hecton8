@@ -577,3 +577,15 @@ Route impact: Profile hydration, Vault rows, CBuffer upload, and dump-reader exp
 Proof required: Static source/self-audit now; Unity import/Console, editor self-audit invocation, selected route run, profiler/GC, Frame Debugger, screenshot/clip, save/load diff, and dump-read smoke test remain pending.
 Parked work rejected: Build launch before it is useful, unrelated DTO cleanup in sibling domains, changing DTO sizes, and adding managed reflection to hot phases.
 Static verification: Owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; runtime has 29 `GetFieldOffset<...>` checks, explicit size constants for flow/tuning/profile DTOs, no `profileSize == 32` literal, no `Marshal.OffsetOf`, asmdef JSON parse passed, and `git diff --check` reported no whitespace errors beyond LF/CRLF warnings. Build not launched because this was static ABI proof work.
+
+## Polish Pass 52 Decisions
+Problem: P51 made the validator prove all five DTO layouts, but the editor-facing evidence still reported only params, telemetry, and profile sizes. Flow state and tuning are Vault-owned binary rows too; hiding them weakens the proof artifact.
+Solution: Added a five-output `ValidateFloraSwayLayouts()` overload returning Params/Flow/Tuning/Telemetry/Profile sizes. Kept the older three-output overload as a compatibility wrapper. Updated the layout menu, load validator, self-audit failure log, and self-audit pass log to use the full measured-size output.
+Rejected Alternatives: Breaking the existing three-output public method was rejected because other agents may already be linked against it. Hardcoding `Flow=32` or `Tuning=32` in editor strings was rejected because P49 established that proof output must be measured, not asserted.
+Scalability potential: No runtime tier behavior change. The Low/Middle/High/Ultra shader curves remain untouched; this is editor evidence only.
+Hardware Impact: 0 player us. Editor/menu string output only.
+First 20 Minutes moment: World load and swim readability on the selected Copper Wire route biome.
+Route impact: Integrators running the menu or self-audit now see every SHINOBU_267 binary DTO size, including the flow and tuning rows that feed the shader route.
+Proof required: Static source/self-audit now; Unity Editor menu invocation remains pending.
+Parked work rejected: Build launch before it is useful, removing the compatibility overload, and hardcoded measured-size strings.
+Static verification: Runtime exposes both three-output and five-output validators; editor calls the five-output validator in the menu and self-audit; editor output contains measured `Flow=` and `Tuning=` lanes; owned scan reports no hardcoded `Flow=32`, `Tuning=32`, `Params=32`, `Telemetry=32`, or `Profile=32`; brace/preprocessor balances are zero; `git diff --check` reported no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=8, csc=1.

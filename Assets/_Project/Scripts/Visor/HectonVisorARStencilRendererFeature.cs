@@ -456,6 +456,7 @@ namespace Hecton8.Visor
                 }
 
                 resourceData.cameraColor = destinationTexture;
+                _owner.MarkStencilResolveRecorded();
             }
 
             public void Dispose()
@@ -542,11 +543,16 @@ namespace Hecton8.Visor
         private int _lastAppliedStencilRef = int.MinValue;
         private int _lastAppliedStencilWriteMask = int.MinValue;
         private int _lastStencilPresentationFrame = -1;
+        private int _pendingStencilPresentationFrame = -1;
+        private bool _renderWatchdogRegistered;
 
         private void OnDisable()
         {
+            _pendingStencilPresentationFrame = -1;
+            _lastStencilPresentationFrame = -1;
             SetStencilPresentationActive(false);
             TryUnregisterHotSwapListener();
+            TryUnregisterRenderWatchdog();
         }
 
         public override void Create()
@@ -568,6 +574,7 @@ namespace Hecton8.Visor
             _arPass.PrewarmBuffers();
             EnsureFallbackMaskMeshCold();
             TryRegisterHotSwapListener();
+            TryRegisterRenderWatchdog();
             CacheColdServices(GlobalRegistry.Player, GlobalRegistry.DataVault);
             TryEnsureVaultBuffers();
             LoadCsvProfilesCold();
@@ -618,8 +625,7 @@ namespace Hecton8.Visor
 
             _stencilPass.Setup(settings, _stencilMaterial, maskMesh, maskMatrix);
             _arPass.Setup(settings, _arMaterial);
-            _lastStencilPresentationFrame = Time.frameCount;
-            SetStencilPresentationActive(true);
+            _pendingStencilPresentationFrame = Time.frameCount;
             renderer.EnqueuePass(_stencilPass);
             renderer.EnqueuePass(_arPass);
 
@@ -641,6 +647,7 @@ namespace Hecton8.Visor
             ReleaseVaultHandles(_dataVault);
             _dataVault = null;
             TryUnregisterHotSwapListener();
+            TryUnregisterRenderWatchdog();
             SetStencilPresentationActive(false);
         }
 
@@ -652,14 +659,53 @@ namespace Hecton8.Visor
 
         private void ClearStencilPresentationForRenderGraphAbort()
         {
+            _pendingStencilPresentationFrame = -1;
             _lastStencilPresentationFrame = -1;
             SetStencilPresentationActive(false);
         }
 
         private void ClearStencilPresentationIfFrameUnclaimed()
         {
-            if (_lastStencilPresentationFrame != Time.frameCount)
+            int frame = Time.frameCount;
+            if (_lastStencilPresentationFrame != frame && _pendingStencilPresentationFrame != frame)
                 SetStencilPresentationActive(false);
+        }
+
+        private void MarkStencilResolveRecorded()
+        {
+            int frame = Time.frameCount;
+            _lastStencilPresentationFrame = frame;
+            _pendingStencilPresentationFrame = frame;
+            SetStencilPresentationActive(true);
+        }
+
+        private void TryRegisterRenderWatchdog()
+        {
+            if (_renderWatchdogRegistered)
+                return;
+
+            RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
+            _renderWatchdogRegistered = true;
+        }
+
+        private void TryUnregisterRenderWatchdog()
+        {
+            if (!_renderWatchdogRegistered)
+                return;
+
+            RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
+            _renderWatchdogRegistered = false;
+        }
+
+        private void OnEndCameraRendering(ScriptableRenderContext context, Camera camera)
+        {
+            int frame = Time.frameCount;
+            if (_pendingStencilPresentationFrame == frame &&
+                _lastStencilPresentationFrame != frame &&
+                IsAuthorizedPlayerRenderCamera(camera))
+            {
+                ClearStencilPresentationForRenderGraphAbort();
+            }
         }
 
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)

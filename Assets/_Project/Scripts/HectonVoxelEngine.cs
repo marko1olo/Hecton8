@@ -6428,12 +6428,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if (lodLevel >= 2)
             return 0;
 
-        HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-        return tier == HectonQualityTier.Low ||
-               tier == HectonQualityTier.Mx350 ||
-               tier == HectonQualityTier.Unknown
-            ? 0
-            : 1;
+        return 1;
     }
 
     async Awaitable<bool> ExecuteVoxelPipelineAsync(VoxelPipelineData data, CancellationToken ct)

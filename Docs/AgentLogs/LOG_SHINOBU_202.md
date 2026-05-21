@@ -5288,3 +5288,28 @@ Static verification:
 - Focused scan finds no executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `ResolvePointer`, `.Resolve(...)`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits in the Quest DAG runtime/type/editor files. Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `ReleaseBuffers`, `ReleaseQuestDagVaultHandle`, `ReleaseBuffer(in handle)`, and `[NoAlias]`.
 - Brace counts: `QuestDagRuntimeTypes.cs` `18/18`, `QuestDagResolverRuntime.cs` `114/114`, `NarrativeDagInspectorWindow.cs` `29/29`. `git diff --check` passed with CRLF warnings only. Build was not relaunched.
 - Residual debt is explicit: the dependency-returning dispose overload cannot release descriptors while a resolver job is still pending without risking UAF; the synchronous teardown path handles that release after completion.
+
+## 2026-05-22 - Loop 225 - Shinobu Metabolism Descriptor Route
+
+What was wrong:
+- `Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs` retained eleven GameplayPlayer Vault lanes as pointer-era handles.
+- Metabolism state, entity AUPs, exertion, species rules, rule indices, telemetry, tuning, toxin samples, CSV scratch, physiology signals, and combat signals opened through `GetBufferHandle`, `.Resolve(vault)`, retained handle checks, and `GetElementAsRef`.
+- AISensory chemical readback was borrowed through local `TryGetBufferHandle` and raw `.ptr` dereference.
+
+What was done:
+- Converted the eleven owned lanes to `VaultGenerationHandle<T>`.
+- Added metabolism-local helpers requiring exact BufferID, `SystemID.GameplayPlayer`, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated`.
+- Disable, `Dispose`, and DataVault hot-swap complete active work, unlock job/readback buffers, release owned descriptors through `ReleaseBuffer(in handle)`, and tombstone route state.
+- Replaced `GetStateRef` retained-handle byref access with a phase-local native view plus `UnsafeUtility.ArrayElementAsRef`.
+- Replaced chemical readback pointer handles with borrowed AISensory descriptors using `TryGetGenerationHandle` plus `TryReadHandle`; no release is performed by metabolism.
+
+Cinematic cheats used:
+- Existing metabolism presentation remains shader-first: frost, toxicity, starvation, and dehydration scalars feed global shader state instead of simulating visible body damage or per-entity VFX. Chemical influence remains a bounded 48x16x48 readback fake, not a fluid simulation inside metabolism.
+
+Exact microseconds saved:
+- No measured runtime saving claimed. The loop removes stale pointer trust and release ambiguity. Descriptor validation is paid at cold ensure, SlowTick schedule, CSV reload, telemetry finalization, signal publish, blackbox dump, editor reads, and borrowed readback boundaries only.
+
+Static verification:
+- Focused scan on `ShinobuMetabolismRuntime.cs` finds no executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, `.ptr`, or `ChemicalInfluenceGrid.Chemical*` hits.
+- Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryGetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `TryReadChemicalVaultBuffer`, `ReleaseMetabolismVaultHandles`, and `ReleaseBuffer(in handle)`.
+- Brace count is `151/151`; `git diff --check` passed with CRLF warning only. Build was not relaunched.

@@ -1147,3 +1147,113 @@ Verification:
   <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU sampled at 97% and compiler-process count returned 2.</COMPILE_GUARD>
   <DEAR_LIE_CONFIRMATION>Before/after rendering complexity remains O(N_visible capped at 128) in one screen-space pass and O(1) ring insertion. Loop 23 only removes first-entry corrective CPU clearing from the visual route.</DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>
+
+## 2026-05-22T00:24+04:00 - Polish Loop 24 / Designer Facade Provenance And CSV Schema Gate
+
+What was wrong:
+- `ScreenSpaceDecalTunerWindow` exposed tuning sliders and CSV load but did not surface source path, schema id/hash, DataMonolith caveat, validation state, or byte-layout proof.
+- CSV files with wrong columns could reach the cold profile parser and silently fall back/default fields.
+
+What was done:
+- Added editor-only bridge metadata: source CSV path, schema `H8_VISOR_DECAL_PROFILE_CSV_V1`, lowercase FNV-1a schema hash, runtime Vault route, DataMonolith output caveat, last validation state, row count, selected header hash, and explicit `VisorDecalDTO` / `DecalMaterialProfileDTO` layouts.
+- CSV load now rejects schema-header hash mismatches before calling `DynamicDecalVaultRuntime.TryLoadMaterialProfilesCsv`.
+- Updated architecture note, route card, binary payload ledger, status, and rationale.
+
+Cinematic Cheats used:
+- No physical simulation was added. The route remains screen-space projection, procedural crack/refraction masks, and editor-only authoring validation.
+
+Exact Microseconds saved:
+- No runtime frame-time claim. This is an editor-only authoring guard; it prevents bad CSV data from seeding the profile Vault lane.
+
+Verification:
+- `python Tools\Decal_Projector_Inquisition.py`: PASS at `2026-05-21T20:24:06Z`; 5825 scanned assets, 336 candidates, 0 active GameObject decal violations, 0 active URP decal renderer feature violations.
+- Focused facade scan found the source/schema/validation metadata and `ComputeCsvHeaderHash32`.
+- Focused forbidden scan found no owned runtime `TryGetLatestCreated`, `Material.Set*`, `SetData`, `.Complete`, `BinaryWriter`, text-file whole-read helpers, JSON parse, local native allocations, LINQ, or `foreach` in the touched wound route.
+- `git diff --check` reports only LF-to-CRLF normalization warnings for touched files.
+- Compile not launched: CPU sampled at 89% with `dotnet` PID 37944 and `VBCSCompiler` PID 9584 active.
+
+<SELF_AUDIT agent_id="SHINOBU_275" loop="24_editor_facade_schema_gate">
+  <TASK_RECONCILIATION>
+    <TASK id="01" result="PASS_STATIC">Re-audited owned editor facade and gizmo boundary.</TASK>
+    <TASK id="02" result="PASS_STATIC">Scanner PASS at 2026-05-21T20:24:06Z; no active object/URP decal route introduced.</TASK>
+    <TASK id="03" result="PASS_STATIC">No hot DTO properties added; editor-only labels and validation helpers were added.</TASK>
+    <TASK id="04" result="PASS_STATIC">No DTO layout changed; facade now displays `VisorDecalDTO` 80B and `DecalMaterialProfileDTO` 32B summaries.</TASK>
+    <TASK id="05" result="PASS_STATIC">Mock wound generator unchanged.</TASK>
+    <TASK id="06" result="PASS_STATIC">Burst wound jobs unchanged.</TASK>
+    <TASK id="07" result="PASS_STATIC">Dear Lie route unchanged: screen-space wound pass and shader fakes only.</TASK>
+    <TASK id="08" result="PASS_STATIC">Circular overwrite unchanged.</TASK>
+    <TASK id="09" result="PASS_STATIC">Deterministic decay unchanged.</TASK>
+    <TASK id="10" result="PASS_STATIC">GPU upload route unchanged.</TASK>
+    <TASK id="11" result="PASS_STATIC">Continuous quality curve unchanged; editor facade only exposes route proof.</TASK>
+    <TASK id="12" result="PASS_STATIC">Shader refraction/normal perturbation unchanged.</TASK>
+    <TASK id="13" result="PASS_STATIC">AUP localization unchanged.</TASK>
+    <TASK id="14" result="PASS_STATIC">No gameplay authority, rollback, save, or Merkle route changed.</TASK>
+    <TASK id="15" result="PASS_STATIC">Black-box telemetry unchanged.</TASK>
+    <TASK id="16" result="PASS_STATIC">Editor facade now exposes source, schema, validation, DataMonolith caveat, and ABI proof.</TASK>
+    <TASK id="17" result="PASS_STATIC">CSV parser unchanged; editor load rejects header schema mismatch before cold Vault parse.</TASK>
+    <TASK id="18" result="PASS_STATIC">Gizmo route remains editor-only through `SceneView.duringSceneGui` / `UNITY_EDITOR` compile guards.</TASK>
+    <TASK id="19" result="PASS_STATIC">Metric validator rerun and report timestamp refreshed to 2026-05-21T20:24:06Z.</TASK>
+    <TASK id="20" result="PASS_STATIC_COMPILE_BLOCKED">Docs/logs synchronized; compile gate blocked by CPU 89% and active `dotnet`/`VBCSCompiler` processes.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>`VisorDecalDTO`: `LocalToWorld@0` 64B, `DecalTypeHash@64` 4B, `Opacity01@68` 4B, `BirthTime@72` 4B, `Flags@76` 4B; total 80B, 80 % 16 = 0. `DecalMaterialProfileDTO`: `SourceHash@0` 4B, `AtlasSlice@4` 4B, `LifetimeSeconds@8` 4B, `RadiusMeters@12` 4B, `ProjectionDepthMeters@16` 4B, `Flags@20` 4B, `_pad0@24` 8B; total 32B, 32 % 16 = 0.</STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>Loop 24 changes no runtime quality math. Low devices pay zero player-frame cost because the schema gate is editor-only; middle/high/ultra keep the same visual-overkill profile path once cold-loaded. `GlobalQualityWeight` still scales capacity/refraction/fade only, not DTO layout or authority.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>Vault lanes unchanged: 71490 instances, 71491 upload scratch, 71492 runtime state, 71493 telemetry ring, 71494 tuning, 71495 material profiles, 71496 CSV scratch. No new persistent private native container was introduced.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_DEPENDENCY_GRAPH>Job graph unchanged. Loop 24 adds no Burst job, no `[NoAlias]` surface, no `.Complete()`, and no same-frame schedule/readback loop.</POINTER_ALIASING_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU sampled at 89% with `dotnet` PID 37944 and `VBCSCompiler` PID 9584 active.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>Before/after visual complexity remains O(N_visible capped at 128) in one screen-space pass and O(1) ring insertion. Loop 24 only hardens editor authoring provenance and avoids bad CSV data; it does not add object decals, mesh fracture, or physics simulation.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>
+
+## 2026-05-22T00:31+04:00 - Polish Loop 25 / Active RenderGraph Texture Binding Correction
+
+What was wrong:
+- Focused verification contradicted the previous material-mutation claim.
+- `DeferredDecalPass` still called `Material.SetTexture` for `_GlobalVisorWoundAtlas`.
+- `HectonVisorUberPostFeature` still called `Material.SetTexture` for crack, lens dirt, blue-noise, and VR comfort textures.
+
+What was done:
+- Replaced all five active render-function material texture mutations with `RasterCommandBuffer.SetGlobalTexture`.
+- Kept the same shader property IDs, pass data fields, shader property names, DTOs, BufferIDs, and authority route.
+- Updated route docs, binary ledger, status, and rationale.
+
+Cinematic Cheats used:
+- No physical simulation was added. The visual route remains a screen-space fullscreen pass plus procedural shader trauma and texture masks.
+
+Exact Microseconds saved:
+- No profiler claim. Expected low-end effect is reduced render-state dirtiness and removal of material mutation from owned RenderGraph sources.
+
+Verification:
+- `python Tools\Decal_Projector_Inquisition.py`: PASS at `2026-05-21T20:31:51Z`; 5825 scanned assets, 336 candidates, 0 active GameObject decal violations, 0 active URP decal renderer feature violations.
+- Focused render-binding scan found no `Material.Set*`, `.SetTexture(`, or `.SetBuffer(` in `DeferredDecalPass.cs` and `HectonVisorUberPostFeature.cs`.
+- `git diff --check` reports only LF-to-CRLF normalization warnings for touched files.
+- Compile not launched: CPU sampled at 100% with 10 compiler processes (`dotnet` x9, `VBCSCompiler` x1).
+
+<SELF_AUDIT agent_id="SHINOBU_275" loop="25_rendergraph_texture_binding_correction">
+  <TASK_RECONCILIATION>
+    <TASK id="01" result="PASS_STATIC">Re-audited owned render-binding surfaces after Loop 24.</TASK>
+    <TASK id="02" result="PASS_STATIC">Scanner PASS at 2026-05-21T20:31:51Z; no active object/URP decal route introduced.</TASK>
+    <TASK id="03" result="PASS_STATIC">No DTO properties or managed hot structs added.</TASK>
+    <TASK id="04" result="PASS_STATIC">No DTO layout changed; `VisorDecalDTO` remains explicit 80B.</TASK>
+    <TASK id="05" result="PASS_STATIC">Mock wound generator unchanged.</TASK>
+    <TASK id="06" result="PASS_STATIC">Burst wound jobs unchanged.</TASK>
+    <TASK id="07" result="PASS_STATIC">Dear Lie route unchanged: screen-space wound pass and shader fakes only.</TASK>
+    <TASK id="08" result="PASS_STATIC">Circular overwrite unchanged.</TASK>
+    <TASK id="09" result="PASS_STATIC">Deterministic decay unchanged.</TASK>
+    <TASK id="10" result="PASS_STATIC">GPU upload route unchanged; texture publication now uses command-buffer globals.</TASK>
+    <TASK id="11" result="PASS_STATIC">Continuous quality curve unchanged.</TASK>
+    <TASK id="12" result="PASS_STATIC">Shader refraction/normal perturbation unchanged.</TASK>
+    <TASK id="13" result="PASS_STATIC">AUP localization unchanged.</TASK>
+    <TASK id="14" result="PASS_STATIC">No gameplay authority, rollback, save, or Merkle route changed.</TASK>
+    <TASK id="15" result="PASS_STATIC">Black-box telemetry unchanged.</TASK>
+    <TASK id="16" result="PASS_STATIC">Editor facade unchanged from Loop 24.</TASK>
+    <TASK id="17" result="PASS_STATIC">CSV parser unchanged.</TASK>
+    <TASK id="18" result="PASS_STATIC">Gizmo route unchanged.</TASK>
+    <TASK id="19" result="PASS_STATIC">Metric validator rerun and report timestamp refreshed to 2026-05-21T20:31:51Z.</TASK>
+    <TASK id="20" result="PASS_STATIC_COMPILE_BLOCKED">Docs/logs synchronized; compile gate blocked by CPU 100% and 10 active compiler processes.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>`VisorDecalDTO`: `LocalToWorld@0` 64B, `DecalTypeHash@64` 4B, `Opacity01@68` 4B, `BirthTime@72` 4B, `Flags@76` 4B; total 80B, 80 % 16 = 0. Loop 25 changed no primary DTO bytes.</STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>Loop 25 changes no runtime quality math. Low devices avoid material-state mutation in the render path; middle/high/ultra keep crack, dirt, blue-noise, VR comfort, and wound atlas visuals through the same continuous quality gates.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>Vault lanes unchanged: 71490 instances, 71491 upload scratch, 71492 runtime state, 71493 telemetry ring, 71494 tuning, 71495 material profiles, 71496 CSV scratch. No new persistent private native container was introduced.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_DEPENDENCY_GRAPH>Job graph unchanged. Loop 25 adds no Burst job, no `[NoAlias]` surface, no `.Complete()`, and no same-frame schedule/readback loop.</POINTER_ALIASING_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU sampled at 100% with 10 compiler processes active.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>Before/after visual complexity remains O(N_visible capped at 128) in one screen-space pass and O(1) ring insertion. Loop 25 only moves texture binding from material mutation to command-buffer globals.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>

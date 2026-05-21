@@ -579,11 +579,16 @@ namespace Hecton8.World.FloraAmbientSway
 
         public static bool ValidateFloraSwayLayouts(out int paramsSize, out int telemetrySize, out int profileSize)
         {
+            return ValidateFloraSwayLayouts(out paramsSize, out _, out _, out telemetrySize, out profileSize);
+        }
+
+        public static bool ValidateFloraSwayLayouts(out int paramsSize, out int flowSize, out int tuningSize, out int telemetrySize, out int profileSize)
+        {
             paramsSize = UnsafeUtility.SizeOf<FloraSwayParamsDTO>();
+            flowSize = UnsafeUtility.SizeOf<FloraAmbientFlowStateDTO>();
+            tuningSize = UnsafeUtility.SizeOf<FloraSwayTuningDTO>();
             telemetrySize = UnsafeUtility.SizeOf<SwayTelemetryEntry>();
             profileSize = UnsafeUtility.SizeOf<FloraBiomeSwayProfileDTO>();
-            int flowSize = UnsafeUtility.SizeOf<FloraAmbientFlowStateDTO>();
-            int tuningSize = UnsafeUtility.SizeOf<FloraSwayTuningDTO>();
             return paramsSize == FloraSwayParamsSizeBytes &&
                    UnsafeUtility.AlignOf<FloraSwayParamsDTO>() >= 4 &&
                    flowSize == FloraAmbientFlowStateSizeBytes &&

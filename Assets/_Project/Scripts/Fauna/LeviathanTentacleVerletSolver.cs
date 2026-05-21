@@ -14,7 +14,6 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
-using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 
 namespace Hecton8.AI
 {
@@ -24,7 +23,7 @@ namespace Hecton8.AI
     [DisallowMultipleComponent]
     // Runs early enough to register with the dispatcher before fauna presentation consumers sample matrices.
     [DefaultExecutionOrder(-9910)]
-    internal sealed class LeviathanTentacleVerletSolver : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener, IDisposable, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener
+    internal sealed class LeviathanTentacleVerletSolver : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener, IDisposable, IGlobalRegistryHotSwapListener
     {
         private const int MaxTentacles = 8;
         private const int SegmentsPerTentacle = 20;
@@ -105,7 +104,6 @@ namespace Hecton8.AI
             public float TimeSeconds;
             public float3 Gravity;
             public float3 FlowVector;
-            public float GlobalQualityWeight;
             public int TentacleCount;
             public int ConstraintIterations;
 
@@ -148,14 +146,11 @@ namespace Hecton8.AI
                 float safeTime = math.select(0f, TimeSeconds, math.isfinite(TimeSeconds));
                 float3 safeGravity = SanitizeFinite(Gravity, float3.zero);
                 float3 safeFlow = SanitizeFinite(FlowVector, float3.zero) * safeFlowStrength;
-                float qualityWeight = SanitizeQualityWeight(GlobalQualityWeight);
-                float qualityCurve = Smooth01(qualityWeight);
                 int safeTentacleCount = math.clamp(TentacleCount, 0, MaxTentacles);
-                int continuousIterationLimit = (int)math.round(math.lerp(1f, 3f, qualityCurve));
-                int safeIterations = math.clamp(math.min(ConstraintIterations, continuousIterationLimit), 1, 3);
-                int segmentBudget = math.clamp((int)math.round(math.lerp(6f, SegmentsPerTentacle, qualityCurve)), 2, SegmentsPerTentacle);
-                float qualityNoiseScale = math.lerp(0.35f, 1f, qualityCurve);
-                float qualityPulseScale = math.lerp(0.4f, 1f, qualityCurve);
+                int safeIterations = math.clamp(ConstraintIterations, 1, 3);
+                const int segmentBudget = SegmentsPerTentacle;
+                const float qualityNoiseScale = 1f;
+                const float qualityPulseScale = 1f;
                 float invSegmentLast = math.rcp(SegmentLastIndex);
 
                 for (int tentacleIndex = 0; tentacleIndex < MaxTentacles; tentacleIndex++)
@@ -388,17 +383,6 @@ namespace Hecton8.AI
                 return 1f - math.abs(wrapped * 2f - 1f);
             }
 
-            private static float SanitizeQualityWeight(float value)
-            {
-                return math.saturate(math.select(1f, value, math.isfinite(value)));
-            }
-
-            private static float Smooth01(float value)
-            {
-                float t = math.saturate(value);
-                return t * t * (3f - 2f * t);
-            }
-
             private static float3 SanitizeFinite(float3 value, float3 fallback)
             {
                 return math.all(math.isfinite(value)) ? value : fallback;
@@ -498,7 +482,6 @@ namespace Hecton8.AI
         private bool _registeredLateFrame;
         private bool _registeredHotSwapListener;
         private bool _registeredOriginShiftListener;
-        private bool _registeredScalabilityListener;
         private bool _solverScheduled;
         private bool _pendingOriginShiftRebase;
         private bool _telemetryDumped;
@@ -510,7 +493,6 @@ namespace Hecton8.AI
         private int _pendingConstraintIterations;
         private int _telemetryCursor;
         private int _frameIndex;
-        private HectonQualityTier _qualityTier = HectonQualityTier.Unknown;
         private float _globalQualityWeight = 1f;
         private float _grabDamageTimer;
         private float _solverTimeSeconds;
@@ -585,7 +567,6 @@ namespace Hecton8.AI
             SeedAllTentaclesFromSockets();
             ResetConstraintIterationHysteresis();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             TryRegister();
             TryRegisterOriginShiftListener();
         }
@@ -596,7 +577,6 @@ namespace Hecton8.AI
                 return;
 
             TryUnregisterOriginShiftListener();
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
             TryUnregister();
             if (_solverScheduled && DispatcherJobSwap.TryFinalizeCompleted(ref _pendingSolverHandle))
@@ -624,7 +604,6 @@ namespace Hecton8.AI
 
             _disposed = true;
             TryUnregisterOriginShiftListener();
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
             TryUnregister();
             DisposePersistentBuffers();
@@ -718,11 +697,8 @@ namespace Hecton8.AI
                 math.max(DefaultMaxStretchLength, safeRestLength * SegmentLastIndex),
                 safeRestLength * SegmentLastIndex);
             float3 safeGravity = SanitizeFiniteInputFloat3(new float3(gravity.x, gravity.y, gravity.z), float3.zero);
-            _qualityTier = _qualityTier == HectonQualityTier.Unknown
-                ? HectonQualityTier.Low
-                : _qualityTier;
             _globalQualityWeight = ResolveGlobalQualityWeight();
-            int constraintIterations = ResolveConstraintIterationsWithHysteresis(safeDeltaTime, _globalQualityWeight);
+            int constraintIterations = ResolveConstraintIterationsWithHysteresis(safeDeltaTime);
             _solverTimeSeconds += safeDeltaTime;
             if (_solverTimeSeconds > 4096f)
                 _solverTimeSeconds -= 4096f;
@@ -751,7 +727,6 @@ namespace Hecton8.AI
                 TimeSeconds = _solverTimeSeconds,
                 Gravity = safeGravity,
                 FlowVector = _lastFlowVector,
-                GlobalQualityWeight = _globalQualityWeight,
                 TentacleCount = math.clamp(activeTentacleCount, 0, MaxTentacles),
                 ConstraintIterations = constraintIterations
             };
@@ -846,24 +821,6 @@ namespace Hecton8.AI
             _registeredHotSwapListener = false;
         }
 
-        private void TryRegisterScalabilityListener()
-        {
-            if (_registeredScalabilityListener)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _registeredScalabilityListener = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            if (!_registeredScalabilityListener)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _registeredScalabilityListener = false;
-        }
-
         private void TryRegisterOriginShiftListener()
         {
             if (_registeredOriginShiftListener)
@@ -899,12 +856,6 @@ namespace Hecton8.AI
         {
             _dataVault = GlobalRegistry.DataVault;
             _fluidRuntime = GlobalRegistry.Fluid;
-            _qualityTier = GlobalRegistry.ScalabilityTier;
-        }
-
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _qualityTier = payload.CurrentQualityTier;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -1623,28 +1574,23 @@ namespace Hecton8.AI
                 : float3.zero;
         }
 
-        private static int ResolveConstraintIterations(float qualityWeight, int highTierIterations)
+        private static int ResolveConstraintIterations(int highTierIterations)
         {
-            float qualityCurve = SmoothQuality01(qualityWeight);
-            int highIterations = math.clamp(highTierIterations, 1, 3);
-            return math.clamp((int)math.round(math.lerp(1f, highIterations, qualityCurve)), 1, 3);
+            return math.clamp(highTierIterations, 1, 3);
         }
 
         private void ResetConstraintIterationHysteresis()
         {
-            _qualityTier = _qualityTier == HectonQualityTier.Unknown
-                ? HectonQualityTier.Low
-                : _qualityTier;
             _globalQualityWeight = ResolveGlobalQualityWeight();
-            int iterations = ResolveConstraintIterations(_globalQualityWeight, highTierConstraintIterations);
+            int iterations = ResolveConstraintIterations(highTierConstraintIterations);
             _resolvedConstraintIterations = iterations;
             _pendingConstraintIterations = iterations;
             _constraintIterationSwitchTimer = 0f;
         }
 
-        private int ResolveConstraintIterationsWithHysteresis(float deltaTime, float qualityWeight)
+        private int ResolveConstraintIterationsWithHysteresis(float deltaTime)
         {
-            int requestedIterations = ResolveConstraintIterations(qualityWeight, highTierConstraintIterations);
+            int requestedIterations = ResolveConstraintIterations(highTierConstraintIterations);
             if (_resolvedConstraintIterations < 1)
             {
                 _resolvedConstraintIterations = requestedIterations;

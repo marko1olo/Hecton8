@@ -11,6 +11,9 @@ namespace Hecton8.UI.Editor
     {
         private const string ReportRelativePath = "Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json";
         private const string SharedReportSectionKey = "shinobu_270_visor_ar_stencil";
+        private const string CoreCsprojRelativePath = "Hecton8.Core.csproj";
+        private const string RendererFeatureProjectPath = "Assets\\_Project\\Scripts\\Visor\\HectonVisorARStencilRendererFeature.cs";
+        private const string StencilPreviewGizmoProjectPath = "Assets\\_Project\\Scripts\\Visor\\HectonVisorStencilPreviewGizmo.cs";
 
         [MenuItem("Hecton8/UI/HUD Canvas Inquisition")]
         public static void Run()
@@ -21,6 +24,9 @@ namespace Hecton8.UI.Editor
             int hudRaycasterCount = 0;
             int forceUpdateCallCount = CountRuntimeToken(root, string.Concat("Canvas.", "ForceUpdateCanvases"));
             int graphicRaycasterScriptCount = CountRuntimeToken(root, "GraphicRaycaster");
+            string coreCsprojText = ReadAllTextSafe(Path.Combine(root, CoreCsprojRelativePath));
+            bool rendererFeatureInGeneratedProject = ContainsCompileInclude(coreCsprojText, RendererFeatureProjectPath);
+            bool previewGizmoInGeneratedProject = ContainsCompileInclude(coreCsprojText, StencilPreviewGizmoProjectPath);
 
             string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab");
             for (int i = 0; i < prefabGuids.Length; i++)
@@ -48,7 +54,9 @@ namespace Hecton8.UI.Editor
                 hudCanvasCount,
                 hudRaycasterCount,
                 forceUpdateCallCount,
-                graphicRaycasterScriptCount);
+                graphicRaycasterScriptCount,
+                rendererFeatureInGeneratedProject,
+                previewGizmoInGeneratedProject);
             UpsertSharedReportObject(reportPath, SharedReportSectionKey, reportObject);
             AssetDatabase.Refresh();
             Debug.Log($"HUD Canvas Inquisition wrote {reportPath}");
@@ -59,8 +67,11 @@ namespace Hecton8.UI.Editor
             int hudCanvasCount,
             int hudRaycasterCount,
             int forceUpdateCallCount,
-            int graphicRaycasterScriptCount)
+            int graphicRaycasterScriptCount,
+            bool rendererFeatureInGeneratedProject,
+            bool previewGizmoInGeneratedProject)
         {
+            bool generatedProjectStale = !rendererFeatureInGeneratedProject || !previewGizmoInGeneratedProject;
             StringBuilder builder = new StringBuilder(1024);
             builder.AppendLine("{");
             builder.AppendLine("  \"agent\": \"SHINOBU_270\",");
@@ -71,6 +82,9 @@ namespace Hecton8.UI.Editor
             builder.Append("  \"forceUpdateCanvasesCalls\": ").Append(forceUpdateCallCount).AppendLine(",");
             builder.Append("  \"graphicRaycasterRuntimeTokenCount\": ").Append(graphicRaycasterScriptCount).AppendLine(",");
             builder.Append("  \"managedHudElementsPurged\": ").Append(hudCanvasCount == 0 && hudRaycasterCount == 0 && forceUpdateCallCount == 0 && graphicRaycasterScriptCount == 0 ? "true" : "false").AppendLine(",");
+            builder.Append("  \"generatedProjectIncludesRendererFeature\": ").Append(rendererFeatureInGeneratedProject ? "true" : "false").AppendLine(",");
+            builder.Append("  \"generatedProjectIncludesStencilPreviewGizmo\": ").Append(previewGizmoInGeneratedProject ? "true" : "false").AppendLine(",");
+            builder.Append("  \"generatedProjectStale\": ").Append(generatedProjectStale ? "true" : "false").AppendLine(",");
             builder.AppendLine("  \"takeoverPath\": \"HectonVisorARStencilRendererFeature + Hecton_VisorAR.shader\",");
             builder.AppendLine("  \"aggregatePolicy\": \"UPSERT_SECTION_PRESERVE_NEIGHBOR_REPORTS\"");
             builder.AppendLine("}");
@@ -329,6 +343,22 @@ namespace Hecton8.UI.Editor
             }
 
             return count;
+        }
+
+        private static string ReadAllTextSafe(string path)
+        {
+            return File.Exists(path) ? File.ReadAllText(path) : string.Empty;
+        }
+
+        private static bool ContainsCompileInclude(string csprojText, string projectPath)
+        {
+            if (string.IsNullOrEmpty(csprojText) || string.IsNullOrEmpty(projectPath))
+                return false;
+
+            string normalizedBackslash = projectPath.Replace('/', '\\');
+            string normalizedSlash = projectPath.Replace('\\', '/');
+            return csprojText.IndexOf("Compile Include=\"" + normalizedBackslash + "\"", StringComparison.Ordinal) >= 0 ||
+                   csprojText.IndexOf("Compile Include=\"" + normalizedSlash + "\"", StringComparison.Ordinal) >= 0;
         }
     }
 }

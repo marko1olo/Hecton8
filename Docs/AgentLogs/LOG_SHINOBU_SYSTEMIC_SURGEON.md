@@ -67,6 +67,60 @@ Remaining blocked/pending:
   <QUALITY status="DRS shader uses continuous scale-deficit curve; no binary low-tier switch added" />
 </SELF_AUDIT>
 
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="SubmarineLeakPlumePresentationContinuum">
+  <WHAT_WAS_WRONG>
+    `SubmarineStructuralGrid` used low-memory and math-precision globals as a binary switch for visible breach plume count. This was presentation-only, but it violated the continuous quality rule and hot-polled registry state.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Replaced the binary branch with a smooth `GlobalQualityWeight` budget curve from `MinVisibleBreachLimit` to `MaxActiveBreaches`. `_activeBreachCount`, breach repair, damage control, and flood truth remain unchanged.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Leak plumes are shader/GPU presentation. Low quality reduces visual plume density while structural breach facts remain in the owner route.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No runtime speed claim. Two registry flag reads were removed from the presentation resolver; draw density now scales continuously.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `LowTierVisibleBreachLimit`, `H8_LOW_MEMORY_PROFILE`, or `MathPrecision` in `SubmarineStructuralGrid.cs`. Targeted `git diff --check` passed with line-ending warnings only. Full build was deferred because active compiler processes remained.
+  </VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="LeviathanTentacleVerletAuthorityQuality">
+  <WHAT_WAS_WRONG>
+    `LeviathanTentacleVerletSolver` used scalability events and `GlobalQualityWeight` to reduce Verlet segment budget, constraint iterations, flow-noise scale, and suction pulse scale. Those values affect tentacle pose, stretch fraction, grab contact, and GPU matrices.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the scalability listener/tier cache and removed quality from the Burst job contract. The authority solver now uses full segment count, full flow/pulse scales, and authored high-tier constraint iterations; real quality is confined to material FX tier.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Tentacle shader FX tier remains the visual fake. Physics-like tentacle pose is not thinned by hardware quality because it feeds grab presentation and damage-route telemetry.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. This spends full solver work for parity and removes one scalability listener route plus quality caps from the job.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `Scalability`, `ScalabilityChangedEvent`, `IScalability`, `_qualityTier`, or `GlobalRegistry.ScalabilityTier` in `LeviathanTentacleVerletSolver.cs`. Targeted `git diff --check` passed with line-ending warnings only. Build was blocked by active compiler processes and CPU 100%.
+  </VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="ProceduralCrabLegIkRaycastAuthority">
+  <WHAT_WAS_WRONG>
+    `ProceduralCrabLegIKRuntime` used `GlobalRegistry.ScalabilityTier` to downgrade crab leg grounding to two raycasts on Low/Mx350. That makes pose, step scheduling, body tilt, and indirect joint output hardware-dependent.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the cached quality tier, pinned raycast budget mode to `RaycastBudgetHighAllLegs`, and deleted the low-budget `ShouldRaycastLeg` selector from the Burst raycast build job.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    The rejected fake is reduced physical foot probes. Future savings must be visual: density, material quality, indirect draw count, shader motion, or telemetry cadence. Ground contact remains authoritative.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. One cold registry read and a per-command low-budget branch were removed, but full grounding work is intentionally retained for deterministic pose parity.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `_qualityTier`, `GlobalRegistry.ScalabilityTier`, `RaycastBudgetLowTwoLegs`, or `ShouldRaycastLeg` in `ProceduralCrabLegIKRuntime.cs`. Targeted `git diff --check` passed with line-ending warnings only. Build remained blocked by CPU/compiler guard.
+  </VERIFICATION>
+</SELF_AUDIT>
+
 <SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="VisorMaterialTextureBindingRepairII">
   <WHAT_WAS_WRONG>
     Compile Check 87 failed because ordinary `UnityEngine.Texture` assets were still being passed to `RasterCommandBuffer.SetGlobalTexture`, whose Unity 6000 RenderGraph overload expects `TextureHandle` inputs in raster pass context.

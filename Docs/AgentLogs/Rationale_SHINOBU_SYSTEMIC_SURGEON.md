@@ -866,3 +866,27 @@ Solution: Bound ordinary visor crack, lens dirt, blue-noise, VR comfort mask, an
 Rejected Alternatives: Importing stable asset textures into RenderGraph was rejected because ownership is persistent material state, not transient graph storage. String property names were rejected because existing shader IDs are already precomputed integer IDs and avoid per-call lookup/allocation risk.
 Scalability potential: Low/Middle/High/Ultra use the same shader assets; fidelity continues to scale through existing scalar uniforms and continuous presentation weights, not through compile-invalid binding paths.
 Hardware Impact: 0 us runtime. This is a compile-wall repair; no gameplay or frame-time speed claim.
+
+## Procedural Crab Leg IK Raycast Authority Pinning
+
+Problem: `ProceduralCrabLegIKRuntime` cached `GlobalRegistry.ScalabilityTier` and used Low/Mx350 to raycast only two rotating legs per entity. That changes foot targets, grounded pose, body tilt, and indirect joint matrices by hardware tier.
+Solution: Removed the cached tier and pinned `RaycastBudgetMode` to `RaycastBudgetHighAllLegs`. Deleted the Burst helper that accepted the two-leg budget so future callers cannot silently restore hardware-dependent grounding.
+Rejected Alternatives: Continuous raycast-count scaling was rejected because leg contact topology is not a visual density parameter; it changes pose truth. Keeping the unused low-budget helper was rejected because stale public constants become future regression switches.
+Scalability potential: Low/Middle/High/Ultra share crab grounding and body pose. Device savings must move to crab population density, draw distance, shader detail, animation upload cadence, or telemetry, not to physical foot contact truth.
+Hardware Impact: 0 us speed claim. Weak devices spend full grounding authority; one cold registry tier read and one branchy rotating-leg selector were removed.
+
+## Leviathan Tentacle Verlet Authority Quality Pinning
+
+Problem: `LeviathanTentacleVerletSolver` registered as a scalability listener and routed `HomeostasisBrain.GlobalQualityWeight` into the Burst Verlet job. Low quality reduced segment budget, capped Jacobi iterations, and damped flow-noise/suction pulse response, changing tentacle pose, stretch, grab contact, and matrices by hardware pressure.
+Solution: Removed scalability listener registration, hardware tier cache, and job quality input. The solver now uses full `SegmentsPerTentacle`, authored high-tier constraint iterations, and full flow/pulse response in authority. Real quality remains only on `_H8LeviathanTentacleFxTier` material binding for shader presentation.
+Rejected Alternatives: Smoothly lowering tentacle segment count or solver iterations was rejected because active tentacle topology and grab stretch are gameplay-adjacent facts. Keeping job quality as a caller-controlled input was rejected because shared Burst kernels must be self-defending.
+Scalability potential: Low/Middle/High/Ultra share tentacle pose, grab stretch, root/target AUP telemetry, and indirect matrix truth. Weak devices can shed cost through tentacle material FX tier, draw density, culling distance, or optional telemetry cadence; high/ultra can spend presentation budget on richer shader motion.
+Hardware Impact: 0 us speed claim. Weak devices retain full solver authority; one scalability listener route and several quality-dependent branches were removed from the solver setup/job.
+
+## Submarine Leak Plume Continuous Presentation Budget
+
+Problem: `SubmarineStructuralGrid.ResolveVisibleBreachCount` used `GlobalRegistry.H8_LOW_MEMORY_PROFILE` and `GlobalRegistry.MathPrecision` to hard-clamp leak-plume rendering to eight breaches. The underlying breach truth stayed intact, but presentation popped by binary hardware flags and hot-polled registry state.
+Solution: Replaced the binary branch with `ResolveLeakPresentationQuality01()` and a smooth polynomial budget curve from `MinVisibleBreachLimit` to `MaxActiveBreaches`. Active breach count and damage/flood authority are unchanged; only visible shader plume density scales.
+Rejected Alternatives: Keeping low-memory/math precision switches was rejected because visual quality lanes must be continuous. Reducing `_activeBreachCount` itself was rejected because breach truth belongs to the structural/flooding authority route.
+Scalability potential: Low devices render fewer leak plumes but keep every breach in authority. Middle devices interpolate plume density. High/Ultra render all active breach plumes and can spend extra shader detail on the same facts.
+Hardware Impact: 0 us speed claim. Removed two hot registry flag reads from the presentation count resolver; shader draw density now degrades smoothly.

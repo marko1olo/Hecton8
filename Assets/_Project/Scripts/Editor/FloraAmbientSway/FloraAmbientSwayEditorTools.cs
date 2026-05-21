@@ -21,18 +21,18 @@ namespace Hecton8.Editor.FloraAmbientSway
         [MenuItem("Tools/Hecton8/Flora/Ambient Sway/Validate DTO Layouts")]
         public static void ValidateNow()
         {
-            if (!FloraAmbientSwayRuntime.ValidateFloraSwayLayouts(out int paramsSize, out int telemetrySize, out int profileSize))
+            if (!FloraAmbientSwayRuntime.ValidateFloraSwayLayouts(out int paramsSize, out int flowSize, out int tuningSize, out int telemetrySize, out int profileSize))
             {
-                Debug.LogError("SHINOBU_267 flora ambient sway layout invalid. Params=" + paramsSize + " Telemetry=" + telemetrySize + " Profile=" + profileSize);
+                Debug.LogError("SHINOBU_267 flora ambient sway layout invalid. Params=" + paramsSize + " Flow=" + flowSize + " Tuning=" + tuningSize + " Telemetry=" + telemetrySize + " Profile=" + profileSize);
                 return;
             }
 
-            Debug.Log("SHINOBU_267 flora ambient sway layouts valid. Params=" + paramsSize + " Telemetry=" + telemetrySize + " Profile=" + profileSize + ".");
+            Debug.Log("SHINOBU_267 flora ambient sway layouts valid. Params=" + paramsSize + " Flow=" + flowSize + " Tuning=" + tuningSize + " Telemetry=" + telemetrySize + " Profile=" + profileSize + ".");
         }
 
         private static void ValidateOnLoad()
         {
-            FloraAmbientSwayRuntime.ValidateFloraSwayLayouts(out _, out _, out _);
+            FloraAmbientSwayRuntime.ValidateFloraSwayLayouts(out _, out _, out _, out _, out _);
         }
     }
 
@@ -494,7 +494,7 @@ namespace Hecton8.Editor.FloraAmbientSway
         [MenuItem("Tools/Hecton8/Flora/Ambient Sway/Run Self Audit")]
         public static void Run()
         {
-            bool layout = FloraAmbientSwayRuntime.ValidateFloraSwayLayouts(out int paramsSize, out int telemetrySize, out int profileSize);
+            bool layout = FloraAmbientSwayRuntime.ValidateFloraSwayLayouts(out int paramsSize, out int flowSize, out int tuningSize, out int telemetrySize, out int profileSize);
             string runtime = ReadProjectFile("Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs");
             string editor = ReadProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway/FloraAmbientSwayEditorTools.cs");
             string shader = ReadProjectFile("Assets/_Project/Art/Shaders/Hecton_IndirectVegetation.shader");
@@ -532,6 +532,12 @@ namespace Hecton8.Editor.FloraAmbientSway
                 runtime.Contains("GetFieldOffset<SwayTelemetryEntry>(nameof(SwayTelemetryEntry.SourceHash))") &&
                 runtime.Contains("UnsafeUtility.GetFieldOffset(field)") &&
                 !runtime.Contains(forbiddenLayoutOffsetApi);
+            string menuSizeProof = "\"" + " Flow=" + "\" + flowSize + \"" + " Tuning=" + "\" + tuningSize";
+            string auditSizeProof = "\"" + ", Flow=" + "\" + flowSize + \"" + ", Tuning=" + "\" + tuningSize";
+            bool layoutProofOutput =
+                runtime.Contains("ValidateFloraSwayLayouts(out int paramsSize, out int flowSize, out int tuningSize, out int telemetrySize, out int profileSize)") &&
+                editor.Contains(menuSizeProof) &&
+                editor.Contains(auditSizeProof);
             bool dispatcher = runtime.Contains("DispatcherPhase.PreSimulation") && runtime.Contains("DispatcherPhase.VisualSync");
             bool fmod = runtime.Contains("math.fmod") && runtime.Contains("1000f");
             string forbiddenVectorUploadApi = "SetGlobal" + "Vector";
@@ -645,13 +651,16 @@ namespace Hecton8.Editor.FloraAmbientSway
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway.meta") &&
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway/FloraAmbientSwayEditorTools.cs.meta") &&
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway/Hecton8.World.FloraAmbientSway.Editor.asmdef.meta");
-            bool pass = layout && layoutOffsetApi && dispatcher && fmod && upload && shaderQuality && telemetry && vertexColorDebug && littleEndianDump && readAccessorPurity && runtimeQualityFailClosed && unsafeDtoMutation && hotOwnerMutationAndMath && hotValueNewHygiene && burstFloatMode && burstFunctionPointers && aotFunctionPointerAbi && asmdefBoundary && metaIdentity;
+            bool pass = layout && layoutOffsetApi && layoutProofOutput && dispatcher && fmod && upload && shaderQuality && telemetry && vertexColorDebug && littleEndianDump && readAccessorPurity && runtimeQualityFailClosed && unsafeDtoMutation && hotOwnerMutationAndMath && hotValueNewHygiene && burstFloatMode && burstFunctionPointers && aotFunctionPointerAbi && asmdefBoundary && metaIdentity;
             if (!pass)
             {
                 Debug.LogError(
                     "SHINOBU_267 self-audit failed. layout=" + layout +
                     " layoutOffsetApi=" + layoutOffsetApi +
+                    " layoutProofOutput=" + layoutProofOutput +
                     " params=" + paramsSize +
+                    " flow=" + flowSize +
+                    " tuning=" + tuningSize +
                     " telemetry=" + telemetrySize +
                     " profile=" + profileSize +
                     " dispatcher=" + dispatcher +
@@ -674,7 +683,7 @@ namespace Hecton8.Editor.FloraAmbientSway
                 return;
             }
 
-            Debug.Log("SHINOBU_267 self-audit passed. 0 hot managed allocations by static route; Params=" + paramsSize + ", Telemetry=" + telemetrySize + ", Profile=" + profileSize + ", asmdef/meta/layout-offset route locked.");
+            Debug.Log("SHINOBU_267 self-audit passed. 0 hot managed allocations by static route; Params=" + paramsSize + ", Flow=" + flowSize + ", Tuning=" + tuningSize + ", Telemetry=" + telemetrySize + ", Profile=" + profileSize + ", asmdef/meta/layout-offset route locked.");
         }
 
         private static string ReadProjectFile(string path)

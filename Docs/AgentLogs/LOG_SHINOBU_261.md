@@ -681,3 +681,9 @@ What was wrong: `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json` had the SHINOBU_
 What was done: mirrored the sidecar proof into the shared root: generation route, scan scope, script count, four explicit Player/Flora legacy managed water query findings, and a stable compile-proof pointer to `Status_SHINOBU_261.md`. Root and sidecar JSON parse after the patch.
 Cinematic Cheats used: none; this is proof-artifact hygiene for the water-query inquisition.
 Exact Microseconds saved: 0 runtime us. Build not launched: CPU average 99.
+
+## Verification: Post Shared Root Proof Refresh
+What was wrong: shared report proof had just been edited and required a source-local gate under concurrent-agent churn.
+What was done: root and sidecar reports parse; root SHINOBU_261 block reports `scannedScripts=2178` and four findings; runtime forbidden-pattern scan returned `RUNTIME_CORE_FORBIDDEN_CLEAR_CASE_SENSITIVE_TRIG`; stale-token scan returned `STALE_TOKENS_CLEAR`; scoped `git diff --check` returned `GIT_DIFF_CHECK_OK`.
+Cinematic Cheats used: none.
+Exact Microseconds saved: 0 runtime us. Build not launched: CPU average 88 with active `csc` (`Id=38140`) and `dotnet` (`Id=41340`).
