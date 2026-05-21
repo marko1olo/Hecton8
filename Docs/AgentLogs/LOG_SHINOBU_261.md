@@ -584,3 +584,22 @@ Exact Microseconds saved -> Runtime: 0 us. This prevents false green reporting a
   <owner_boundary status="[PRESERVED]">No Player/Flora source was patched without owner/integrator authorization.</owner_boundary>
   <compile status="[NOT_RUN]">No compile/build launched; this was a source/report correction under the existing CPU gate.</compile>
 </SELF_AUDIT_CORRECTION>
+
+## Verification Addendum: OOP Proof Correction Static Gate
+What was wrong: Task 01/19 evidence needed a post-correction static gate after the scanner/report schema was hardened.
+What was done: Revalidated `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json` and `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_261.json`; ran scoped C# brace balance over Crest4/OceanKinematics/scanner files; re-ran exact legacy-call proof against `HectonPlayerMovement.cs` and `World/FloraInteractionManager.cs`.
+Cinematic Cheats used: None in this documentation pass. Runtime Dear Lie path remains the Vault-backed GPU readback cache and polynomial local Gerstner evaluator.
+Exact Microseconds saved: 0 runtime us claimed. Proof correction prevents false green integration state; no gameplay code changed.
+Build gate: CPU average 100 with active `csc` (`Id=26488`) and `dotnet` (`Id=20124`); rebuild was not launched.
+
+<SELF_AUDIT_REVISION id="SHINOBU_261_OOP_PROOF_CORRECTION_STATIC_GATE">
+  <json_reports root="PASS" sidecar="PASS" />
+  <csharp_brace_scan scope="Crest4/OceanKinematics/Water_Interface_Scanner" result="PASS" />
+  <legacy_oop_callers result="BLOCKED_BY_DEPENDENCY">
+    <caller file="Assets/_Project/Scripts/HectonPlayerMovement.cs" line="6924" api="GetWaterHeight" />
+    <caller file="Assets/_Project/Scripts/HectonPlayerMovement.cs" line="6932" api="GetWaveNormal" />
+    <caller file="Assets/_Project/Scripts/HectonPlayerMovement.cs" line="6984" api="GetSurfaceFlow" />
+    <caller file="Assets/_Project/Scripts/World/FloraInteractionManager.cs" line="7014" api="GetSurfaceFlow" />
+  </legacy_oop_callers>
+  <compile_gate result="NOT_RUN" reason="CPU=100 active csc/dotnet" />
+</SELF_AUDIT_REVISION>

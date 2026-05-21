@@ -493,3 +493,9 @@ Solution: Downgraded Task 01 to partial/blocked and Task 19 to blocked-by-depend
 Rejected Alternatives: Claiming eradication while four managed query sites remain was rejected. Editing `HectonPlayerMovement.cs` or `World/FloraInteractionManager.cs` from this pass was rejected because those are Player/Flora ownership surfaces with serialized/runtime side effects and no current integrator authorization.
 Scalability potential: SHINOBU_261 queued Vault/Burst path remains scalable from low to ultra through continuous `GlobalQualityWeight`. Remaining Player/Flora callers are the migration debt preventing whole-project OOP-water-query pass.
 Hardware Impact: Runtime: 0 us in this patch. Proof integrity gain only; it prevents a false green report from hiding Player/Flora migration work.
+
+Problem: The OOP proof correction changed scanner/report artifacts and must not be treated as unverified documentation churn.
+Solution: Revalidated the root and SHINOBU_261 sidecar JSON reports, ran a scoped comment/string-aware C# brace scan over Crest4/OceanKinematics/scanner files, and re-ran the exact Player/Flora legacy-call proof scan. Build gate was sampled separately: CPU average 100 with active `csc` and `dotnet`, so no build was launched.
+Rejected Alternatives: Running rebuild under saturated CPU and an active compiler was rejected by AGENTS.md. Suppressing the legacy-call evidence was rejected because the scanner is the proof artifact for Task 19.
+Scalability potential: Runtime behavior unchanged. The proof now distinguishes SHINOBU_261's scalable queued path from cross-domain Player/Flora migration debt.
+Hardware Impact: 0 runtime microseconds claimed. Build contention avoided; static proof only.
