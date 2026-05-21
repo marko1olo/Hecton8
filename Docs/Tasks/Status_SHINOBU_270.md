@@ -4,7 +4,7 @@ Agent: SHINOBU_270
 Domain: ECHELON 8 Presentation & UX / Visor AR (HUD)
 Prompt role: VISOR_AR_STENCIL_RENDERER
 Task count: 20
-Status: STATIC API RECHECK CLEAN / GENERATED CSPROJ STALE / COMPILE BLOCKED BY ACTIVE COMPILER AND CPU GATE
+Status: VAULT LIFECYCLE PATCHED / STATIC SCAN CLEAN / GENERATED CSPROJ STALE / COMPILE BLOCKED BY ACTIVE COMPILER AND CPU GATE
 
 ## Mandates Read
 
@@ -151,3 +151,10 @@ Status: STATIC API RECHECK CLEAN / GENERATED CSPROJ STALE / COMPILE BLOCKED BY A
 ## Iteration 18: Build Gate Watch / Active Compiler Window
 
 - [x] Active compiler gate resampled | Justification: active `dotnet` PID 30716 and `csc` PID 14152 were present; CPU was 73% by CIM and 60.81%, 67.67%, 50.23% by processor counter samples, so SHINOBU_270 did not launch `dotnet build` | Alternatives Rejected: starting a competing compiler while another C# compilation is active or treating a borderline 50.23% sample as legal clearance | Estimated impact: protects shared workstation and IO; compile remains PENDING VERIFICATION
+
+## Iteration 19: Vault Descriptor Lifecycle Patch
+
+- [x] DataVault release route repaired | Justification: `HectonVisorARStencilRendererFeature` now calls `IDataVault.ReleaseBuffer(in VaultGenerationHandle<T>)` for all seven owned visual descriptors on renderer dispose, DataVault service replacement, and cold service rebind before tombstoning handles | Alternatives Rejected: descriptor-only `ClearVaultHandles`, `ReleaseOwnerBuffers(SystemID.UI)` broad release, or leaking stale references across vault hot-swap | Estimated impact: runtime frame 0 us; prevents cold native refcount leak/compaction blocker
+- [x] Stale clear-only helper removed | Justification: deleted the old private `ClearVaultHandles()` helper so no local code path demonstrates clearing descriptor metadata without releasing Vault ownership | Alternatives Rejected: keeping dead helper as harmless private code | Estimated impact: proof hygiene; runtime 0 us
+- [x] Post-lifecycle static verification rerun | Justification: targeted visor/UI/shader forbidden scan returned no `GlobalSignals`, `FromRuntimePosition`, shader global setters, `Canvas.ForceUpdateCanvases`, `TryGetLatestCreated`, Burst/job/tiny-run wrappers, `.Complete()`, persistent runtime `NativeArray`, or `_CameraDepthTexture`; `git diff --check` reports only Git LF-to-CRLF warning | Alternatives Rejected: waiting for build output before checking deterministic source risks | Estimated impact: proof only
+- [x] Build gate resampled after lifecycle patch | Justification: active `dotnet` PID 34832 and `csc` PID 15644 were present; CPU was 100% by CIM and 90.05%, 82.47%, 86.72% by processor counter samples, so SHINOBU_270 did not launch `dotnet build` | Alternatives Rejected: launching a competing compiler or building under saturated CPU | Estimated impact: protects shared workstation and IO; compile remains PENDING VERIFICATION
