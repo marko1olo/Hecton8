@@ -348,3 +348,27 @@ Cinematic Cheats used: Existing persistent ecology remains a record fake: hibern
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped from `unityTimeCritical=913` to `910`, from `unityTimeWallClock=69` to `66`, and from `unityTimeRiskGameplayWallClock=35` to `32`.
 
 Evidence: Focused `rg -n "Time\.time\b" Assets/_Project/Scripts/World/PersistentWorldRegistry.cs` returns no rows. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_persistent_world_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_persistent_world_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=910`, `unityTimeWallClock=66`, and `unityTimeRiskGameplayWallClock=32`. `git diff --check -- Assets/_Project/Scripts/World/PersistentWorldRegistry.cs` reports only LF-to-CRLF warning. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Sargassum Thermal Shader Clock
+
+What was wrong: `SargassumCutManager` used `Time.time` for recent cut heat stamp registration and shader-global pruning. Those values are consumed by `Hecton_ScooterVolumetricShafts.shader`, which computes thermal haze age from Unity shader `_Time.y`.
+
+What was done: Added `ResolveThermalShaderClockSeconds()` and routed the two heat-stamp time reads through `Time.timeSinceLevelLoad`, preserving shader `_Time` compatibility while removing direct `Time.time` usage from the manager.
+
+Cinematic Cheats used: Existing thermal scar/haze remains a Dear Lie: 16 compact heat stamps and shader noise/displacement sell post-cut heat instead of CPU thermal diffusion or fluid simulation.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped from `unityTimeCritical=910` to `906`, from `unityTimeWallClock=66` to `64`, and from `unityTimeRiskGameplayWallClock=32` to `30`.
+
+Evidence: Focused `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/World/SargassumCutManager.cs` returns no direct wall-clock rows; it only shows `Time.timeSinceLevelLoad` inside `ResolveThermalShaderClockSeconds()`. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_sargassum_shader_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_sargassum_shader_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=906`, `unityTimeWallClock=64`, and `unityTimeRiskGameplayWallClock=30`. `git diff --check -- Assets/_Project/Scripts/World/SargassumCutManager.cs` reports only LF-to-CRLF warning. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Vegetation Flow-Field Owner Clock
+
+What was wrong: `VegetationFlowFieldIntegrator` used `Time.time` for threat propagation elapsed time and `Time.unscaledTime` for swarm wake impulse lifetime. Those values feed simulation jobs, not diagnostics.
+
+What was done: Added `_vegetationRuntimeSeconds` to `HectonMapMagicVegetationBridge`, advanced it from dispatcher `Tick(float dt)`, and routed threat propagation plus wake impulse expiry through `ResolveVegetationRuntimeSeconds()`. Tick delta is sanitized before clock advancement.
+
+Cinematic Cheats used: Existing abyssal flow remains a field approximation: grid diffusion, flow vectors, and one external wake impulse slot replace per-fish/per-particle fluid simulation.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped from `unityTimeCritical=906` to `902`, from `unityTimeWallClock=64` to `62`, and from `unityTimeRiskGameplayWallClock=30` to `28`.
+
+Evidence: Focused `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs` returns no rows. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_vegetation_flow_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_vegetation_flow_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=902`, `unityTimeWallClock=62`, and `unityTimeRiskGameplayWallClock=28`. `git diff --check -- Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs` reports only LF-to-CRLF warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

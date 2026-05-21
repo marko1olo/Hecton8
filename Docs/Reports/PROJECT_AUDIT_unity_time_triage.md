@@ -261,3 +261,39 @@ Updated static counts from that artifact:
 - `unityTimeRiskGameplayDelta`: 1
 
 Residual note: `PersistentWorldRegistry` still has `Time.unscaledTime` in sector override unload/commit and tombstone sweep cadence. That should be handled as a cold IO/paging scheduler route, not mixed into fauna state timing.
+
+## 2026-05-22 SargassumCutManager Follow-Up
+
+`SargassumCutManager` no longer uses direct `Time.time` for recent cut heat stamp registration or shader-global pruning. This was intentionally handled as shader-clock alignment, not owner-clock migration: `Hecton_ScooterVolumetricShafts.shader` computes heat age from `HectonShaftAnimationTime() - strengthTime.y`, and `HectonShaftAnimationTime()` is based on Unity `_Time.y`.
+
+Focused proof:
+
+- `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/World/SargassumCutManager.cs` returns no direct wall-clock rows; only `Time.timeSinceLevelLoad` remains inside `ResolveThermalShaderClockSeconds()`.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_time_after_sargassum_shader_clock.json`.
+
+Updated static counts from that artifact:
+
+- `unityTimeCritical`: 906
+- `unityTimeWallClock`: 64
+- `unityTimeRiskGameplayWallClock`: 30
+- `unityTimeRiskGameplayDelta`: 1
+
+Residual note: `Time.timeSinceLevelLoad` is still a Unity presentation clock. This is acceptable here because the payload is a shader `_Time` bridge for thermal haze, not rollback/gameplay authority.
+
+## 2026-05-22 VegetationFlowFieldIntegrator Follow-Up
+
+`VegetationFlowFieldIntegrator` no longer uses direct Unity wall-clock time for threat propagation delta or swarm wake impulse expiry. `HectonMapMagicVegetationBridge` now owns `_vegetationRuntimeSeconds`, advances it from dispatcher `Tick(float dt)`, and the flow-field partial reads it through `ResolveVegetationRuntimeSeconds()`.
+
+Focused proof:
+
+- `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs` returns no rows.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_time_after_vegetation_flow_clock.json`.
+
+Updated static counts from that artifact:
+
+- `unityTimeCritical`: 902
+- `unityTimeWallClock`: 62
+- `unityTimeRiskGameplayWallClock`: 28
+- `unityTimeRiskGameplayDelta`: 1
+
+Residual note: `HectonMapMagicVegetationBridge.cs` still has `Time.unscaledTime` for native-pool fragmentation log cadence and camera-resolve retry cadence. Those are cooldown/diagnostic routes and were not mixed into flow-field simulation timing.

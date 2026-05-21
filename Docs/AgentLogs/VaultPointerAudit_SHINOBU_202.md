@@ -840,3 +840,14 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - `PlayerKinematicsBodyJob` and `PlayerKinematicsHandPlacementJob` now carry `[NoAlias]` on non-overlapping native lanes.
 - This entry corrects the old Loop 77 audit gap. It does not claim a generic `VaultBufferBinding<T>` refcount/release policy change; that ownership behavior remains a separate audited route.
 - This entry claims only player kinematics resurfaced direct-route cleanup. `LockstepPlayerKinematicState`, `PlayerKinematicsRuntimeTelemetryEntry`, `PlayerKinematicsSyncState`, `SdfSqueezeResult`, BufferIDs, SDF byte payload format, AUP conversion, KCC squeeze math, hand IK, telemetry dump format, shader property IDs, SignalBus payloads, and GameplayPlayer/WorldStreaming authority are unchanged by this loop.
+
+## 2026-05-22 Deep Sea Noir Descriptor Route Update
+
+- `Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.Noir.cs` has no `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits.
+- Noir constants, Noir input, Noir telemetry ring, Noir tuning, Noir color profiles, and Noir CSV scratch routes use `VaultGenerationHandle<T>` descriptors.
+- Each route validates exact BufferID, `SystemID.GraphicsScalability`, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated` before returning a native view.
+- Editor constants readback uses descriptor read proof. Editor tuning writes use `TryAcquireWriteLock(in handle, SystemID.GraphicsScalability, out NativeArray<NoirPostProcessTuningDTO>)` and release through the matching descriptor lock.
+- `ReleaseNoirVaultHandles` releases all six owned GraphicsScalability descriptors through `ReleaseBuffer(in handle)` and tombstones the route state.
+- Compile-wall guard: `Hecton8.Graphics.Scalability.asmdef` references `Hecton8.Core`, `Hecton8.Core.Contracts`, `Hecton8.Core.Memory`, `Hecton8.Bootstrap.Contracts`, and Unity packages only; no sibling runtime assembly dependency was introduced.
+- This entry claims only the Noir partial. `HectonVisorUberPostFeature.cs` still has separate reconstruction legacy Vault routes and remains explicit residual debt for a later bounded pass.
+- This entry does not change `NoirPostProcessDTO`, `NoirPostProcessInputDTO`, `NoirPostProcessTuningDTO`, `NoirTelemetryEntry`, `NoirColorProfileDTO`, BufferIDs, CSV parser contract, shader property IDs, RenderGraph pass ABI, constant-buffer stride, telemetry dump format, or GraphicsScalability authority.

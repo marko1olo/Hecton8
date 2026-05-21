@@ -875,7 +875,7 @@ namespace Hecton8.Interaction
             if (!IsFiniteVector(nextPosition))
                 return;
 
-            _activeBody.MovePosition(nextPosition);
+            _activeTargetTransform.position = nextPosition;
         }
 
         private void TickHeavyCarry(float deltaTime)

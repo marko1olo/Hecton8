@@ -26,6 +26,10 @@ namespace Hecton8.Editor
         private const string SelfAuditPath = "Docs/Reports/VR_INTERACTION_SELF_AUDIT_SHINOBU_271.md";
         private const string RootPath = "Assets/_Project/Scripts";
         private const string SharedReportKey = "shinobu271VRKinematicBridgeScanner";
+        private const string CompileProof =
+            "dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true returned EXIT_CODE=0 in Docs/AgentLogs/Build_SHINOBU_271_solution_loop12_23.log with 14 Warning(s), 0 Error(s).";
+        private const string RuntimeProofLimit =
+            "Unity import, Unity Console, Play Mode GCMonitor, profiler captures, player-build, Quest/Steam Deck runtime, and live VR device proof remain pending.";
 
         [MenuItem("HECTON-8/VR/Run Physics Inquisition")]
         public static void Run()
@@ -83,7 +87,9 @@ namespace Hecton8.Editor
             AppendJson(builder, "binaryLedger", "Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md#2026-05-21-shinobu_271-vr-interaction-kinematic-bridge-payload-boundary", true);
             AppendJson(builder, "sdfRoute", "IVoxelSonarSdfReadModel.TryReadNearestSonarSdf -> VRHandStateDTO -> transform-only runtime target", true);
             AppendJson(builder, "hotPathAmendments", "cached IDataVault TryResolveExisting in fixed-step; live VRControllerMatrixDTO ingestion; all-active socket scan; over-budget state is telemetry-only.", true);
-            AppendJson(builder, "continuousQuality", "GlobalQualityWeight maps continuously to a 2..8 presentation/telemetry iteration hint. Authoritative SDF truth uses the deterministic 8-step fence for rollback.", false);
+            AppendJson(builder, "continuousQuality", "GlobalQualityWeight maps continuously to a 2..8 presentation/telemetry iteration hint. Authoritative SDF truth uses the deterministic 8-step fence for rollback.", true);
+            AppendJson(builder, "compileProof", CompileProof, true);
+            AppendJson(builder, "verificationLimit", RuntimeProofLimit, false);
             builder.AppendLine("}");
             File.WriteAllText(DedicatedReportPath, builder.ToString());
             UpsertSharedReport(BuildSharedReportBlock(layoutValid, springJointHits, configurableJointHits, fixedJointHits, handMovePositionHits, physicalHandArticulationHits, physicalHandRigidbodyShellHits));
@@ -222,7 +228,7 @@ namespace Hecton8.Editor
             builder.Append("  \"").Append(SharedReportKey).AppendLine("\": {");
             builder.AppendLine("    \"agent\": \"SHINOBU_271\",");
             builder.AppendLine("    \"scanner\": \"VR_Physics_Inquisition static/editor hybrid\",");
-            builder.AppendLine("    \"verdict\": \"PASS_PENDING_UNITY_COMPILE\",");
+            builder.AppendLine("    \"verdict\": \"PASS_STATIC_COMPILE_GREEN_UNITY_EXECUTION_PENDING\",");
             builder.AppendLine("    \"summary\": \"Physics-Based Hands Purged by default transform-only kinematic SDF bridge; legacy PhysX hand proxy remains behind explicit fallback only.\",");
             builder.AppendLine("    \"dedicatedReport\": \"Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_271.json\",");
             builder.AppendLine("    \"routeCard\": \"Docs/ARCHITECTURE/SHINOBU_271_VR_INTERACTION_KINEMATIC_BRIDGE_ROUTE_CARD.md\",");
@@ -237,7 +243,8 @@ namespace Hecton8.Editor
             builder.AppendLine("    \"sdfRoute\": \"IVoxelSonarSdfReadModel.TryReadNearestSonarSdf -> VRHandStateDTO -> resolved float4x4 matrix\",");
             builder.AppendLine("    \"hotPathAmendments\": \"cached IDataVault TryResolveExisting in fixed-step; live VRControllerMatrixDTO ingestion; all-active socket scan; mutation guard; over-budget telemetry-only flag\",");
             builder.AppendLine("    \"blackBoxDump\": \"Docs/AgentLogs/Dump_SHINOBU_271.bin\",");
-            builder.AppendLine("    \"compileProof\": \"blocked by external missing source: after narrow restore succeeded and CPU sampled 35.2 percent with no csc/dotnet process, dotnet build Hecton8.Core.csproj --no-restore reached CSC and failed on Assets/_Project/Scripts/IBuildPlacementRule.cs referenced by the project file. Repo scan found no such file; SHINOBU_271 source was not reached.\"");
+            builder.Append("    \"compileProof\": \"").Append(Escape(CompileProof)).AppendLine("\",");
+            builder.Append("    \"verificationLimit\": \"").Append(Escape(RuntimeProofLimit)).AppendLine("\"");
             builder.Append("  }");
             return builder.ToString();
         }
@@ -588,15 +595,19 @@ namespace Hecton8.Editor
             if (vault == null)
                 return;
 
-            DrawHand(vault, PhysicalHandSide.Left, new Color(0.2f, 0.75f, 1f, 0.85f));
-            DrawHand(vault, PhysicalHandSide.Right, new Color(1f, 0.75f, 0.2f, 0.85f));
+            double3 runtimeOriginAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!VRInteractionKinematicBridgeMath.IsFinite(runtimeOriginAup))
+                return;
+
+            DrawHand(vault, PhysicalHandSide.Left, new Color(0.2f, 0.75f, 1f, 0.85f), runtimeOriginAup);
+            DrawHand(vault, PhysicalHandSide.Right, new Color(1f, 0.75f, 0.2f, 0.85f), runtimeOriginAup);
         }
 
-        private static void DrawHand(IDataVault vault, PhysicalHandSide side, Color color)
+        private static void DrawHand(IDataVault vault, PhysicalHandSide side, Color color, double3 runtimeOriginAup)
         {
             if (!VRInteractionKinematicBridgeVault.TryReadLatestHandState(vault, side, out VRHandStateDTO state) ||
-                !VRInteractionKinematicBridgeMath.TryResolveRuntimePosition(state.ResolvedHandAUP, out Vector3 resolved) ||
-                !VRInteractionKinematicBridgeMath.TryResolveRuntimePosition(state.RawControllerAUP, out Vector3 raw))
+                !VRInteractionKinematicBridgeMath.TryResolveRuntimePosition(state.ResolvedHandAUP, runtimeOriginAup, out Vector3 resolved) ||
+                !VRInteractionKinematicBridgeMath.TryResolveRuntimePosition(state.RawControllerAUP, runtimeOriginAup, out Vector3 raw))
             {
                 return;
             }

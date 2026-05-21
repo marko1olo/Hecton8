@@ -133,6 +133,7 @@ namespace Hecton8.World
         private const float DefaultThermalGridVerticalCellSize = 250f;
         private const float BiolumeSurgeDurationSeconds = 4f;
         private const float BiolumeSurgeVelocityDeltaThreshold = 8f;
+        private const float VegetationRuntimeClockMaxSeconds = 16777215f;
         private const float DefaultThermalGridDepthMeters = 4000f;
         private const float AbyssalFlowNoiseStartDepthMeters = 2000f;
         private const float ScatterMinimumSurfaceNormalUpDot = OrganicKelpMaxSlopeNormalY;
@@ -1782,6 +1783,7 @@ namespace Hecton8.World
         private Vector3 _scheduledThreatVoxelOrigin;
         private Vector3 _ecosystemFlowFieldCenter;
         private Vector3 _scheduledFlowFieldCenter;
+        private float _vegetationRuntimeSeconds;
         private float _swarmWakeImpulseExpireTime = float.NegativeInfinity;
         private Vector3 _canopyGridCenter;
         private Vector3 _abyssalThermalGridCenter;
@@ -1836,6 +1838,7 @@ namespace Hecton8.World
             _totalUniverseOffsetDouble = double3.zero;
             GlobalTotalUniverseOffset = Vector3.zero;
             GlobalTotalUniverseOffsetDouble = double3.zero;
+            _vegetationRuntimeSeconds = 0f;
             RebuildFloraTemplateRuntimeDescriptors();
             if (_surfaceNativeBufferSource == null)
                 _surfaceNativeBufferSource = new IndirectVegetationNativeBufferSource(this, false); // COLD ALLOC: IndirectVegetationNativeBufferSource[1] - surface native vegetation renderer seam - owner: HectonMapMagicVegetationBridge
@@ -2187,7 +2190,8 @@ namespace Hecton8.World
         public void Tick(float dt)
         {
             TryDisposeDeferredTileCacheReadbacks();
-            float clampedDt = math.max(0f, dt);
+            float clampedDt = math.isfinite(dt) ? math.max(0f, dt) : 0f;
+            AdvanceVegetationRuntimeClock(clampedDt);
             _predatorFearSimulationTime += clampedDt;
             _predatorFearPruneTimer += clampedDt;
             if (_predatorFearPruneTimer >= 1f)

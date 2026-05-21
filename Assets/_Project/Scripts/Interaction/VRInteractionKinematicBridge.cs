@@ -630,22 +630,6 @@ namespace Hecton8.Interaction
             return IsFinite(aup);
         }
 
-        public static bool TryResolveRuntimePosition(double3 aup, out Vector3 runtimePosition)
-        {
-            runtimePosition = default;
-            if (!IsFinite(aup))
-                return false;
-
-            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
-            double3 delta = aup - origin;
-            float3 local = new float3((float)delta.x, (float)delta.y, (float)delta.z);
-            if (!IsFinite(local))
-                return false;
-
-            runtimePosition = new Vector3(local.x, local.y, local.z);
-            return true;
-        }
-
         public static bool TryResolveRuntimePosition(double3 aup, double3 runtimeOriginAup, out Vector3 runtimePosition)
         {
             runtimePosition = default;

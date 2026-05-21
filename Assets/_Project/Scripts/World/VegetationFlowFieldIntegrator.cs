@@ -73,7 +73,7 @@ namespace Hecton8.World
                 Strength = strength
             };
             _swarmWakeImpulseCount = 1;
-            _swarmWakeImpulseExpireTime = Time.unscaledTime + math.max(0.1f, lifetimeSeconds);
+            _swarmWakeImpulseExpireTime = ResolveVegetationRuntimeSeconds() + math.max(0.1f, lifetimeSeconds);
         }
 
         private static float2 DominantAxisOrDefault(float2 value, float2 fallback)
@@ -132,6 +132,19 @@ namespace Hecton8.World
             decay = math.max(0f, decay);
             float decaySq = decay * decay;
             return math.saturate(math.rcp(1f + decay + (decaySq * 0.48f) + (decaySq * decay * 0.235f)));
+        }
+
+        private void AdvanceVegetationRuntimeClock(float deltaTime)
+        {
+            if (!math.isfinite(deltaTime) || deltaTime <= 0f)
+                return;
+
+            _vegetationRuntimeSeconds = math.min(VegetationRuntimeClockMaxSeconds, _vegetationRuntimeSeconds + deltaTime);
+        }
+
+        private float ResolveVegetationRuntimeSeconds()
+        {
+            return _vegetationRuntimeSeconds;
         }
 
         /// <summary>
@@ -283,9 +296,10 @@ namespace Hecton8.World
             Vector3 previousCenter = _threatGridInitialized ? _ecosystemThreatGridCenter : targetCenter;
             ResolveThreatSignalSnapshot(out Vector3 emissionPosition, out float emissionRadius, out float emissionStrength);
 
+            float currentTime = ResolveVegetationRuntimeSeconds();
             float deltaTime = 0.5f;
             if (_lastThreatPropagationTime > float.NegativeInfinity)
-                deltaTime = math.clamp(Time.time - _lastThreatPropagationTime, 0.05f, 5f);
+                deltaTime = math.clamp(currentTime - _lastThreatPropagationTime, 0.05f, 5f);
 
             float inverseThreatGridCellSize = math.rcp(threatGridCellSize);
             int shiftX = (int)math.round((targetCenter.x - previousCenter.x) * inverseThreatGridCellSize);
@@ -331,7 +345,7 @@ namespace Hecton8.World
 
             _scheduledThreatGridCenter = targetCenter;
             _scheduledThreatVoxelOrigin = voxelOrigin;
-            _lastThreatPropagationTime = Time.time;
+            _lastThreatPropagationTime = currentTime;
             JobHandle propagationHandle = job.Schedule(_ecosystemThreatGridCellCount, DefaultJobBatchSize);
             var voxelJob = new ThreatVoxelizationJob
             {
@@ -494,7 +508,7 @@ namespace Hecton8.World
 
             EnsureFlowFieldBuffers();
             if (_swarmWakeImpulseCount > 0 &&
-                (!float.IsFinite(_swarmWakeImpulseExpireTime) || Time.unscaledTime > _swarmWakeImpulseExpireTime))
+                (!float.IsFinite(_swarmWakeImpulseExpireTime) || ResolveVegetationRuntimeSeconds() > _swarmWakeImpulseExpireTime))
             {
                 _swarmWakeImpulseCount = 0;
                 if (_nativeMemory.SwarmWakeImpulseNative.IsCreated)

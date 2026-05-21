@@ -67,6 +67,24 @@ Remaining blocked/pending:
   <QUALITY status="DRS shader uses continuous scale-deficit curve; no binary low-tier switch added" />
 </SELF_AUDIT>
 
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="SpatialAudioVirtualVoiceQualityContinuum">
+  <WHAT_WAS_WRONG>
+    `SpatialAudioManager` used scalability snapshot drains and cached hardware tier/low-memory profile to clamp virtual voice quality and spatial policy. That made physical voice budget and telemetry flags depend on binary hardware identity.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the scalability event alias, drain, handler, cached tier/profile fields, and cached-tier accessors. Spatial policy now caches continuous global quality and combines it with the native virtual voice quality state before a smooth budget curve.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Virtual voice reduction remains an audio presentation fake: weak devices shed active physical voices continuously while listener/source AUP facts and event admission remain intact.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. Removed a per-frame scalability snapshot scan and binary profile branch state.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no remaining scalability event alias, drain/handler, cached tier/profile fields, or direct scalability/low-memory registry read in `SpatialAudioManager.cs`. `git diff --check` passed for spatial/audio proof files. `dotnet build .\Assembly-CSharp.csproj --no-restore --nologo -m:1` returned 0 errors and 161 warnings.
+  </VERIFICATION>
+</SELF_AUDIT>
+
 <SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="PlayerCriticalAudioQualityContinuum">
   <WHAT_WAS_WRONG>
     `PlayerCriticalProceduralAudioRenderer` used cached scalability tier, quality tier, low-memory profile, and scalability signal drains to select audio presentation budgets and kinetic impact fallback behavior. That made critical audio presentation branch on binary hardware identity.

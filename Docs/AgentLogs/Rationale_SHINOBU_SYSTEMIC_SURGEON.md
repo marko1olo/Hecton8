@@ -946,3 +946,11 @@ Solution: Removed the cached tier/profile fields, scalability snapshot drain, pa
 Rejected Alternatives: Keeping scalability signals as an audio metadata lane was rejected because the renderer used them as branch selectors. Preserving clip-only kinetic fallback was rejected because it changed impact presentation discontinuously; the clip is now a minimum-quality layer, not an exclusive hardware route.
 Scalability potential: Low devices keep a cheap impact layer, lower granular voice ceiling, and fewer sonar probes; middle devices interpolate; high/ultra reach full voice/probe counts and native convolution. Impact truth and signal admission remain unchanged.
 Hardware Impact: 0 us speed claim. Removed a per-frame scalability snapshot scan and three cold hardware registry fields from the critical audio presentation path.
+
+## Spatial Audio Virtual Voice Quality Continuum
+
+Problem: `SpatialAudioManager` cached scalability tier and low-memory profile, drained scalability snapshots every tick, and clamped virtual voice quality/physical voice budget through binary Low/Mx350/low-memory hardware identity.
+Solution: Removed the scalability event alias, snapshot drain, handler, cached tier/profile fields, and cached-tier accessors. Spatial audio policy now caches continuous `HomeostasisBrain.GlobalQualityWeight` once per frame, combines it with the native virtual-voice quality DTO, and smooths the result before resolving voice budget.
+Rejected Alternatives: Keeping low-memory/tier clamps as a separate survival profile was rejected because virtual voice count is presentation budget and should follow the global quality continuum. Deleting the smoke coverage was rejected; the editor proof now asserts the continuous spatial-quality route.
+Scalability potential: Low devices receive fewer active physical voices through the same continuous resolver, middle devices interpolate, and high/ultra get full physical voice budget. Listener AUP, source routing, and acoustic impulse facts remain unchanged.
+Hardware Impact: 0 us speed claim. Removed one per-frame scalability snapshot scan and two hardware profile fields from the spatial audio presentation route. Build returned 0 errors and 161 warnings.

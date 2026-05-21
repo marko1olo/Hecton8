@@ -4075,3 +4075,20 @@ Mandates read before coding:
 - Brace count is balanced: `PlayerKinematicsRuntime.cs` `380/380`.
 - `git diff --check` passed for `PlayerKinematicsRuntime.cs`; CRLF warning only.
 - Build not relaunched under the explicit no-rebuild command discipline.
+
+## Loop 228 - Deep Sea Noir Descriptor Route
+- [x] Verified Noir visor post-process Vault lanes use generation descriptors.
+  DOD practice: constants, input, telemetry ring, tuning, color profile table, and CSV scratch lanes in `HectonVisorUberPostFeature.Noir.cs` retain `VaultGenerationHandle<T>` descriptors and open only through exact BufferID, `SystemID.GraphicsScalability`, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated` proof.
+  Rejected: retaining `VaultBufferHandle<T>`, `.Resolve(vault)`, retained handle created/length checks, and direct buffer APIs because the route crosses RenderGraph constant uploads, editor facade reads/writes, CSV profile loading, and blackbox telemetry dumps.
+  Estimate: descriptor proof is paid at Noir handle ensure, constants update, telemetry record/dump, tuning editor write, and CSV profile load boundaries only; no shader constant-buffer ABI, DTO layout, BufferID, CSV schema, RenderGraph pass, or GraphicsScalability authority changed.
+- [x] Verified owned GraphicsScalability release and compile-wall boundary.
+  DOD practice: `ReleaseNoirVaultHandles` releases all six nonzero GraphicsScalability descriptors through `ReleaseBuffer(in handle)` and tombstones local route state. `Hecton8.Graphics.Scalability.asmdef` references Core/Contracts/Memory plus Unity packages only; no sibling runtime assembly route was added.
+  Rejected: claiming the whole visor feature clean because `HectonVisorUberPostFeature.cs` still owns separate reconstruction legacy routes that need their own bounded pass. Rewriting Noir grading math, shader IDs, RenderGraph binding, CSV parser, or editor UI was rejected as outside this descriptor-route verification loop.
+  Estimate: cold lifecycle and phase-boundary only; no managed hot-path allocation, new job, same-frame readback loop, shader variant, DTO stride change, save identity change, or hot GlobalRegistry polling was introduced.
+
+## Compile State Update 222
+- Focused legacy/direct route scan on `HectonVisorUberPostFeature.Noir.cs` found no `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits.
+- Descriptor route scan confirmed expected `VaultGenerationHandle<T>`, `TryGetGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `TryResolveNoirVaultBuffer`, `TryReadNoirVaultBuffer`, `ReleaseNoirVaultHandle`, and `ReleaseBuffer(in handle)` hits.
+- Brace/preprocessor counts are balanced: `HectonVisorUberPostFeature.Noir.cs` braces `123/123`, preprocessor `#if/#endif` `7/7`.
+- `git diff --check` passed for `HectonVisorUberPostFeature.Noir.cs`; CRLF warning only.
+- Build not relaunched under the explicit no-rebuild command discipline.

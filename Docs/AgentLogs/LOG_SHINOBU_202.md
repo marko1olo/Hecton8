@@ -5362,3 +5362,29 @@ Static verification:
 - Focused scan found no `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `GetBuffer<T>`, `TryGetBuffer(...)`, `TryGetLatestCreated`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits in `PlayerKinematicsRuntime.cs`.
 - Descriptor scan confirms `VaultGenerationHandle<T>`, `TryGetGenerationHandle`, `TryResolveHandle`, `TryReadHandle`, `TryOpenPlayerKinematicStateView`, `TryReadExistingVaultView`, and `[NoAlias]`.
 - Brace count is `380/380`; `git diff --check` passed with CRLF warning only. Build was not relaunched.
+
+## 2026-05-22 - Loop 228 - Deep Sea Noir Descriptor Route
+
+What was wrong:
+- `Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.Noir.cs` has a cold/hot hybrid VFX route with six GraphicsScalability Vault lanes.
+- Constants, input, telemetry, tuning, color profiles, and CSV scratch cross RenderGraph constant-buffer uploads, editor facade access, CSV profile ingestion, and blackbox dump paths.
+- The risk is not buffer size; the risk is stale provenance after Vault relocation or release.
+
+What was done:
+- Verified all six Noir lanes use `VaultGenerationHandle<T>` descriptors.
+- Verified local helpers require exact BufferID, `SystemID.GraphicsScalability`, nonzero generation, required length, descriptor read/resolve, and `IsCreated` before returning native views.
+- Verified editor constants readback uses descriptor read proof and tuning writes use descriptor write locks.
+- Verified Noir release path calls `ReleaseBuffer(in handle)` for all six owned descriptors and tombstones local state.
+- Verified `Hecton8.Graphics.Scalability.asmdef` references Core/Contracts/Memory and Unity packages only; no sibling runtime dependency was added.
+
+Cinematic cheats used:
+- Noir remains a shader-driven visual fake: stress, depth, toxicity, quality weight, grain, glitch, vignette, chroma, and color profile scalars drive post-process presentation instead of simulating physical lens damage, volumetric film response, or gameplay state.
+
+Exact microseconds saved:
+- No measured runtime speedup claimed. Descriptor validation is paid at handle ensure, constants update, telemetry write/dump, CSV load, and editor tuning boundaries only. The useful result is stale-route removal for a shader upload path without changing the RenderGraph ABI.
+
+Static verification:
+- Focused scan found no `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits in `HectonVisorUberPostFeature.Noir.cs`.
+- Descriptor scan confirms `VaultGenerationHandle<T>`, `TryGetGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `TryResolveNoirVaultBuffer`, `TryReadNoirVaultBuffer`, `ReleaseNoirVaultHandle`, and `ReleaseBuffer(in handle)`.
+- Brace/preprocessor counts are balanced: braces `123/123`, `#if/#endif` `7/7`. `git diff --check` passed with CRLF warning only. Build was not relaunched.
+- Residual debt is explicit: this entry claims only `.Noir.cs`; the broader `HectonVisorUberPostFeature.cs` reconstruction partial still needs its own route pass.
