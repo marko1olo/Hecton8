@@ -1,6 +1,6 @@
 # Rationale_SHINOBU_260
 
-Status: POLISH PASS LOOP 18 WITH TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE CPU GATE
+Status: PENDING VERIFICATION / POLISH PASS LOOP 19 WITH TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE COMPILER PROCESS GATE
 
 ## Decision 001: Resolve Duplicate SHINOBU_260 Prompt By ID And Role
 
@@ -170,3 +170,11 @@ Solution: Add scanner checks for active Crest donor asmdefs and bridge asmdefs t
 Rejected Alternatives: Trusting status documentation was rejected because a future Unity inspector toggle can alter `autoReferenced` without adding any C# or asmdef reference line. Audit-only checking was rejected because the dependency scanner is the primary repeatable wall gate.
 Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. Developer scalability improves because Crest donor changes stay leaf-scoped instead of forcing unrelated assemblies into the compile wall.
 Hardware Impact: Runtime frame saving is 0 microseconds. Editor hardware impact is avoided seconds-scale domain reload/recompile fanout if an asmdef toggle regresses.
+
+## Decision 022: Track Global Crest Scripting Defines Without Breaking The Active Donor
+
+Problem: `ProjectSettings/ProjectSettings.asset` still contains Standalone scripting defines `CREST_OCEAN` and `CREST_URP`. These symbols do not create an asmdef reference by themselves, but they are global compile switches and can become a hidden donor route if first-party code outside the bridge starts using `#if CREST_OCEAN` or `#if CREST_URP`.
+Solution: Extend `Tools/Crest_Dependency_Scanner.py` with `scan_first_party_scripting_define_usage()` and `scan_global_scripting_defines()`. Non-bridge first-party Crest preprocessor branches are hard breaches. The current global PlayerSettings symbols are reported as `global_scripting_define_hits` so integrators can see the contamination without breaking the selected Crest 4 donor.
+Rejected Alternatives: Deleting `CREST_URP` immediately was rejected because active Crest 4 donor C# and HLSL under `Assets/Crest` uses the symbol for URP-specific code. Treating the PlayerSettings line as a hard breach was rejected because it would fail the wall while the selected donor still requires it. Ignoring the line was rejected because global defines can activate future non-bridge conditional code silently.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. Developer scalability improves because future Crest-symbol branches outside `Assets/_Project/Scripts/Plugins/Crest` fail in the scanner instead of becoming hidden compile-wall dependencies.
+Hardware Impact: Runtime frame saving is 0 microseconds. Editor/build impact is avoided future compile fanout from donor preprocessor symbols leaking into first-party assemblies; no steady-state frame claim.

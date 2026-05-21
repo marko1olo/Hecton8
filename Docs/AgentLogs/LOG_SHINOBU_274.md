@@ -103,6 +103,7 @@ What was wrong:
 
 What was done:
 - Public zero-intensity source registration now routes to `UnregisterSource(sourceId)` and publishes the existing typed remove payload through `SignalBus<RadiationSourceSignal>`.
+- Public invalid/non-positive radius input now falls back to `DefaultSourceRadiusMeters`, matching the owner drain path.
 - Route card and status/rationale artifacts were updated with the facade lifecycle proof.
 
 Cinematic Cheats used:
@@ -114,11 +115,11 @@ Exact microseconds saved:
 
 Verification:
 - `git diff --check -- Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs`: PASS with CRLF warning only.
-- Source lifecycle scan confirmed public zero-intensity facade and internal owner drain both remove by source id.
+- Source lifecycle scan confirmed public zero-intensity facade and internal owner drain both remove by source id, and both use the same invalid-radius fallback.
 - Build not launched because `VBCSCompiler` was active even though CPU sampled at 45 percent.
 
 <SELF_AUDIT agent="SHINOBU_274" domain="Radiation Scrubber" date="2026-05-22" pass="loop_16_source_facade">
-  <TaskReconciliation>Tasks 01-19 remain PASS. Task 20 remains PARTIAL because compile/import/profiler proof is still blocked by active compiler/dependency gates.</TaskReconciliation>
+  <TaskReconciliation>Tasks 01-19 remain PASS. Task 20 remains PARTIAL because compile/import/profiler proof is still blocked by active compiler/dependency gates. Loop 16 additionally aligns public source radius fallback with the owner drain.</TaskReconciliation>
   <StructLayout>RadiationStateDTO unchanged: explicit 32 bytes. RadiationSourceSignal unchanged: explicit 64 bytes.</StructLayout>
   <ScalabilityCurve>Source removal identity is independent of GlobalQualityWeight. Quality still only scales cadence, SDF/bulkhead sample budgets, and GPU presentation scalars.</ScalabilityCurve>
   <HphiVaultStatus>No new private NativeArray ownership. Source storage remains in Vault lane 72741 and source count in 72742.</HphiVaultStatus>

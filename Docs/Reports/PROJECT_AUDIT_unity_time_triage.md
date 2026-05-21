@@ -437,3 +437,40 @@ Updated static counts from that artifact:
 - `unityTimeDelta`: 1 (`Assets/_Project/Scripts/Dev/CelestialTimeLapseDebugger.cs:30`)
 
 Residual time debt is now mostly frame stamps/telemetry/log throttles and one dev debugger `Time.fixedDeltaTime` accessor. This is not runtime/profiler proof; it is static-source proof only.
+
+## 2026-05-22 Native API Exposure Follow-Up
+
+This follow-up shifted from Unity time debt to native collection API debt after the gameplay wall-clock buckets reached zero.
+
+Changes:
+
+- `HectonMapMagicVegetationBridge.TryGetActiveAbyssalAnchorPayload` now returns `NativeArray<Vector3>.ReadOnly`.
+- `HectonMapMagicVegetationBridge.TryGetActiveAbyssalAnchorAupPayload` now returns `NativeArray<AbsoluteUniversePosition>.ReadOnly`.
+- `HectonMapMagicVegetationBridge.TryGetEcosystemThreatGridPayload` now returns `NativeArray<float>.ReadOnly`.
+- `HectonMapMagicVegetationBridge.TryGetCompressedEcosystemThreatGridPayload` now returns `NativeArray<byte>.ReadOnly`.
+- `HectonMapMagicVegetationBridge.TryGetTerrainHoleStreamingPayload` now returns `NativeArray<TerrainHoleStreamingRecord>.ReadOnly`.
+
+Call-site updates:
+
+- `AcousticEcholocationTranslator`
+- `ARWaypointOverlay`
+- `SuitHUDV4CanvasOverlay`
+- `SargassumMicroFaunaBoids`
+- `HectonVoxelStreamingBridge`
+
+Focused proof:
+
+- Focused scans found no stale mutable call-site declarations for the converted APIs.
+- Focused scans found no `.IsCreated` checks on the converted read-only locals in touched call sites.
+- Runtime `.Complete()` read-only explorer grep found no executable direct `.Complete()` outside `DispatcherJobFence`; remaining runtime-scope hit was only a string literal in `SavePersistenceOmegaSmokeTester`.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_vegetation_readonly_payloads.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 236, down from 268 at the start of this native-exposure pass.
+- `nativeApiExposureBuildPlayerRuntime`: 222, down from 254.
+- `nativeApiExposureOutRefMutable`: 184, down from 189.
+- `nativeApiRiskRuntimeOutRefMutableView`: 109, down from 114.
+- `jobHandleComplete`: 112, unchanged; bounded runtime grep found no remaining executable runtime candidates outside the core fence helper.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

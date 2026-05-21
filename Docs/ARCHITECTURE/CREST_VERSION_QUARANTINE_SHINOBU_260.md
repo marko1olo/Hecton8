@@ -44,9 +44,11 @@ Crest 4 asmdefs are leaf-import guarded with `autoReferenced=false`:
 - `Assets/Crest/Crest/Scripts/Crest.asmdef`
 - `Assets/Crest/Crest/Scripts/Editor/Crest.Editor.asmdef`
 
-Static proof: `Docs/Reports/ARCHITECTURE_OPTIMIZATION_REPORT.json` reports `breach_count=0`, `allowed_hit_count=40`, `reflection_string_hit_count=0`, and non-failing `vocabulary_debt_hit_count=111`. The scanner now covers active serialized text in `Assets`, `ProjectSettings`, and `Packages` for Crest5/WaveHarmonic/direct UnderwaterRenderer/bare Crest assembly-list breaches, active `Packages/com.waveharmonic.crest` visibility, shader/HLSL/compute Crest includes outside the bridge, Unity `.asmref` sidecars, Unity `GUID:<asmdef-guid>` references to the active Crest 4 asmdefs, and active backreferences to archived Crest5/recovery asset GUIDs.
+Static proof: `Docs/Reports/ARCHITECTURE_OPTIMIZATION_REPORT.json` reports `breach_count=0`, `allowed_hit_count=40`, `reflection_string_hit_count=0`, `global_scripting_define_hit_count=1`, and non-failing `vocabulary_debt_hit_count=111`. The scanner now covers active serialized text in `Assets`, `ProjectSettings`, and `Packages` for Crest5/WaveHarmonic/direct UnderwaterRenderer/bare Crest assembly-list breaches, active `Packages/com.waveharmonic.crest` visibility, shader/HLSL/compute Crest includes outside the bridge, Unity `.asmref` sidecars, Unity `GUID:<asmdef-guid>` references to the active Crest 4 asmdefs, active backreferences to archived Crest5/recovery asset GUIDs, and non-bridge first-party `#if CREST_OCEAN` / `#if CREST_URP` branches.
 
 The scanner also fails if active Crest donor asmdefs or Crest bridge asmdefs become auto-referenced. This keeps Crest opt-in at the assembly importer level, not only at the direct-reference level.
+
+`ProjectSettings/ProjectSettings.asset` still carries Standalone `CREST_OCEAN` and `CREST_URP` scripting defines. They are recorded as non-failing donor-state evidence because the active Crest 4 donor uses `CREST_URP` internally. Any first-party non-bridge use of those symbols is a scanner breach.
 
 Scanner throughput proof: after broadening the serialized surface, `scan_active_assets` was moved to `rg --json` with a Python fallback. Full scanner wall time on this workspace dropped from about 262 seconds to about 35.5 seconds while preserving `breach_count=0`.
 
@@ -128,10 +130,11 @@ Task 12 status: blocked by dependency. Full suppression of Crest `OceanRenderer.
 ## Static Verification
 
 - `python Tools/Crest_Baseline_Archiver.py --execute`: passed.
-- `python Tools/Crest_Dependency_Scanner.py`: passed with `breach_count=0`, `allowed_hit_count=40`, `reflection_string_hit_count=0`, `vocabulary_debt_hit_count=111`.
+- `python Tools/Crest_Dependency_Scanner.py`: passed with `breach_count=0`, `allowed_hit_count=40`, `reflection_string_hit_count=0`, `global_scripting_define_hit_count=1`, `vocabulary_debt_hit_count=111`.
 - `python Tools/Crest_Quarantine_Polish_Audit.py`: passed with `failed_count=0`, including `legacy_crest4_adapter_no_hot_component_repair`, `base_bridge_no_ocean_singleton_polling`, `base_bridge_underwater_reads_are_cache_only`, `depth_cache_bootstrap_no_ocean_singleton_fallback`, `legacy_crest4_read_accessors_do_not_log_or_poll_registry`, `legacy_crest4_tuning_is_cached_read_only`, `player_prefab_has_no_direct_underwater_renderer`, `crest5_migration_assets_outside_unity_visibility`, `crest_input_shaders_owned_by_bridge_folder`, `crest5_scene_outside_unity_visibility`, and `dependency_scanner_covers_asmref_and_crest_guid_references`.
 - `Tools/Crest_Quarantine_Polish_Audit.py` also gates `dependency_scanner_blocks_archived_asset_guid_references`, proving the normal scanner will fail active links to archived Crest5/recovery object GUIDs.
 - `Tools/Crest_Quarantine_Polish_Audit.py` also gates `crest_donor_asmdefs_not_auto_referenced`, `bridge_asmdef_not_auto_referenced`, and `dependency_scanner_blocks_auto_referenced_crest_assemblies`.
+- `Tools/Crest_Quarantine_Polish_Audit.py` also gates `dependency_scanner_tracks_crest_scripting_defines` and `dependency_scanner_blocks_non_bridge_crest_preprocessor_branches`.
 - `Tools/Crest_Quarantine_Polish_Audit.py` also gates `underwater_visuals_no_crest_reflection_fallback`, `underwater_visuals_vendor_neutral_pass_vocabulary`, `visual_bridge_contract_vendor_neutral`, `dry_volume_reads_vendor_texture_id_through_bridge`, `crest5_prefab_adapter_reference_removed`, `ocean_kinematics_base_vendor_neutral`, `low_risk_non_bridge_text_uses_ocean_vocabulary`, and `dependency_scanner_tracks_vocabulary_debt`.
 - `python Tools/BufferIDSovereigntyAudit.py --report-path Docs/Reports/SHINOBU_260_BufferIDSovereigntyAudit.md --json-path Docs/Reports/SHINOBU_260_BufferIDSovereigntyAudit.json`: passed as static evidence; global `duplicateValueCount=3` comes from unrelated `H8Memory.cs` values `70534..70536`, while `72960..72965` are local casts only in `OceanAdapterVaultRoute.cs`.
 - `python -m py_compile Tools/Crest_Baseline_Archiver.py Tools/Crest_Dependency_Scanner.py Tools/Crest_Quarantine_Polish_Audit.py Tools/BufferIDSovereigntyAudit.py`: passed.
@@ -141,6 +144,7 @@ Task 12 status: blocked by dependency. Full suppression of Crest `OceanRenderer.
 - Assembly sidecar exact scans: no non-bridge active `.asmdef` or `.asmref` references to Crest assembly names or Crest asmdef GUIDs `5b35af79ebbe89647a157055d52c59d3` / `59cd48da98d9e4a80917b613abe9416e`.
 - Archived asset GUID exact scan: no active references under `Assets`, `ProjectSettings`, or `Packages` to `ed12880d16f3f2f4e80ceee64594101d`, `149ebcba5c729ad49911b1ea4b8456fd`, `0ef7bde4d259c9d4abcc93f41b0903a0`, or `a73ab923bdc811242bdca5f288eb3877`.
 - Auto-reference exact check: active Crest donor runtime/editor asmdefs and Crest bridge runtime/editor asmdefs all retain `autoReferenced=false`.
+- Scripting define exact check: `CREST_OCEAN` and `CREST_URP` appear in Standalone PlayerSettings and active Crest donor code; no first-party non-bridge `.cs`, `.asmdef`, `.asmref`, or `.rsp` file uses those symbols.
 - Exact shader scan: Crest HLSL include hits exist only under `Assets/_Project/Scripts/Plugins/Crest/Shaders/`.
 - Exact scene/build scan: no active `03_HECTON_WORLD_CREST5` hits remain under `ProjectSettings` or `Assets/_Project/Scenes`.
 - asmdef JSON parse check: passed for touched asmdefs.

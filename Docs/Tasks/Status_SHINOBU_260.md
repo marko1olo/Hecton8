@@ -3,7 +3,7 @@
 Agent: SHINOBU_260
 Domain: CREST_VERSION_QUARANTINE_DIRECTOR / Echelon 9 Meta & Integration
 Task Count: 20
-Status: POLISH PASS LOOP 18 WITH TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE CPU GATE
+Status: PENDING VERIFICATION / POLISH PASS LOOP 19 WITH TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE COMPILER PROCESS GATE
 Batch Source: Docs/Tasks/CURRENT_BATCH.md `<AGENT_PROMPT id="SHINOBU_260" role="CREST_VERSION_QUARANTINE_DIRECTOR">`
 
 ## Hygiene
@@ -385,3 +385,18 @@ Rule quote: `Hecton8.Core` and `Hecton8.Physics` must have zero direct assembly 
   - DOD practice: py_compile passed; dependency scanner reports `breach_count=0`; polish audit reports `failed_count=0`.
   - Rejected alternative: Unity/dotnet rebuild was rejected because this loop changes proof tooling/docs only.
   - Estimated saving: no frame claim; avoids needless build wall.
+
+## Loop 19: Global Crest Scripting Define Evidence Wall
+
+- [x] Attribute-aware Crest XML extraction revalidated.
+  - DOD practice: extracted `<AGENT_PROMPT id="SHINOBU_260" role="CREST_VERSION_QUARANTINE_DIRECTOR" ...>` with an attribute-tolerant CLI regex and recounted 20 tasks.
+  - Rejected alternative: trusting the earlier exact-tag false negative was rejected because the current batch still contains the correct Crest block at line 4605.
+  - Estimated saving: prevents wrong-domain stop/restart churn; runtime cost 0 microseconds.
+- [x] Global Crest scripting defines classified as evidence, not hidden first-party routes.
+  - DOD practice: `Tools/Crest_Dependency_Scanner.py` now reports `global_scripting_define_hits` for PlayerSettings `CREST_OCEAN`/`CREST_URP` and hard-fails first-party `#if CREST_OCEAN` / `#if CREST_URP` branches outside the Crest bridge.
+  - Rejected alternative: deleting `CREST_URP` from `ProjectSettings` was rejected because the selected active Crest 4 donor uses that symbol internally; leaving the symbols invisible in reports was rejected because global defines are contamination evidence.
+  - Estimated saving: runtime 0 microseconds; prevents future non-bridge compile branches from silently depending on donor scripting symbols.
+- [x] Static proof rerun.
+  - DOD practice: py_compile passed; dependency scanner reports `breach_count=0`, `global_scripting_define_hit_count=1`, `reflection_string_hit_count=0`, `vocabulary_debt_hit_count=111`; polish audit reports `failed_count=0`.
+  - Rejected alternative: Unity/dotnet rebuild was rejected because the gate found active `VBCSCompiler` even though sampled CPU was 45.3 percent.
+  - Estimated saving: no frame claim; avoids violating the compile gate while preserving scanner proof.

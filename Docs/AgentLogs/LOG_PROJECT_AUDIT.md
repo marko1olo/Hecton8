@@ -456,3 +456,15 @@ Cinematic Cheats used: None added. The existing quest DAG remains bitmask state 
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `jobHandleComplete` from `114 files=32` to `112 files=31`.
 
 Evidence: Focused `rg -n "\.Complete\(\)|DispatcherJobFence\.TryComplete|Dispose\(" Assets/_Project/Scripts/Quest/QuestDagResolverRuntime.cs` shows only the two `DispatcherJobFence.TryComplete` calls and no direct `.Complete()`. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_quest_dag_fence_cleanup.json --report-path Docs\Reports\PROJECT_AUDIT_polish_after_quest_dag_fence_cleanup.md` returned `PASS_WITH_WARNINGS` with `jobHandleComplete=112 files=31`. `git diff --check -- Assets/_Project/Scripts/Quest/QuestDagResolverRuntime.cs` reports only LF-to-CRLF warning. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Vegetation Native Read-Only Payload Narrowing
+
+What was wrong: `HectonMapMagicVegetationBridge` had public mutable native payload debt: owner-owned front-buffer snapshots for abyssal anchors, AUP anchors, ecosystem threat grids, compressed threat grids, and terrain-hole streaming were exposed as writable `NativeArray<T>` values to external readers.
+
+What was done: Converted those five payload APIs to `NativeArray<T>.ReadOnly` and updated the five observed call-site files to read-only declarations. The call sites now use `Length` fail-closed guards instead of relying on mutable-array `IsCreated` checks.
+
+Cinematic Cheats used: No new physical simulation was added. Existing terrain-hole, sonar anchor, HUD threat, and boid threat-grid paths remain zero-copy snapshot reads feeding presentation/proxy systems rather than duplicating data or simulating per-plant/per-cell truth outside the vegetation owner.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `268` at the start of the native-exposure pass to `236`; `nativeApiExposureOutRefMutable` dropped from `189` to `184`.
+
+Evidence: Focused scans found no stale mutable call-site declarations for `TryGetActiveAbyssalAnchorPayload`, `TryGetActiveAbyssalAnchorAupPayload`, `TryGetEcosystemThreatGridPayload`, `TryGetCompressedEcosystemThreatGridPayload`, or `TryGetTerrainHoleStreamingPayload`, and no read-only `.IsCreated` leftovers in the touched call sites. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_vegetation_readonly_payloads.json --report-path Docs\Reports\PROJECT_AUDIT_polish_after_vegetation_readonly_payloads.md` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=236`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

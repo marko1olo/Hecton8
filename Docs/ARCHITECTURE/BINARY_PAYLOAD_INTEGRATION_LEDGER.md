@@ -4826,7 +4826,7 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 
 ## 2026-05-22 - SHINOBU_274 Radiation Source Zero-Intensity Remove Facade
 
-- `Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs` now maps public `RegisterSource(... intensity <= 0 or non-finite ...)` to `UnregisterSource(sourceId)`, matching the internal owner drain behavior.
+- `Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs` now maps public `RegisterSource(... intensity <= 0 or non-finite ...)` to `UnregisterSource(sourceId)` and maps invalid/non-positive radius to `DefaultSourceRadiusMeters`, matching the internal owner drain behavior.
 - Binary payload impact: route-only. `RadiationSourceSignal` remains 64 bytes, `RadiationStateDTO` remains 32 bytes, `RadiationTelemetryEntry` remains 64 bytes, BufferIDs `72740..72751`, blackbox dump row order, shader property IDs, save identity, and CombatDamageSignal ABI are unchanged.
 - Authority impact: zero-intensity source updates no longer silently preserve old source truth. Removal still travels through the typed `SignalBus<RadiationSourceSignal>` lane and is applied by the `RadiationHazardGrid` owner phase.
 - Verification: source lifecycle scan confirmed public facade removal and internal owner removal parity; `git diff --check -- Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs` passed with CRLF warning only. Build was not launched because `VBCSCompiler` was active.

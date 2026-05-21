@@ -35,7 +35,7 @@ namespace Hecton8.VFX
     /// Integrates with HectonSurvivalSystem, PlayerMovement, InteractionEvents, GameTickManager, SaveManager.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class CameraJuiceSystem : MonoBehaviour, ICameraJuiceSystem, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IInteractionEventListener, IPhysicsImpactEventListener, ICombatDamageEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener, IScalabilityChangedEventListener
+    public sealed class CameraJuiceSystem : MonoBehaviour, ICameraJuiceSystem, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IInteractionEventListener, IPhysicsImpactEventListener, ICombatDamageEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         // ═══ CACHED REFERENCES ═══
         [StructLayout(LayoutKind.Explicit, Size = CameraJuiceTelemetryEntrySizeBytes)]
@@ -116,7 +116,7 @@ namespace Hecton8.VFX
         private const float DEFAULT_SHAKE_CLIP_SAFE_DISPLACEMENT = 0.05f;
         private const float PROCEDURAL_TRAUMA_DECAY_RATE = 1.65f;
         private const float PROCEDURAL_SHAKE_FREQUENCY = 18f;
-        private const float PROCEDURAL_LOW_TIER_SAMPLE_INTERVAL = 0.033333334f;
+        private const float PROCEDURAL_MIN_QUALITY_SAMPLE_INTERVAL = 0.033333334f;
         private const float PROCEDURAL_TRANSLATION_AMPLITUDE_METERS = 0.07f;
         private const float PROCEDURAL_ROTATION_AMPLITUDE_DEGREES = 2.4f;
         private const float PROCEDURAL_ROLL_AMPLITUDE_DEGREES = 5.5f;
@@ -141,12 +141,13 @@ namespace Hecton8.VFX
         private float _shakeNoiseTime;
         private float _trauma;
         private float _proceduralShakeTime;
-        private float _proceduralLowTierSampleTimer;
-        private float3 _proceduralLowTierTranslationFrom;
-        private float3 _proceduralLowTierTranslationTo;
-        private float3 _proceduralLowTierRotationFrom;
-        private float3 _proceduralLowTierRotationTo;
-        private bool _proceduralLowTierNoisePrimed;
+        private float _proceduralSampleTimer;
+        private float _proceduralNoiseSampleInterval;
+        private float3 _proceduralSampleTranslationFrom;
+        private float3 _proceduralSampleTranslationTo;
+        private float3 _proceduralSampleRotationFrom;
+        private float3 _proceduralSampleRotationTo;
+        private bool _proceduralSampleNoisePrimed;
         private float3 _proceduralShakeTranslation;
         private float3 _proceduralShakeRotationDegrees;
         private float3 _directionalBiasLocal;
@@ -366,7 +367,6 @@ namespace Hecton8.VFX
         private bool _registeredLateFrame;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
-        private bool _scalabilityEventsRegistered;
         private float _nextDependencyResolveTime;
 
         // ═══ EFFECT ENABLE FLAGS ═══
@@ -378,7 +378,6 @@ namespace Hecton8.VFX
         private float _adaptiveFOVScale = 1f;
         private float _adaptivePostFxScale = 1f;
         private float _adaptiveRenderScale = 1f;
-        private byte _cachedScalabilityTier;
         private int _adaptiveMaxActiveShakes = MAX_ACTIVE_SHAKES;
         private VRAMMonitor.VRAMPressureState _adaptiveVRAMPressureState = VRAMMonitor.VRAMPressureState.Stable;
         private bool _adaptiveDisableInteractionDoF;
@@ -445,7 +444,6 @@ namespace Hecton8.VFX
                 }
             }
 
-            TryRegisterScalabilityEvents();
             TryResolveGameplayDependencies();
             SyncDependencyFlags();
             EnsureCameraJuiceTelemetry();
@@ -463,7 +461,6 @@ namespace Hecton8.VFX
         {
             TryRegisterToGlobalRegistry();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityEvents();
             if (Application.isPlaying)
                 CameraJuiceSignals.EnsurePrewarmed();
 
@@ -484,7 +481,6 @@ namespace Hecton8.VFX
             // Unregister from GameTickManager
             TryUnregister();
             TryUnregisterFromGlobalRegistry();
-            TryUnregisterScalabilityEvents();
             TryUnregisterHotSwapListener();
 
             UnhookDependencyEvents();
@@ -518,7 +514,6 @@ namespace Hecton8.VFX
             _dynamicResolutionScaler = null;
             _vramMonitor = null;
             _dispatcher = null;
-            _cachedScalabilityTier = 0;
             StopCameraSpeedLineParticles();
 
             if (_cameraTransform != null)
@@ -617,32 +612,6 @@ namespace Hecton8.VFX
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapRegistered = false;
-        }
-
-        private void TryRegisterScalabilityEvents()
-        {
-            if (!_scalabilityEventsRegistered)
-            {
-                ScalabilityEvents.Register(this);
-                _scalabilityEventsRegistered = true;
-            }
-
-            _cachedScalabilityTier = (byte)GlobalRegistry.ScalabilityTier;
-        }
-
-        private void TryUnregisterScalabilityEvents()
-        {
-            if (!_scalabilityEventsRegistered)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _scalabilityEventsRegistered = false;
-        }
-
-        void IScalabilityChangedEventListener.OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _cachedScalabilityTier = (byte)payload.CurrentQualityTier;
-            _proceduralLowTierNoisePrimed = false;
         }
 
         void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(
@@ -745,7 +714,6 @@ namespace Hecton8.VFX
         {
             TryUnregister();
             TryUnregisterFromGlobalRegistry();
-            TryUnregisterScalabilityEvents();
             TryUnregisterHotSwapListener();
             InteractionEvents.Unregister(this);
             PhysicsEvents.Unregister(this);
@@ -1419,37 +1387,44 @@ namespace Hecton8.VFX
 
         private void ResolveProceduralNoise(float dt, out float3 translation, out float3 rotation)
         {
-            bool lowTier =
-                QualitySettings.GetQualityLevel() == 0 ||
-                _cachedScalabilityTier <= (byte)HectonQualityTier.Mx350;
-
-            if (!lowTier)
+            float sampleInterval = ResolveProceduralNoiseSampleInterval();
+            if (sampleInterval <= 0.0001f)
             {
+                _proceduralSampleNoisePrimed = false;
                 EvaluateProceduralNoise(_proceduralShakeTime, out translation, out rotation);
                 return;
             }
 
-            if (!_proceduralLowTierNoisePrimed)
+            if (!_proceduralSampleNoisePrimed || math.abs(sampleInterval - _proceduralNoiseSampleInterval) > 0.002f)
             {
-                EvaluateProceduralNoise(_proceduralShakeTime, out _proceduralLowTierTranslationTo, out _proceduralLowTierRotationTo);
-                _proceduralLowTierTranslationFrom = _proceduralLowTierTranslationTo;
-                _proceduralLowTierRotationFrom = _proceduralLowTierRotationTo;
-                _proceduralLowTierSampleTimer = 0f;
-                _proceduralLowTierNoisePrimed = true;
+                EvaluateProceduralNoise(_proceduralShakeTime, out _proceduralSampleTranslationTo, out _proceduralSampleRotationTo);
+                _proceduralSampleTranslationFrom = _proceduralSampleTranslationTo;
+                _proceduralSampleRotationFrom = _proceduralSampleRotationTo;
+                _proceduralSampleTimer = 0f;
+                _proceduralNoiseSampleInterval = sampleInterval;
+                _proceduralSampleNoisePrimed = true;
             }
 
-            _proceduralLowTierSampleTimer += math.max(0f, dt);
-            if (_proceduralLowTierSampleTimer >= PROCEDURAL_LOW_TIER_SAMPLE_INTERVAL)
+            _proceduralSampleTimer += math.max(0f, dt);
+            if (_proceduralSampleTimer >= sampleInterval)
             {
-                _proceduralLowTierSampleTimer -= PROCEDURAL_LOW_TIER_SAMPLE_INTERVAL;
-                _proceduralLowTierTranslationFrom = _proceduralLowTierTranslationTo;
-                _proceduralLowTierRotationFrom = _proceduralLowTierRotationTo;
-                EvaluateProceduralNoise(_proceduralShakeTime, out _proceduralLowTierTranslationTo, out _proceduralLowTierRotationTo);
+                _proceduralSampleTimer = math.fmod(_proceduralSampleTimer, math.max(sampleInterval, 0.0001f));
+                _proceduralSampleTranslationFrom = _proceduralSampleTranslationTo;
+                _proceduralSampleRotationFrom = _proceduralSampleRotationTo;
+                EvaluateProceduralNoise(_proceduralShakeTime, out _proceduralSampleTranslationTo, out _proceduralSampleRotationTo);
             }
 
-            float t = EvaluateSmoothStep01(_proceduralLowTierSampleTimer / PROCEDURAL_LOW_TIER_SAMPLE_INTERVAL);
-            translation = math.lerp(_proceduralLowTierTranslationFrom, _proceduralLowTierTranslationTo, t);
-            rotation = math.lerp(_proceduralLowTierRotationFrom, _proceduralLowTierRotationTo, t);
+            float t = EvaluateSmoothStep01(_proceduralSampleTimer / math.max(sampleInterval, 0.0001f));
+            translation = math.lerp(_proceduralSampleTranslationFrom, _proceduralSampleTranslationTo, t);
+            rotation = math.lerp(_proceduralSampleRotationFrom, _proceduralSampleRotationTo, t);
+        }
+
+        private static float ResolveProceduralNoiseSampleInterval()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            quality = math.saturate(math.isfinite(quality) ? quality : 1f);
+            float exactNoiseWeight = EvaluateSmoothStep01(quality);
+            return PROCEDURAL_MIN_QUALITY_SAMPLE_INTERVAL * (1f - exactNoiseWeight);
         }
 
         private static void EvaluateProceduralNoise(float time, out float3 translation, out float3 rotation)
