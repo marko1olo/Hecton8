@@ -1018,3 +1018,27 @@ Solution: Removed the scalability listener interface, registration state, regist
 Rejected Alternatives: Keeping the event route as a "cheap cache" was rejected because it preserves binary scalability dependency for a single float. Changing sonar sampling truth or voxel/nav sampling was rejected because the map is a player-facing UI readout; only presentation cadence and grid density should scale.
 Scalability potential: Low devices keep the 8-cell/0.1s minimum quality mesh cadence, middle devices interpolate density and update rate, high/ultra get 18-cell/30Hz visual sync and interpolation. No save identity, sonar facts, or voxel navigation source changed.
 Hardware Impact: 0 us speed claim. Removed one event listener route and one lifecycle register/unregister pair; build passed with 0 errors and 161 warnings.
+
+## Acoustic Radar Sphere Quality Pull
+
+Problem: `AcousticRadarSphereRenderer` still had a stale scalability listener route for a UI-only blip draw budget. The route was not the owner of any gameplay fact and preserved a binary scalability dependency in diegetic radar presentation.
+Solution: Removed the scalability event/listener path and refreshed quality directly during the existing matrix refresh. Draw matrix capacity now follows `SmoothStep01(HomeostasisBrain.GlobalQualityWeight)` from 16 to 64 blips, with existing retained arrays and render handoff unchanged.
+Rejected Alternatives: Keeping the event callback as a cache invalidation route was rejected because it preserved a binary SignalBus dependency for one presentation scalar. Changing audio emitter truth or impact sampling was rejected because radar display density is the only scalable fact in this renderer.
+Scalability potential: Low devices draw the minimum blip set, middle devices interpolate capacity, and high/ultra keep the full 64-matrix pass for richer acoustic clutter.
+Hardware Impact: 0 us speed claim. Removed one stale lifecycle/event dependency; no new allocation or authority route was added.
+
+## Fake Radar Blip Quality Pull
+
+Problem: `FakeRadarBlipController` still depended on scalability listener plumbing around a presentation-only blip budget. That kept binary hardware event coupling in a Dear Lie radar renderer.
+Solution: Removed the listener/register/unregister route and refreshed quality from `HomeostasisBrain.GlobalQualityWeight` during the existing tick/cache path. Visible blip capacity and thermal ghost count now follow the same smooth quality curve while culling, AUP projection, and retained render buffers remain unchanged.
+Rejected Alternatives: Keeping a low-tier cutover for fake blips was rejected because the radar is already an optical UI fake and can scale continuously. Changing spatial-query or player-AUP truth was rejected because hardware quality must not change what the radar is allowed to know.
+Scalability potential: Low devices keep 16 blips and no or few thermal ghosts, middle devices interpolate, and high/ultra get full blip and thermal ghost density for visual overkill.
+Hardware Impact: 0 us speed claim. Removed one stale event route; hot work stays on existing fixed-capacity buffers.
+
+## Diegetic Visor Mesh Quality Pull
+
+Problem: `DiegeticVisorHudMesh` implemented `IScalabilityChangedEventListener` and rebuilt its physical HUD mesh directly from scalability callbacks. The previous `qualityBucket = round(weight * 1000)` could also force rebuilds even when horizontal/vertical segment counts did not change.
+Solution: Removed the scalability listener route. The existing tick now samples finite-guarded `HomeostasisBrain.GlobalQualityWeight`, resolves continuous segment counts, and calls `RebuildMesh` only when those counts differ from the retained mesh. The mesh cache bucket now derives from resolved segment counts instead of arbitrary quality thousandths.
+Rejected Alternatives: Rebuilding every tick was rejected because it churns retained arrays and mesh upload work without a visual topology change. Keeping callback rebuilds was rejected because presentation quality should be pulled from the canonical scalar and not a stale tier signal.
+Scalability potential: Low devices collapse the visor projection surface toward the 4x2 minimum, middle devices interpolate segment density, and high/ultra can use up to 64x32 curved HUD geometry.
+Hardware Impact: 0 us speed claim. Removed one event listener path and avoids mesh rebuilds for quality changes that do not alter topology. Build deferred because `VBCSCompiler` was active.

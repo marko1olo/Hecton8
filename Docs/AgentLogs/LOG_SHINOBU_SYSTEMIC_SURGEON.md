@@ -3095,3 +3095,21 @@ Verification:
     Targeted `rg` found no `ScalabilityChangedEvent`, `IScalabilityChangedEventListener`, `ScalabilityEvents`, `LowTier`, `lowTier`, `HighTier`, or `QualityTier` in `SubmarineSonarHoloMapRenderer.cs`; only `MinimumQuality`, `MaximumQuality`, and `HomeostasisBrain.GlobalQualityWeight` remain. `git diff --check` passed with line-ending warning only. Guarded `dotnet build .\Assembly-CSharp.csproj --no-restore --nologo -m:1` returned 0 errors and 161 warnings after one no-diagnostics `-clp:ErrorsOnly` exit.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="RadarVisorUiQualityPullCluster">
+  <WHAT_WAS_WRONG>
+    `AcousticRadarSphereRenderer`, `FakeRadarBlipController`, and `DiegeticVisorHudMesh` retained scalability listener plumbing for presentation-only radar/visor budgets. The visor also rebuilt mesh topology from a callback and keyed the cache by arbitrary quality thousandths instead of actual segment topology.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Radar renderers now pull continuous `HomeostasisBrain.GlobalQualityWeight` during their existing tick/matrix refresh and resolve capacities through `SmoothStep01`. The visor no longer implements `IScalabilityChangedEventListener`; it samples finite-guarded quality during tick and rebuilds only when resolved segment counts change. No gameplay truth, AUP owner, SignalBus ABI, save identity, shader property ID, or DTO layout changed.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Radar blips and visor curvature remain Dear Lie presentation meshes: weak devices lower draw/topology density through a scalar curve, while high/ultra devices spend the same facts on denser visual clutter and curved HUD geometry. No physics raycast, sonar truth, or mesh collider simulation was added.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. Removed stale listener/event routes and avoided visor mesh rebuilds when continuous quality changes do not cross a segment-count threshold.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `ScalabilityChangedEvent`, `IScalabilityChangedEventListener`, `ScalabilityEvents`, or `_scalabilityListenerRegistered` in the radar/visor UI cluster. `git diff --check` passed with line-ending warnings only. Build was not launched because `VBCSCompiler` was active under the AGENTS.md build guard.
+  </VERIFICATION>
+</SELF_AUDIT>

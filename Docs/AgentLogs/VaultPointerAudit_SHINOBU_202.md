@@ -881,3 +881,14 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - `EnsureVaultBuffers` refuses reacquire during Vault allocation lock or compaction fence and releases partially reacquired owned descriptors when readiness proof fails.
 - Disable and DataVault hot-swap complete pending jobs, unlock buffers, dump faulted telemetry, release all 12 owned descriptors through `ReleaseBuffer(in handle)`, and tombstone local descriptor state.
 - This entry does not change `AutopilotStateDTO`, `AutopilotAvoidanceDTO`, `AutopilotFeelerResultDTO`, `AutopilotWaypointDTO`, `AutopilotRouteRangeDTO`, `AutopilotTuningDTO`, `AutopilotTelemetryEntry`, `AutopilotHandlingProfileDTO`, BufferIDs `71592..71603`, `BufferID.SubmarineKinematicStates`, CSV parser contract, blackbox dump format, SDF/flow fake math, job topology, or VehiclesPhysics authority.
+
+## 2026-05-22 Save Pager Descriptor Route Update
+
+- `Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs` has no executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, retained handle `.Length`, retained handle `.IsCreated`, `TryGetLatestCreated`, `TryGetBufferGeneration`, or `VaultGenerationID` hits.
+- Write commands, read commands, read results, write arena, read arena, read slot states, compression scratch, hot-state arena, and pager telemetry ring use `VaultGenerationHandle<T>` descriptors.
+- Each retained route validates exact BufferID, `SystemID.SavePersistence`, nonzero generation, positive required length, no active compaction fence, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated` before returning a native view.
+- `AllocateNativeState()` rejects DataVault allocation lock or compaction fence, readiness-proofs all nine descriptors, and releases partial acquisitions when the proof fails.
+- `DisposeNativeState()` releases all nine owned SavePersistence descriptors through `ReleaseBuffer(in handle)` and unregisters the hot-swap listener.
+- DataVault hot-swap fail-closes without descriptor release if the worker thread does not stop. The release path runs only after the worker is fenced, then dumps telemetry, clears transient queues, releases old-vault descriptors, and tombstones `_vault`.
+- `TryReadPageIntoVaultSlice` no longer polls `GlobalRegistry.DataVault`; it uses cached `_vault` and rejects compaction/allocation fences. The public `VaultBufferSlice<byte>` signature remains compatibility debt because public API mutation is forbidden mid-batch without a route card.
+- This entry does not change `PageWriteCommand`, `PageReadCommand`, `PageReadResult`, `PagerTelemetryEntry`, BufferIDs `70200..70209`, page header layout, WAL header layout, RLE compression bytes, dump header layout, file paths, worker queue ABI, or SavePersistence authority.

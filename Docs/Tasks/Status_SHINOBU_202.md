@@ -4143,3 +4143,20 @@ Mandates read before coding:
 - Brace/preprocessor counts are balanced: `SubmarineAutopilotSdfNavigator.cs` braces `244/244`, preprocessor `#if/#endif` `1/1`.
 - `git diff --check` passed for `SubmarineAutopilotSdfNavigator.cs`; CRLF warning only.
 - Build not relaunched: CPU sampled at 15 percent, but `VBCSCompiler.exe` was already active, so the explicit compiler-process gate blocked a new `dotnet build`.
+
+## Loop 232 - Save Pager Descriptor Route
+- [x] Replaced retained SaveSystem pager Vault handles with generation descriptors on disk.
+  DOD practice: `H8BinaryWorldPager.cs` stores `VaultGenerationHandle<T>` for write commands, read commands, read results, write arena, read arena, read slot states, compression scratch, hot-state arena, and the 300-frame telemetry ring; every route validates exact BufferID, `SystemID.SavePersistence`, nonzero generation, positive required length, compaction-fence absence, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated`.
+  Rejected: keeping `VaultBufferHandle<T>`, `GetBufferHandle`, `.Resolve(vault)`, retained handle `.IsCreated`, and retained handle `.Length` because the pager crosses worker-thread IO, WAL replay/append, RLE scratch, hot-state staging, telemetry dumps, and DataVault replacement.
+  Estimate: descriptor proof is paid at cold init, queue enqueue/dequeue, worker read/write, telemetry record/dump, and hot-state staging boundaries only; page header/WAL header binary formats and save identity are unchanged.
+- [x] Hardened pager DataVault replacement and staging slice routes.
+  DOD practice: DataVault hot-swap now fail-closes without releasing descriptors if the worker thread refuses to stop; descriptors are released only after the worker is fenced. `TryReadPageIntoVaultSlice` uses cached `_vault`, rejects compaction/allocation fences, and no longer polls `GlobalRegistry.DataVault`.
+  Rejected: releasing old Vault descriptors while the worker may still hold phase-local views because that is a direct UAF risk. Changing the public `VaultBufferSlice<byte>` signature was rejected in this loop because interface mutation is forbidden mid-batch; the compatibility route is fenced and documented as residual public API debt.
+  Estimate: cold/hot-swap failure path only; no DTO layout, BufferID, WAL/page format, RLE algorithm, file path, or worker queue ABI changed.
+
+## Compile State Update 226
+- Focused legacy/direct route scan on `H8BinaryWorldPager.cs` found no executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, retained handle `.Length`, retained handle `.IsCreated`, `TryGetLatestCreated`, `TryGetBufferGeneration`, or `VaultGenerationID` hits. The only `GlobalRegistry.DataVault` hit is the cold `AllocateNativeState()` dependency acquisition.
+- Descriptor route scan confirmed expected `VaultGenerationHandle<T>`, `GetGenerationHandle`, `TryResolveHandle`, `TryReadHandle`, `ReleasePagerVaultHandles`, `ReleaseBuffer(in handle)`, `IGlobalRegistryHotSwapListener`, `IsCompactionFenceActive`, and `IsAllocationLocked` hits.
+- Brace/preprocessor counts are balanced: `H8BinaryWorldPager.cs` braces `295/295`, preprocessor `#if/#endif` `2/2`.
+- `git diff --check` passed for `H8BinaryWorldPager.cs`; CRLF warning only.
+- Build not relaunched: CPU sampled at 6 percent, but `VBCSCompiler.exe` was already active, so the explicit compiler-process gate blocked a new `dotnet build`.

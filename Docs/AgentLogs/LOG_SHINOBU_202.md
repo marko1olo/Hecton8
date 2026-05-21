@@ -5460,3 +5460,31 @@ Static verification:
 - Focused scan found no `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, retained handle `.Length`, or retained handle `.IsCreated` hits in `SubmarineAutopilotSdfNavigator.cs`.
 - Descriptor scan confirms `VaultGenerationHandle<T>`, `TryGetGenerationHandle`, `GetGenerationHandle`, `TryResolveAutopilotVaultBuffer`, `TryReadAutopilotVaultBuffer`, `ReleaseAutopilotVaultHandles`, `ReleaseBuffer(in handle)`, `IsCompactionFenceActive`, and `IsAllocationLocked`.
 - Brace/preprocessor counts are balanced: braces `244/244`, `#if/#endif` `1/1`. `git diff --check` passed with CRLF warning only. Build was not relaunched because `VBCSCompiler.exe` was already active.
+
+## 2026-05-22 - Loop 232 - Save Pager Descriptor Route
+
+What was wrong:
+- `Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs` retained nine SavePersistence Vault lanes through pointer-era handles.
+- Pager queue state, arenas, compression scratch, hot-state arena, and telemetry ring crossed worker-thread IO, WAL replay/append, dump writing, hot-state staging, and DataVault replacement.
+- DataVault hot-swap released descriptors even if the worker did not stop, which could free old-vault memory while `ProcessWrite` or `ProcessRead` still held phase-local native views.
+- `TryReadPageIntoVaultSlice` polled `GlobalRegistry.DataVault` directly instead of using the cached dependency.
+
+What was done:
+- Converted retained pager lanes to `VaultGenerationHandle<T>` descriptors.
+- Added local descriptor proofs for exact BufferID, `SystemID.SavePersistence`, nonzero generation, positive required length, no compaction fence, descriptor read/resolve, and `IsCreated`.
+- Added readiness proof and partial-acquire release on init failure.
+- Added hot-swap listener registration/unregistration and old-vault descriptor release after the worker is fenced.
+- Changed hot-swap failure to fail closed without descriptor release when the worker is still alive.
+- Changed `TryReadPageIntoVaultSlice` to use cached `_vault` and reject compaction/allocation fences.
+
+Cinematic cheats used:
+- The pager keeps the existing practical cheat: page IO stores compact binary deltas plus cheap RLE compression/hot-state staging instead of trying to serialize or simulate the whole 100 km world state every frame.
+
+Exact microseconds saved:
+- No measured runtime speedup claimed. The useful result is stale-route removal and release-order correctness. Descriptor checks are O(1) and paid at init, queue boundaries, worker IO, telemetry dump, hot-state staging, and hot-swap only.
+
+Static verification:
+- Focused scan found no executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, retained handle `.Length`, retained handle `.IsCreated`, `TryGetLatestCreated`, `TryGetBufferGeneration`, or `VaultGenerationID` hits in `H8BinaryWorldPager.cs`.
+- The only `GlobalRegistry.DataVault` hit is cold `AllocateNativeState()`. The public `VaultBufferSlice<byte>` API remains for compatibility; it now uses cached `_vault` and allocation/compaction fencing.
+- Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle`, `TryResolveHandle`, `TryReadHandle`, `ReleasePagerVaultHandles`, `ReleaseBuffer(in handle)`, `IGlobalRegistryHotSwapListener`, `IsCompactionFenceActive`, and `IsAllocationLocked`.
+- Brace/preprocessor counts are balanced: braces `295/295`, `#if/#endif` `2/2`. `git diff --check` passed with CRLF warning only. Build was not relaunched because `VBCSCompiler.exe` was active.

@@ -16,7 +16,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
-    public sealed class DiegeticVisorHudMesh : MonoBehaviour, IUpdatable, IPlayerSignalEventListener, IDamageReceiver, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
+    public sealed class DiegeticVisorHudMesh : MonoBehaviour, IUpdatable, IPlayerSignalEventListener, IDamageReceiver, IGlobalRegistryHotSwapListener
     {
         private const int BlackBoxCapacity = 300;
         private const float DefaultDistanceMeters = 0.48f;
@@ -63,7 +63,6 @@ namespace Hecton8.UI
         private int _blackBoxCursor;
         private bool _registered;
         private bool _hotSwapListenerRegistered;
-        private bool _scalabilityListenerRegistered;
         private bool _playerSignalRegistered;
         private bool _nativeRegistered;
         private bool _blackBoxDumped;
@@ -97,7 +96,6 @@ namespace Hecton8.UI
         {
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             ResolveComponents();
             ResolveCamera();
             RebuildMesh();
@@ -111,7 +109,6 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             TryUnregisterHotSwapListener();
-            TryUnregisterScalabilityListener();
             TryUnregisterTick();
             if (_playerSignalRegistered)
             {
@@ -128,7 +125,6 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             TryUnregisterHotSwapListener();
-            TryUnregisterScalabilityListener();
             TryUnregisterTick();
             DisposeBlackBox();
             ReleaseRuntimeObjects();
@@ -141,6 +137,9 @@ namespace Hecton8.UI
                 _damageGlitch01 = math.max(0f, _damageGlitch01 - dt * glitchRecoveryPerSecond);
             if (_brownout01 > 0f)
                 _brownout01 = math.max(0f, _brownout01 - dt);
+
+            if (RefreshQualityPolicy())
+                RebuildMesh();
 
             SampleHumidity(dt);
             ApplyMaterialState();
@@ -266,12 +265,6 @@ namespace Hecton8.UI
                 ResolveCamera();
         }
 
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _cachedQualityWeight01 = math.saturate(HomeostasisBrain.GlobalQualityWeight);
-            RebuildMesh();
-        }
-
         private void TryRegisterHotSwapListener()
         {
             if (_hotSwapListenerRegistered || !Application.isPlaying)
@@ -289,28 +282,31 @@ namespace Hecton8.UI
             _hotSwapListenerRegistered = false;
         }
 
-        private void TryRegisterScalabilityListener()
-        {
-            if (_scalabilityListenerRegistered || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _scalabilityListenerRegistered = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            if (!_scalabilityListenerRegistered)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _scalabilityListenerRegistered = false;
-        }
-
         private void CacheRegistryServicesCold()
         {
             _cachedPlayerContext = GlobalRegistry.Player;
-            _cachedQualityWeight01 = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+            _cachedQualityWeight01 = ResolveCurrentQualityWeight(_cachedQualityWeight01);
+        }
+
+        private bool RefreshQualityPolicy()
+        {
+            float nextQualityWeight01 = ResolveCurrentQualityWeight(_cachedQualityWeight01);
+            if (math.abs(nextQualityWeight01 - _cachedQualityWeight01) <= Epsilon)
+            {
+                _cachedQualityWeight01 = nextQualityWeight01;
+                return false;
+            }
+
+            _cachedQualityWeight01 = nextQualityWeight01;
+            int hSegments = ResolveSegmentCount(horizontalSegments, nextQualityWeight01, 4, 64);
+            int vSegments = ResolveSegmentCount(verticalSegments, nextQualityWeight01, 2, 32);
+            return hSegments != _meshHorizontalSegments || vSegments != _meshVerticalSegments;
+        }
+
+        private static float ResolveCurrentQualityWeight(float fallbackWeight01)
+        {
+            float qualityWeight01 = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(fallbackWeight01, qualityWeight01, math.isfinite(qualityWeight01)));
         }
 
         private static int ResolveSegmentCount(int authoringCount, float qualityWeight01, int min, int max)
@@ -366,9 +362,9 @@ namespace Hecton8.UI
         {
             ResolveComponents();
             float qualityWeight = math.saturate(_cachedQualityWeight01);
-            int qualityBucket = (int)math.round(qualityWeight * 1000f);
             int hSegments = ResolveSegmentCount(horizontalSegments, qualityWeight, 4, 64);
             int vSegments = ResolveSegmentCount(verticalSegments, qualityWeight, 2, 32);
+            int qualityBucket = (hSegments << 8) | vSegments;
             if (IsMeshCurrent(qualityBucket, hSegments, vSegments))
             {
                 if (_meshFilter != null && _meshFilter.sharedMesh != _runtimeMesh)
