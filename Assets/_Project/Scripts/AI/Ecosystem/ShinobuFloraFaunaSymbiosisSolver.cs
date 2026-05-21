@@ -64,6 +64,7 @@ namespace Hecton8.AI.Ecosystem
         private const float DefaultCellSizeMeters = 8f;
         private const float DefaultSectorSizeMeters = 64f;
         private const float DefaultSimulationTickDelta = 1f;
+        private const float AuthoritativeQualityWeight = 1f;
         private const double AupCellSizeMetersDouble = HectonPhysicsContract.AupSectorSizeMetersDouble;
         private const string CsvRelativePath = "symbiosis_links.csv";
         private const string CsvPrecomputedRelativePath = "Data/Precomputed/symbiosis_links.csv";
@@ -210,7 +211,7 @@ namespace Hecton8.AI.Ecosystem
             RefreshAupSignals();
             RefreshSubmarineIdleState();
             MonitorCsvOverrides(vault);
-            RefreshQualityWeight(vault);
+            RefreshAuthorityTuning(vault);
 
             if (!TryBindJobBuffers(
                     vault,
@@ -245,13 +246,15 @@ namespace Hecton8.AI.Ecosystem
                 int floraCount = math.min(DefaultFloraCapacity, math.min(flora.Length, floraAups.Length));
                 int mockFishCount = math.min(DefaultMockFishCapacity, mockFish.Length);
                 int ambientCount = math.min(_ambientFishCapacity, math.min(ambientEntities.Length, ambientAups.Length));
-                float quality = ResolveGlobalQualityWeight(vault);
+                const float quality = AuthoritativeQualityWeight;
                 uint frame = AdvanceSimulationFrame(counters);
                 uint seed = ResolveFrameSectorSeed(in _centerAup, frame);
                 SymbiosisTuningDTO activeTuning = tuning.IsCreated && tuning.Length > 0
                     ? SymbiosisTuningDTO.Sanitize(tuning[0])
                     : SymbiosisTuningDTO.Default();
-                activeTuning.GlobalQualityWeight = quality;
+                activeTuning.GlobalQualityWeight = AuthoritativeQualityWeight;
+                if (tuning.IsCreated && tuning.Length > 0)
+                    tuning[0] = activeTuning;
                 float microExchangeWeight = ResolveMicroExchangeWeight(quality, activeTuning.MacroThreshold);
                 bool runMicroExchangeFrame = ResolveDitheredFrameGate(seed ^ 0x53504853u, microExchangeWeight);
 
@@ -693,7 +696,7 @@ namespace Hecton8.AI.Ecosystem
             _submarineAup = latest;
         }
 
-        private void RefreshQualityWeight(IDataVault vault)
+        private void RefreshAuthorityTuning(IDataVault vault)
         {
             if (!TryResolveVaultBuffer(vault, in _tuningHandle, out NativeArray<SymbiosisTuningDTO> tuning))
                 return;
@@ -702,26 +705,9 @@ namespace Hecton8.AI.Ecosystem
                 return;
 
             SymbiosisTuningDTO dto = SymbiosisTuningDTO.Sanitize(tuning[0]);
-            dto.GlobalQualityWeight = ResolveGlobalQualityWeight(vault);
+            dto.GlobalQualityWeight = AuthoritativeQualityWeight;
             dto.SimulationTickDelta = DefaultSimulationTickDelta;
             tuning[0] = dto;
-        }
-
-        private float ResolveGlobalQualityWeight(IDataVault vault)
-        {
-            if (vault != null &&
-                vault.TryGetGenerationHandle(BufferID.ShinobuScalabilityState, out VaultGenerationHandle<ScalabilityStateDTO> handle) &&
-                TryResolveVaultBuffer(vault, in handle, out NativeArray<ScalabilityStateDTO> state))
-            {
-                if (state.IsCreated && state.Length > 0 && math.isfinite(state[0].GlobalQualityWeight))
-                    return math.saturate(state[0].GlobalQualityWeight);
-            }
-
-            float weight = HomeostasisBrain.GlobalQualityWeight;
-            if (math.isfinite(weight))
-                return math.saturate(weight);
-
-            return 1f;
         }
 
         private void MonitorCsvOverrides(IDataVault vault)

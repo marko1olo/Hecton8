@@ -2333,6 +2333,19 @@ namespace Hecton8.Visor
                 ? value * math.rsqrt(lengthSq)
                 : fallback;
         }
+
+        public static void CopyDecalsToMappedUploadBuffer(
+            NativeArray<VisorDecalDTO> source,
+            VisorDecalDTO* destination,
+            int count)
+        {
+            int safeCount = math.min(math.max(0, count), source.IsCreated ? source.Length : 0);
+            if (safeCount <= 0 || destination == null)
+                return;
+
+            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+            UnsafeUtility.MemCpy(destination, sourcePtr, (long)UnsafeUtility.SizeOf<VisorDecalDTO>() * safeCount);
+        }
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -2431,24 +2444,6 @@ namespace Hecton8.Visor
             }
 
             state.LastUploadCount = write;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct VisorWoundMappedUploadJob : IJob
-    {
-        [ReadOnly, NoAlias] public NativeArray<VisorDecalDTO> Source;
-        [NoAlias, NativeDisableUnsafePtrRestriction] public VisorDecalDTO* Destination;
-        public int Count;
-
-        public void Execute()
-        {
-            int safeCount = math.min(math.max(0, Count), Source.IsCreated ? Source.Length : 0);
-            if (safeCount <= 0 || Destination == null)
-                return;
-
-            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(Source);
-            UnsafeUtility.MemCpy(Destination, sourcePtr, (long)UnsafeUtility.SizeOf<VisorDecalDTO>() * safeCount);
         }
     }
 
