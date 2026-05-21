@@ -240,3 +240,15 @@ Cinematic Cheats used: Existing Dear Lie flora destruction remains intact: spati
 Exact Microseconds saved: 0 us measured. Static outcome: `unityTimeCritical` dropped from `962` to `940`; `unityTimeRiskGameplayWallClock` dropped from `80` to `60`.
 
 Evidence: Focused `rg` finds no `Time.time`, `Time.deltaTime`, or `Time.fixedDeltaTime` in `Assets/_Project/Scripts/World/DestructibleOrganicManager.cs`. `python -X faulthandler Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_organic_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_organic_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=940`, `unityTimeWallClock=97`, and `unityTimeRiskGameplayDelta=1`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - MigrationDirector Fallback Timeline
+
+What was wrong: `MigrationDirector` used `Time.time` as the fallback for game-time timeline math when `CelestialEngine` was unavailable. That fallback drove migration field seasonal phase, blood-cloud POI expiry, and statistical swarm state timestamps.
+
+What was done: Added `_fallbackTimelineGameSeconds`, advanced by the existing bounded cold-tick delta. Changed migration timeline call sites to use `ResolveTimelineGameSeconds(0f)`, preserving `CelestialEngine.GameTime` as the primary authority and using the local fallback only when the celestial owner is absent.
+
+Cinematic Cheats used: Existing statistical swarm population remains the fake: O(1) population cells and POI bias replace materialized boids. No new AI simulation was added.
+
+Exact Microseconds saved: 0 us measured. Static outcome: `unityTimeCritical` dropped from `940` to `936`; `unityTimeRiskGameplayWallClock` dropped from `60` to `56`.
+
+Evidence: Focused `rg -n "Time\.time" Assets/_Project/Scripts/Ecosystem/MigrationDirector.cs` returns no rows. `python -X faulthandler Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_migration_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_migration_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=936`, `unityTimeWallClock=93`, and `unityTimeRiskGameplayWallClock=56`. `Time.unscaledTime` remains only as cold-tick cadence pending a dispatcher slow-tick delta route. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

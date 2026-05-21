@@ -89,3 +89,21 @@ Updated static counts from that artifact:
 - `unityTimeRiskGameplayDelta`: 1
 
 Interpretation: the highest-priority wall-clock owner from the first time triage is no longer on Unity wall clock. Remaining wall-clock work should move to `MigrationDirector`, `FaunaBrain`, `SpectrumSystem`, and `HectonBoidController` after local owner-route inspection.
+
+## 2026-05-22 Migration Timeline Follow-Up
+
+`MigrationDirector` no longer uses `Time.time` as the absent-celestial fallback for migration field game time. `CelestialEngine.GameTime` remains the authority path. When celestial time is unavailable, `_fallbackTimelineGameSeconds` advances from the bounded cold-tick delta and feeds POI expiry, swarm state timestamps, and seasonal field phase.
+
+Focused proof:
+
+- `rg -n "Time\.time" Assets/_Project/Scripts/Ecosystem/MigrationDirector.cs` returns no rows.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_time_after_migration_clock.json`.
+
+Updated static counts from that artifact:
+
+- `unityTimeCritical`: 936
+- `unityTimeWallClock`: 93
+- `unityTimeRiskGameplayWallClock`: 56
+- `unityTimeRiskGameplayDelta`: 1
+
+Residual note: `MigrationDirector` still uses `Time.unscaledTime` for cold-tick cadence because `ISlowTickable` currently does not pass a delta. That is not a `Time.time` authority stamp anymore, but it remains a dispatcher-contract cleanup candidate.

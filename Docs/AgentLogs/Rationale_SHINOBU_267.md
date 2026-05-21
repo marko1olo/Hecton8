@@ -541,3 +541,15 @@ Route impact: Technical artists can prove Vertex Color red stiffness authoring w
 Proof required: Static source/self-audit now; Unity import/Console and actual SceneView toggle proof remain pending under Unity execution.
 Parked work rejected: Runtime material swapping, replacement shader instantiation, build launch under CPU/dotnet/csc gate.
 Static verification: Static scan shows `Toggle Vertex Color Debug`, `Shader.SetGlobalFloat(DebugId...)`, `_HectonFloraVertexColorDebug`, `half4(input.color)`, and `return half4(input.biolumColor.rgb, 1.0h)` are present; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; `git diff --check` reported no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 70.1%, dotnet=1, csc=1.
+
+## Polish Pass 49 Decisions
+Problem: The editor layout validator and self-audit success messages still printed hardcoded `32` sizes. After P46/P47 made row size a file ABI, stale proof strings became misleading evidence.
+Solution: Changed both success messages to print the actual `paramsSize`, `telemetrySize`, and `profileSize` returned by `ValidateFloraSwayLayouts()`.
+Rejected Alternatives: Keeping hardcoded success text was rejected because the audit output must reflect measured layout values. Adding another separate size formatter was rejected as unnecessary editor-only complexity.
+Scalability potential: No player visual-tier behavior change. This is editor evidence hygiene.
+Hardware Impact: 0 player us.
+First 20 Minutes moment: World load and swim readability on the selected Copper Wire route biome.
+Route impact: Editor validation output now reflects actual DTO sizes when artists or integrators run the flora tools.
+Proof required: Static source scan now; Unity Editor menu invocation remains pending.
+Parked work rejected: Build launch under CPU/dotnet/csc gate and DTO size changes.
+Static verification: Editor scan reports no hardcoded `Params=32`, `Telemetry=32`, or `Profile=32` success strings; owned forbidden scan is clean; editor brace/preprocessor balance is zero; `git diff --check` reported no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 72.8%, dotnet=1, csc=1.
