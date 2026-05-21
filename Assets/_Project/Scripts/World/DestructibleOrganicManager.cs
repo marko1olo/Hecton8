@@ -1516,8 +1516,14 @@ namespace Hecton8.World
         public void Tick(float deltaTime)
         {
             float currentTime = Time.time;
+            if (_dearLieJobScheduled)
+                return;
+
             RefreshActiveCachesIfNeeded(force: false);
             ProcessDearLieDestructionSignals(currentTime);
+            if (_dearLieJobScheduled)
+                return;
+
             ProcessDearLieRegeneration(currentTime);
             UpdateDecompositionVisuals(currentTime);
             UpdateRegrowthVisuals();
@@ -1563,6 +1569,9 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
+            if (_dearLieJobScheduled)
+                return;
+
             SyncDestroyedFloraFromPersistence();
             SyncFloraStateOverridesFromPersistence();
             RefreshActiveCachesIfNeeded(force: true);
@@ -2501,7 +2510,10 @@ namespace Hecton8.World
             float normalizedPower,
             uint toolCapabilityMask)
         {
-            if (deliveredDamage <= 0f || vegetationBridge == null || _templateDescriptors.Length <= 0)
+            if (_dearLieJobScheduled ||
+                deliveredDamage <= 0f ||
+                vegetationBridge == null ||
+                _templateDescriptors.Length <= 0)
                 return false;
 
             RefreshActiveCachesIfNeeded(force: false);
@@ -2579,7 +2591,7 @@ namespace Hecton8.World
         internal bool TryConsumeFloraAtPosition(Vector3 worldPosition, float searchRadius, out uint instanceUid)
         {
             instanceUid = 0u;
-            if (vegetationBridge == null || _templateDescriptors.Length <= 0)
+            if (_dearLieJobScheduled || vegetationBridge == null || _templateDescriptors.Length <= 0)
                 return false;
 
             RefreshActiveCachesIfNeeded(force: false);
@@ -2618,7 +2630,7 @@ namespace Hecton8.World
         /// </summary>
         internal int ApplyConstructionDecomposition(Vector3 runtimePosition, float radiusMeters)
         {
-            if (!math.isfinite(radiusMeters) || radiusMeters <= 0f)
+            if (_dearLieJobScheduled || !math.isfinite(radiusMeters) || radiusMeters <= 0f)
                 return 0;
 
             if (vegetationBridge == null)
@@ -2641,7 +2653,7 @@ namespace Hecton8.World
         /// </summary>
         internal int ApplyDefoliantDeadZone(Vector3 runtimePosition, float radiusMeters)
         {
-            if (!math.isfinite(radiusMeters) || radiusMeters <= 0f)
+            if (_dearLieJobScheduled || !math.isfinite(radiusMeters) || radiusMeters <= 0f)
                 return 0;
 
             if (vegetationBridge == null)
@@ -3536,6 +3548,8 @@ namespace Hecton8.World
         {
             floraPosition = Vector3.zero;
             instanceUid = 0u;
+            if (_dearLieJobScheduled)
+                return false;
 
             float bestDistanceSq = searchRadius * searchRadius;
             bool found = TryResolveNearestConsumableFloraInLane(runtimePosition, true, ref bestDistanceSq, ref floraPosition, ref instanceUid);
@@ -3552,6 +3566,9 @@ namespace Hecton8.World
             out FloraHarvestInteractionPoint interactionPoint)
         {
             interactionPoint = default;
+            if (_dearLieJobScheduled)
+                return false;
+
             if (vegetationBridge == null)
                 vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
 
@@ -3613,7 +3630,7 @@ namespace Hecton8.World
             uint[] instanceUids,
             Vector3[] positions)
         {
-            if (instanceUids == null || positions == null)
+            if (_dearLieJobScheduled || instanceUids == null || positions == null)
                 return 0;
 
             int capacity = math.min(instanceUids.Length, positions.Length);
@@ -3663,7 +3680,9 @@ namespace Hecton8.World
 
         internal bool TryConsumeFlora(uint instanceUid)
         {
-            if (instanceUid == 0u || !TryResolveActiveInstanceByUid(instanceUid, out bool underwater, out int activeIndex, out int templateIndex))
+            if (_dearLieJobScheduled ||
+                instanceUid == 0u ||
+                !TryResolveActiveInstanceByUid(instanceUid, out bool underwater, out int activeIndex, out int templateIndex))
                 return false;
 
             NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
@@ -4430,6 +4449,9 @@ namespace Hecton8.World
         internal bool TryEvaluateParasiteExposure(Vector3 runtimePosition, out float exposure01)
         {
             exposure01 = 0f;
+            if (_dearLieJobScheduled)
+                return false;
+
             float bestExposure = 0f;
             EvaluateParasiteExposureInLane(runtimePosition, false, ref bestExposure);
             EvaluateParasiteExposureInLane(runtimePosition, true, ref bestExposure);
@@ -5501,7 +5523,7 @@ namespace Hecton8.World
 
         internal bool TrySetMaturationProgress(uint instanceUid, float progress01, float scaleMultiplier, float resourceYieldMultiplier)
         {
-            if (instanceUid == 0u || !_maturationScaleByInstanceUid.IsCreated)
+            if (_dearLieJobScheduled || instanceUid == 0u || !_maturationScaleByInstanceUid.IsCreated)
                 return false;
 
             float clampedProgress = Mathf.Clamp01(progress01);
@@ -5579,7 +5601,8 @@ namespace Hecton8.World
 
         internal bool TryApplyLightStarvation(uint instanceUid, float starvation01)
         {
-            if (instanceUid == 0u ||
+            if (_dearLieJobScheduled ||
+                instanceUid == 0u ||
                 !TryResolveActiveInstanceByUid(instanceUid, out bool underwater, out int activeIndex, out int templateIndex) ||
                 (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid)))
             {
@@ -5640,7 +5663,8 @@ namespace Hecton8.World
             int semanticType,
             float toxicity01)
         {
-            if (!TryResolveFloraGrowthDescriptor(
+            if (_dearLieJobScheduled ||
+                !TryResolveFloraGrowthDescriptor(
                     matrix,
                     metadata,
                     typeId,
@@ -5790,7 +5814,8 @@ namespace Hecton8.World
 
         internal bool TrySetRegrowthProgress(uint instanceUid, Vector3 runtimePosition, float progress01)
         {
-            if (instanceUid == 0u ||
+            if (_dearLieJobScheduled ||
+                instanceUid == 0u ||
                 !_regrowthProgressByInstanceUid.IsCreated ||
                 !_regrowthPositionByInstanceUid.IsCreated)
             {

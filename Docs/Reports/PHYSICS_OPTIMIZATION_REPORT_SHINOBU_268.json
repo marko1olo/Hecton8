@@ -45,6 +45,7 @@
     "resultLane": "FloraDearLieDestructionResult[256] covers surface and underwater lanes for 128 staged events",
     "vaultBuffers": "72980 surface claims, 72981 underwater claims, 72982 damage events, 72983 results, 72984 counters, 72985 regen records, 72986 telemetry ring, 72987..72990 flat spatial buckets",
     "vaultLockPolicy": "Job buffer locks are acquired in fixed 11-buffer order; partial failure unlocks only the acquired prefix, and dispatcher completion unlocks exactly the held count.",
+    "activeJobMutationFence": "While _dearLieJobScheduled is true, Tick returns before active-cache refresh or downstream owner-lane work, SlowTick returns before persistence/corpse/allelopathy/overgrowth writes, and lane-facing public/internal APIs fail closed until DispatcherJobSwap completion.",
     "overflowGuard": "Result slot is reserved before matrix scale-zero; overflow increments counter slot 6, sets telemetry flag 16, and dumps blackbox without mutating the instance",
     "visualFake": "matrix basis scale columns swapped to zero, then owner-fenced DebrisSpawnSignal.TryPush",
     "forbiddenRuntimePatternsFoundInOwnedPath": 0

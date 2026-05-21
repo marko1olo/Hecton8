@@ -752,3 +752,23 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - Public `TryGetPreview` is now pure: it refuses to initialize native state, allocate/grow Vault buffers, publish signals, complete jobs, or mutate route state.
 - This entry claims only Diegetic Visor Vault route cleanup. `VisorStateDTO`, `VisorLensTuningDTO`, `MockPhysiologySignal`, `MockVisorEnvironmentSignal`, `DiegeticVisorLensGpuGlobalsDTO`, `VisorLensTelemetryEntry`, BufferIDs 71020-71029, CBuffer stride, shader property IDs, CSV parser contract, fixed-binary probe contract, SignalBus payload, dump format, and Vfx authority are unchanged by this loop.
 - Preexisting same-file diffs in `DiegeticVisorLensRuntime.cs` are not claimed by this descriptor-route entry.
+
+## 2026-05-21 Dynamic Decal Descriptor Route Update
+
+- `Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs` no longer has executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `GetBuffer<T>`, direct `TryGetBuffer`, `TryGetLatestCreated`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetBufferGeneration`, `VaultGenerationID`, retained handle `.IsCreated`, retained handle `.Length`, or word-boundary `ResolveBuffer` hits.
+- Decal instances, upload scratch, runtime state, telemetry ring, tuning, material profiles, and CSV scratch routes now use `VaultGenerationHandle<T>` descriptors.
+- Each route validates exact BufferID, Vfx SystemID, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated` before returning a native view.
+- Subsystem reset and cold-storage rebind release all seven nonzero VFX descriptors through `ReleaseBuffer(in handle)` and tombstone route state before reacquisition.
+- Owned acquisition uses `GetGenerationHandle`; no `TryGetGenerationHandle` fallback is used for these owned lanes, preventing release/refcount ambiguity.
+- This entry claims only Dynamic Decal Vault route cleanup. `VisorDecalDTO`, `DecalRuntimeStateDTO`, `VisorWoundTelemetryEntry`, `DecalTuningDTO`, `DecalMaterialProfileDTO`, BufferIDs 71490-71496, request queue ABI, material CSV parser contract, SignalBus ingestion, GPU upload ABI, blackbox dump format, and Vfx authority are unchanged by this loop.
+- Preexisting same-file diffs in `DynamicDecalVaultRuntime.cs` are not claimed by this descriptor-route entry.
+
+## 2026-05-21 Marine Snow Descriptor Route Update
+
+- `Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs` no longer has executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `GetBuffer<T>`, direct `TryGetBuffer`, `TryGetLatestCreated`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetBufferGeneration`, `VaultGenerationID`, retained handle `.IsCreated`, retained handle `.Length`, or word-boundary `ResolveBuffer` hits.
+- Marine-snow wake result, telemetry ring, silt tuning constants, dynamic wake DTOs, mock flow field, propwash event ring, propwash ring cursor, propwash telemetry ring, propwash tuning, and propwash wake profiles now use `VaultGenerationHandle<T>` descriptors.
+- Each owned route validates exact BufferID, Vfx SystemID, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated` before returning a native view.
+- Borrowed route policy: `WakeSources` is acquired only through `TryGetGenerationHandle`, verified as an existing VFX descriptor, read through descriptor resolution, and never released by Marine Snow.
+- Disable, destroy, and DataVault replacement release ten owned VFX descriptors through `ReleaseBuffer(in handle)` and tombstone route state. Compaction-fence handling keeps owned descriptors for later release proof and drops only the borrowed wake-source alias.
+- This entry claims only Marine Snow Vault route cleanup. `VehicleWakeJobResult`, `MarineSnowTelemetryEntry`, `VfxConfigurationDTO`, `DynamicWakeDTO`, `MockFlowField`, `PropwashEventDTO`, `PropwashRingCursorDTO`, `PropwashTelemetryEntry`, `PropwashGpuTuningDTO`, `PropwashWakeProfileDTO`, BufferIDs, shader property IDs, compute kernel ABI, graphics buffer stride, indirect draw ABI, CSV parser contracts, SignalBus payloads, blackbox dump format, and Vfx authority are unchanged by this loop.
+- `git status --short` reports `HectonMarineSnowRenderer.cs` as untracked in this workspace; this audit records the on-disk runtime edit, not repository index state.

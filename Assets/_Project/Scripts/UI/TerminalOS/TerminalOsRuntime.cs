@@ -182,6 +182,7 @@ namespace Hecton8.UI
         private int _buttonCount;
         private int _writeBufferIndex;
         private int _decryptionPuzzleWriteBufferIndex;
+        private int _decryptionPuzzleUploadCount;
         private int _textureResolution;
         private int _blitKernel = -1;
         private int _groupsX;
@@ -412,7 +413,7 @@ namespace Hecton8.UI
             if (_decryptionScheduled ||
                 !TryReadVaultBuffer(in _decryptionPuzzlesHandle, out NativeArray<DecryptionPuzzleDTO> puzzles) ||
                 index < 0 ||
-                index >= _terminalCount)
+                index >= math.min(_terminalCount, puzzles.Length))
             {
                 puzzle = default;
                 return false;
@@ -488,7 +489,7 @@ namespace Hecton8.UI
             if (_decryptionScheduled ||
                 !TryOpenVaultBuffer(ref _decryptionPuzzlesHandle, out NativeArray<DecryptionPuzzleDTO> puzzles) ||
                 index < 0 ||
-                index >= _terminalCount)
+                index >= math.min(_terminalCount, puzzles.Length))
             {
                 return false;
             }
@@ -1315,22 +1316,31 @@ namespace Hecton8.UI
                 return;
             }
 
-            knobInput[0] = default;
-            DecryptionPuzzleDTO* puzzlePtr = (DecryptionPuzzleDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(puzzles);
-            new ClearDecryptionFlagsJob
+            if (knobInput.Length > 0)
+                knobInput[0] = default;
+            int clearCount = math.min(_terminalCount, puzzles.Length);
+            if (clearCount > 0)
             {
-                Puzzles = puzzlePtr,
-                PuzzleCount = _terminalCount
-            }.Run(_terminalCount);
+                DecryptionPuzzleDTO* puzzlePtr = (DecryptionPuzzleDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(puzzles);
+                new ClearDecryptionFlagsJob
+                {
+                    Puzzles = puzzlePtr,
+                    PuzzleCount = clearCount
+                }.Run(clearCount);
+            }
 
-            new GenerateMockPuzzleDataJob
+            int generateCount = math.min(clearCount, decryptionTerminals.Length);
+            if (generateCount > 0)
             {
-                Puzzles = puzzles,
-                Terminals = decryptionTerminals,
-                Planes = terminalPlanes,
-                PuzzleCount = _terminalCount,
-                BasePlayerFrequency = decryptionBaseFrequency
-            }.Run(_terminalCount);
+                new GenerateMockPuzzleDataJob
+                {
+                    Puzzles = puzzles,
+                    Terminals = decryptionTerminals,
+                    Planes = terminalPlanes,
+                    PuzzleCount = generateCount,
+                    BasePlayerFrequency = decryptionBaseFrequency
+                }.Run(generateCount);
+            }
             _decryptionTelemetryCursor = 0;
             _lastDecryptionTelemetryFrame = -1;
             _lastDecryptionFaultFlags = 0u;
@@ -1862,15 +1872,25 @@ namespace Hecton8.UI
             GraphicsBuffer uploadBuffer = SelectDecryptionPuzzleUploadBuffer();
             if (uploadBuffer == null ||
                 !TryOpenVaultBuffer(ref _decryptionPuzzlesHandle, out NativeArray<DecryptionPuzzleDTO> puzzles))
+            {
+                ClearDecryptionPuzzleUploadBindingForOwner();
                 return false;
+            }
+
+            int uploadCount = math.min(_terminalCount, math.min(puzzles.Length, uploadBuffer.count));
+            if (uploadCount <= 0)
+            {
+                ClearDecryptionPuzzleUploadBindingForOwner();
+                return false;
+            }
 
             bool copied = false;
-            NativeArray<DecryptionPuzzleDTO> mapped = uploadBuffer.LockBufferForWrite<DecryptionPuzzleDTO>(0, _terminalCount);
+            NativeArray<DecryptionPuzzleDTO> mapped = uploadBuffer.LockBufferForWrite<DecryptionPuzzleDTO>(0, uploadCount);
             try
             {
                 void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(puzzles);
                 void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                long copyBytes = (long)UnsafeUtility.SizeOf<DecryptionPuzzleDTO>() * _terminalCount;
+                long copyBytes = (long)UnsafeUtility.SizeOf<DecryptionPuzzleDTO>() * uploadCount;
                 long destinationBytes = (long)UnsafeUtility.SizeOf<DecryptionPuzzleDTO>() * mapped.Length;
                 copied = UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes);
                 if (!copied)
@@ -1878,18 +1898,34 @@ namespace Hecton8.UI
             }
             finally
             {
-                uploadBuffer.UnlockBufferAfterWrite<DecryptionPuzzleDTO>(_terminalCount);
+                uploadBuffer.UnlockBufferAfterWrite<DecryptionPuzzleDTO>(uploadCount);
             }
 
             if (copied)
             {
                 _decryptionPuzzleBuffer = uploadBuffer;
                 _decryptionPuzzleWriteBufferIndex = 1 - _decryptionPuzzleWriteBufferIndex;
+                _decryptionPuzzleUploadCount = uploadCount;
                 _decryptionBufferUploadDirty = false;
                 _bindingsDirty = true;
                 BindTerminalRenderers();
             }
+            else
+            {
+                ClearDecryptionPuzzleUploadBindingForOwner();
+            }
             return copied;
+        }
+
+        private void ClearDecryptionPuzzleUploadBindingForOwner()
+        {
+            if (_decryptionPuzzleUploadCount == 0 && _decryptionPuzzleBuffer == null)
+                return;
+
+            _decryptionPuzzleUploadCount = 0;
+            _decryptionPuzzleBuffer = null;
+            _bindingsDirty = true;
+            BindTerminalRenderers();
         }
 
         private int DispatchDirtyScreens(int dirtyCount)
@@ -2137,6 +2173,10 @@ namespace Hecton8.UI
             if (evaluationStride > 1 && frame % evaluationStride != 0)
                 return;
 
+            int puzzleCount = math.min(_terminalCount, puzzles.Length);
+            if (puzzleCount <= 0)
+                return;
+
             DecryptionPuzzleDTO* puzzlePtr = (DecryptionPuzzleDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(puzzles);
             _decryptionScheduleTicks = Stopwatch.GetTimestamp();
             _decryptionScheduleFrame = (uint)frame;
@@ -2146,7 +2186,7 @@ namespace Hecton8.UI
                 Puzzles = puzzlePtr,
                 Terminals = decryptionTerminals,
                 Inputs = knobInput,
-                PuzzleCount = _terminalCount,
+                PuzzleCount = puzzleCount,
                 FrequencySensitivity = decryptionFrequencySensitivity,
                 PhaseSensitivity = decryptionPhaseSensitivity,
                 FreqWeight = decryptionFrequencyWeight,
@@ -2188,6 +2228,9 @@ namespace Hecton8.UI
 
         private void CaptureDecryptionKnobInputForOwner(int frame, NativeArray<DecryptionKnobInputDTO> knobInput)
         {
+            if (!knobInput.IsCreated || knobInput.Length == 0)
+                return;
+
             DecryptionKnobInputDTO input = new DecryptionKnobInputDTO
             {
                 Flags = TerminalOsConstants.DecryptionKnobFlagActive,
@@ -2246,7 +2289,8 @@ namespace Hecton8.UI
                 return false;
 
             float closest = float.MaxValue;
-            for (int i = 0; i < _terminalCount; i++)
+            int count = math.min(_terminalCount, interactions.Length);
+            for (int i = 0; i < count; i++)
             {
                 TerminalInteractionDTO interaction = interactions[i];
                 if ((interaction.InteractionFlags & TerminalOsConstants.InteractionFlagHover) == 0u ||
@@ -2295,7 +2339,8 @@ namespace Hecton8.UI
                 return;
 
             float closest = float.MaxValue;
-            for (int i = 0; i < _terminalCount; i++)
+            int count = math.min(_terminalCount, interactions.Length);
+            for (int i = 0; i < count; i++)
             {
                 TerminalInteractionDTO interaction = interactions[i];
                 if ((interaction.InteractionFlags & TerminalOsConstants.InteractionFlagNonFinite) != 0u)
@@ -3153,8 +3198,11 @@ namespace Hecton8.UI
                 terminalArrayMaterial.SetFloat(HectonDiegeticGlitchQualityWeightId, _globalQualityWeight);
                 terminalArrayMaterial.SetFloat(HectonDecryptionNoiseDensityId, decryptionNoiseDensity);
                 terminalArrayMaterial.SetFloat(HectonTerminalInstancedModeId, drawPanelsInstanced && _panelInstanceBuffer != null ? 1f : 0f);
-                terminalArrayMaterial.SetFloat(GlobalDecryptionPuzzleCountId, _decryptionPuzzleBuffer != null ? _terminalCount : 0);
-                if (_decryptionPuzzleBuffer != null)
+                int decryptionPuzzleCount = _decryptionPuzzleBuffer != null
+                    ? math.min(_decryptionPuzzleUploadCount, _terminalCount)
+                    : 0;
+                terminalArrayMaterial.SetFloat(GlobalDecryptionPuzzleCountId, decryptionPuzzleCount);
+                if (_decryptionPuzzleBuffer != null && decryptionPuzzleCount > 0)
                     terminalArrayMaterial.SetBuffer(GlobalDecryptionPuzzlesId, _decryptionPuzzleBuffer);
                 if (_panelInstanceBuffer != null)
                     terminalArrayMaterial.SetBuffer(TerminalPanelInstancesId, _panelInstanceBuffer);
@@ -3446,6 +3494,7 @@ namespace Hecton8.UI
             ReleaseBuffer(ref _decryptionPuzzleBuffer1);
             _decryptionPuzzleBuffer = null;
             _decryptionPuzzleWriteBufferIndex = 0;
+            _decryptionPuzzleUploadCount = 0;
             ReleaseRenderTexture();
             _graphicsResourcesReady = false;
             _blitKernel = -1;

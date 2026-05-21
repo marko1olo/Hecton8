@@ -13,6 +13,8 @@ Status: PENDING VERIFICATION
 - DATA_Runtime_Struct_Layout_ARM64.txt
 - MATH_Coordinate_Precision_AUP_FloatingOrigin.txt
 - REND_Instanced_Flora_Physics.txt
+- OPT_Native_Memory_Collections_JobSystem_Protocol.txt
+- ARCH_Execution_Phases.txt
 - ARCH_Signal_Lane_Segregation.txt
 - DBG_Telemetry_Crash_Reporting_PostMortem.txt
 
@@ -63,6 +65,10 @@ Status: PENDING VERIFICATION
 - STATIC AUDIT: removed editor X-Ray `FindFirstObjectByType` fallback. Focused forbidden-pattern grep over touched Dear Lie runtime/editor files now returns no hits for hot physics/object creation/profile-sensitive finite checks/scene-search/map ownership/binary quality switch patterns.
 - BLOCKED: post-loop-20 build gate showed CPU LoadPercentage 100 and compiler process count 0. Build was not launched.
 - STATIC AUDIT: subagent 019e4bd5 did not return within the assigned lock-audit window and was closed; no external pass is claimed for loop 20.
+- STATIC AUDIT: post-loop-21 active-job mutation fence added. `Tick` now returns before active-cache refresh when a prior Dear Lie job is pending; `SlowTick` and lane-facing public/internal mutation/query APIs fail closed while `_dearLieJobScheduled` is true, keeping matrix/health/metadata access behind dispatcher completion.
+- STATIC AUDIT: post-loop-21 forbidden-pattern grep returned no hits, both physics JSON reports parse, XML re-extract confirms 20 tasks, and `git -c core.fsmonitor=false diff --check` passed. Default `git diff --check` hit a Git fsmonitor internal error before the workaround.
+- BLOCKED: post-loop-21 build gate showed CPU LoadPercentage 96 and compiler/Unity process count 0. Build was not launched.
+- BLOCKED: final post-loop-21 gate recheck showed CPU LoadPercentage 100 and compiler/Unity process count 0. Build was not launched.
 
 ## Notes
 
@@ -89,3 +95,4 @@ Status: PENDING VERIFICATION
 - Polish loop 18: converted Dear Lie transient lanes to GlobalDataVault generation handles under `SystemID.FloraGenomics` and replaced the private spatial map with flat Vault bucket-head/next arrays. Job buffers are locked while scheduled jobs hold pointers and released on dispatcher completion/hot-swap/shutdown. Build gate still pending.
 - Polish loop 19: corrected the source read. `GlobalDataVault.Initialize` allocates `_metadataByBufferId` with `MaxGenerationHandleCapacity=100000`, so restored high local `72980..72990` BufferIDs and rejected the temporary low `644..654` detour as a future core-enum collision risk.
 - Polish loop 20: fixed partial Vault lock rollback. `TryLockDearLieVaultJobBuffers` now counts the acquired prefix and releases only that prefix on failure; normal completion releases exactly the held count. Also removed the X-Ray scene-search fallback so the editor facade uses the owner-published active runtime reference only. Build still gated by CPU rule.
+- Polish loop 21: added the active Dear Lie job lane fence. `Tick` now returns before refresh or downstream owner-lane work when a previous Dear Lie job is pending; `SlowTick` returns before persistence/corpse/allelopathy/overgrowth writes while jobs hold raw pointers; lane-facing APIs fail closed until `LateFrameTick` dispatcher completion. Build still gated by CPU rule.

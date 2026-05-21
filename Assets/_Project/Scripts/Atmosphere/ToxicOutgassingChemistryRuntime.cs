@@ -45,7 +45,7 @@ namespace Hecton8.Atmosphere
         private const byte TelemetryFlagMockChemistry = 1;
         private const byte TelemetryFlagFallbackRadial = 2;
         private const byte TelemetryFlagNaN = 128;
-        private const float MinQualityWeight = 0.0001f;
+        private const float AuthoritativeQualityWeight = 1f;
         private const float NaNEpsilon = 0.0001f;
         private const float RebaseHalfCellBias = 0.5f;
         private const uint ToxicityExposureLaneHash = 0x54584F58u; // TOX
@@ -278,7 +278,7 @@ namespace Hecton8.Atmosphere
 
         public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
         {
-            _lastQualityWeight = ResolveQualityWeight();
+            _lastQualityWeight = AuthoritativeQualityWeight;
         }
 
         public bool TryUpsertSource(uint sourceId, double3 aup, float emissionRate, float density, uint chemicalHash)
@@ -519,7 +519,7 @@ namespace Hecton8.Atmosphere
                 ChemistryFlags = 1u,
                 _pad0 = 0u
             };
-            constants.GlobalQualityWeight = ResolveQualityWeight();
+            constants.GlobalQualityWeight = AuthoritativeQualityWeight;
             constants.SimulationTickDelta = ResolveTickInterval(constants.GlobalQualityWeight);
             TryWriteConstants(in constants);
             _mockChemistry = true;
@@ -598,11 +598,11 @@ namespace Hecton8.Atmosphere
             }
 
             ClearAllNativeBuffersWithMemClear();
-            _activeResolution = ResolveResolution(ResolveQualityWeight());
+            _activeResolution = ResolveResolution(AuthoritativeQualityWeight);
             _activeCellCount = _activeResolution * _activeResolution * _activeResolution;
             _cellSizeMeters = DefaultCellSizeMeters;
             _gridOriginAup = ResolveCurrentRuntimeOriginDouble3();
-            _lastQualityWeight = ResolveQualityWeight();
+            _lastQualityWeight = AuthoritativeQualityWeight;
             _nativeReady = true;
             PrewarmSignalLanes();
             GenerateEmergencyMockChemistry();
@@ -1432,40 +1432,28 @@ namespace Hecton8.Atmosphere
 
         private float ResolveQualityWeight()
         {
-            float weight = HomeostasisBrain.GlobalQualityWeight;
-            if (!math.isfinite(weight))
-            {
-                weight = _lastQualityWeight;
-            }
-
-            weight = math.clamp(weight, 0f, 1f);
-            _lastQualityWeight = weight;
-            return weight;
+            _lastQualityWeight = AuthoritativeQualityWeight;
+            return AuthoritativeQualityWeight;
         }
 
         private float ReadCachedQualityWeight()
         {
-            return math.isfinite(_lastQualityWeight) ? math.saturate(_lastQualityWeight) : 0f;
+            return AuthoritativeQualityWeight;
         }
 
         private static int ResolveResolution(float qualityWeight)
         {
-            float gate = math.step(0.4f, qualityWeight);
-            return (int)math.lerp(LowResolution, HighResolution, gate);
+            return HighResolution;
         }
 
         private static float ResolveTickInterval(float qualityWeight)
         {
-            float q = math.saturate(qualityWeight);
-            float curved = q * q * (3f - 2f * q);
-            return math.lerp(0.20f, 0.08333334f, curved);
+            return 0.08333334f;
         }
 
         private static int ResolveSourceBudget(float qualityWeight, int sourceCount)
         {
-            float q = math.saturate(qualityWeight);
-            float budget = math.lerp(8f, MaxSourceCount, q * q);
-            return math.clamp((int)math.ceil(budget), 0, math.min(sourceCount, MaxSourceCount));
+            return math.clamp(sourceCount, 0, MaxSourceCount);
         }
 
         private static float Smooth01(float value)

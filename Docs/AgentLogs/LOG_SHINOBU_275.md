@@ -850,3 +850,66 @@ Verification:
 - `python -m json.tool Docs\Reports\RENDERING_OPTIMIZATION_REPORT.json` validates, and the SHINOBU_275 report timestamp is `2026-05-21T18:52:59Z`.
 - `git diff --check` reports only LF-to-CRLF warnings in edited files.
 - Compile not launched: CPU sampled at 84%; no compiler processes were active, but AGENTS policy blocks build above 50% CPU.
+
+## 2026-05-21T23:17+04:00 - Polish Loop 19 / Reconstruction Hot-Path Closure
+
+What was wrong:
+- `VisorWoundMappedUploadJob` was a fake Burst surface for a direct mapped-buffer copy.
+- Reconstruction enqueue still had profile/CSV debt: profile selection locked the Vault profile buffer from the render path, and `AddRenderPasses()` could retry the aesthetic CSV load.
+- Reconstruction constants used one mapped constant buffer and AB split was pushed through `Material.SetFloat` during enqueue instead of the RenderGraph command stream.
+- Raw color history availability still had a per-enqueue component lookup.
+- Legacy `HectonVisorUberPost.shader` kept hard low-tier gates for heat haze, VR comfort, light shafts, water refraction, and droplet refraction.
+
+What was done:
+- Deleted `VisorWoundMappedUploadJob`; mapped GPU upload now calls `DynamicDecalVaultRuntime.CopyDecalsToMappedUploadBuffer()` and performs one guarded `UnsafeUtility.MemCpy`.
+- Added A/B reconstruction constant buffers and `_activeReconstructionConstantsBuffer`; unchanged constants reuse the active buffer and changed constants write the next mapped buffer.
+- Moved reconstruction AB split binding into the reconstruction RenderGraph raster function with `SetGlobalFloat`.
+- Removed render-frame aesthetic CSV retry and replaced render-frame Vault profile selection with a fixed 32-row cold-loaded profile snapshot.
+- Cached raw color history read access; `TryGetComponent` is limited to camera-change registration.
+- Replaced the legacy shader's binary low-tier quality gates with continuous `smoothstep`/`lerp` weights.
+- Updated status, rationale, architecture note, route card, and binary payload ledger.
+
+Cinematic Cheats used:
+- No physical wound, fluid, droplet, fracture, or light-shaft simulation was added. The path remains a bounded screen-space wound projection plus shader-side visor/noir fakes, with low-tier effects fading continuously rather than switching off.
+
+Exact Microseconds saved:
+- No measured profiler claim. Expected low-end savings are from removed render-frame Vault/file/profile work, removed fake mapped-upload job surface, and removed per-enqueue history component lookup. Estimated risk reduction remains 2-20 us on weak devices pending Unity Profiler proof.
+
+Verification:
+- `python Tools\Decal_Projector_Inquisition.py`: PASS at `2026-05-21T19:12:28Z`; 5825 scanned assets, 336 candidates, 0 active GameObject decal violations, 0 active URP decal renderer feature violations.
+- Focused forbidden C# scan returned no `VisorWoundMappedUploadJob`, `TryLockAndSelectAestheticProfile`, `_lastReconstructionAbSplit`, concrete fluid/player fallback tokens, direct Unity `Time.*`, `UnityEngine.Random`, `UsePass`, `AddBlitPass`, `RenderGraphUtils`, `NativeList`, `NativeHashMap`, or `new NativeArray` in the touched wound/noir route.
+- Shader quality scan has no true hard low-tier branch or `step(0.5)` quality gate; the remaining text hit is `smoothstep(0.54...)`, a substring false positive.
+- `python -m json.tool Docs\Reports\RENDERING_OPTIMIZATION_REPORT.json` validates.
+- `git diff --check` reports only LF-to-CRLF warnings in edited files.
+- Compile not launched: first sample had CPU 49.79% but `dotnet` PID 6956 and `VBCSCompiler` PID 29328 were active; final sample had CPU 57.95% with `VBCSCompiler` PID 29328 still active, so AGENTS compile policy blocked the build.
+
+<SELF_AUDIT agent_id="SHINOBU_275" loop="19_reconstruction_hot_path">
+  <TASK_RECONCILIATION>
+    <TASK id="01" result="PASS_STATIC">Re-audited visor post, reconstruction, mapped upload, shader, and docs route.</TASK>
+    <TASK id="02" result="PASS_STATIC">Decal inquisition scanner reports 0 active object/URP decal violations.</TASK>
+    <TASK id="03" result="PASS_STATIC">No hot DTO properties added; fake mapped job removed.</TASK>
+    <TASK id="04" result="PASS_STATIC">Primary `VisorDecalDTO` remains explicit 80B; reconstruction/profile DTOs unchanged.</TASK>
+    <TASK id="05" result="PASS_STATIC">Mock lanes unchanged; runtime hot path cannot cold-load CSV.</TASK>
+    <TASK id="06" result="PASS_STATIC">Batched wound Burst jobs remain; one-row mapped upload wrapper removed.</TASK>
+    <TASK id="07" result="PASS_STATIC">Dear Lie route preserved: shader fakes instead of physical wounds/droplets/light shafts.</TASK>
+    <TASK id="08" result="PASS_STATIC">Circular overwrite unchanged.</TASK>
+    <TASK id="09" result="PASS_STATIC">Decay route unchanged; profile selection is now snapshot read.</TASK>
+    <TASK id="10" result="PASS_STATIC">Mapped GPU upload and reconstruction CBuffer publication are double-buffered.</TASK>
+    <TASK id="11" result="PASS_STATIC">Legacy shader low-tier gates now fade continuously.</TASK>
+    <TASK id="12" result="PASS_STATIC">Normal/refraction perturbation remains shader-side; droplet refraction quality is continuous.</TASK>
+    <TASK id="13" result="PASS_STATIC">AUP localization unchanged.</TASK>
+    <TASK id="14" result="PASS_STATIC">No gameplay truth, rollback, save, or authority route changed.</TASK>
+    <TASK id="15" result="PASS_STATIC">Telemetry route unchanged; scanner/report proof refreshed.</TASK>
+    <TASK id="16" result="PASS_STATIC">Editor facade unchanged.</TASK>
+    <TASK id="17" result="PASS_STATIC">CSV parsing remains cold; render path reads fixed snapshot only.</TASK>
+    <TASK id="18" result="PASS_STATIC">Debug gizmo route unchanged.</TASK>
+    <TASK id="19" result="PASS_STATIC">Metric validator rerun and report timestamp updated.</TASK>
+    <TASK id="20" result="PASS_STATIC_COMPILE_BLOCKED">Docs/logs synchronized; compile gate blocked by existing compiler processes.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>`VisorDecalDTO`: `float4x4 LocalToWorld` offset 0 size 64; `uint DecalTypeHash` offset 64 size 4; `float Opacity01` offset 68 size 4; `float BirthTime` offset 72 size 4; `uint Flags` offset 76 size 4. Total 80B; 80 % 16 = 0. Loop 19 changed no primary DTO bytes.</STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>Below quality 0.3, heat haze, comfort mask bias, light-shaft intensity/sample budget, water refraction admission, droplet refraction, wound capacity, and thermal fade pressure collapse continuously through `smoothstep`, `lerp`, and quality-smoothed runtime state. Middle quality keeps partial shafts/refraction. High/ultra keep richer reconstruction grain/chroma/vignette and full visual-overkill shader response without changing DTO layout or authority route.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>Primary wound Vault lanes remain 71490..71496. Reconstruction lanes remain owned by the visor feature; render enqueue no longer locks the aesthetic profile Vault lane and no new persistent private native collection was introduced. The 32-row profile cache is a cold managed snapshot used to avoid render-frame Vault locks.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_DEPENDENCY_GRAPH>Wound job dependency chain remains dispatcher-owned visual sync. Mapped upload is a direct guarded copy after `LockBufferForWrite`. Reconstruction constants are A/B buffers consumed by RenderGraph; no same-frame `.Complete()` was added.</POINTER_ALIASING_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because compiler processes were already active and the final CPU sample exceeded 50%.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>Before: object decals/light simulations would be O(N) scene/render work and hard shader quality branches snapped visuals. After: one bounded screen-space projection path and shader fakes with continuous quality weights; mapped upload is one O(N_visible) memory copy over a capped 128-row payload.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>

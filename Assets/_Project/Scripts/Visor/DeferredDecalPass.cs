@@ -63,8 +63,6 @@ namespace Hecton8.Visor
             private bool _hasStagedBuffer;
             private DynamicDecalFrameStats _lastFrameStats;
             private bool _hasLastFrameStats;
-            private Material _boundAtlasMaterial;
-            private Texture2DArray _boundDecalAtlas;
 
             private sealed class PassData
             {
@@ -72,6 +70,7 @@ namespace Hecton8.Visor
                 public TextureHandle Depth;
                 public BufferHandle DecalBuffer;
                 public Material Material;
+                public Texture2DArray DecalAtlas;
                 public Vector4 DecalAtlasParams;
                 public Vector4 DecalRefractionParams;
                 public Vector4 DecalTint;
@@ -164,13 +163,6 @@ namespace Hecton8.Visor
                 renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
                 ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
-                if (_settings.decalAtlas != null &&
-                    (_boundAtlasMaterial != _material || _boundDecalAtlas != _settings.decalAtlas))
-                {
-                    _material.SetTexture(ShaderConstants.DecalAtlasId, _settings.decalAtlas);
-                    _boundAtlasMaterial = _material;
-                    _boundDecalAtlas = _settings.decalAtlas;
-                }
             }
 
             public void Dispose()
@@ -221,6 +213,7 @@ namespace Hecton8.Visor
                     passData.Depth = depthTexture;
                     passData.DecalBuffer = decalBufferHandle;
                     passData.Material = _material;
+                    passData.DecalAtlas = _settings.decalAtlas;
                     passData.DecalCount = readableCount;
                     passData.DecalAtlasParams = new Vector4(
                         Mathf.Max(1, _settings.atlasSlices),
@@ -248,6 +241,8 @@ namespace Hecton8.Visor
 
                         context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.Source);
                         context.cmd.SetGlobalTexture(ShaderConstants.CameraDepthTextureId, data.Depth);
+                        if (data.DecalAtlas != null)
+                            context.cmd.SetGlobalTexture(ShaderConstants.DecalAtlasId, data.DecalAtlas);
                         context.cmd.SetGlobalBuffer(ShaderConstants.DecalBufferId, decalBuffer);
                         context.cmd.SetGlobalInt(ShaderConstants.DecalCountId, data.DecalCount);
                         context.cmd.SetGlobalVector(ShaderConstants.DecalAtlasParamsId, data.DecalAtlasParams);

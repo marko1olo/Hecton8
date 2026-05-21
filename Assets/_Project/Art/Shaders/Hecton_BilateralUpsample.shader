@@ -33,6 +33,7 @@ Shader "Hidden/Hecton8/BilateralUpsample"
             CBUFFER_END
 
             float _H8UberNoirABSplit;
+            float _H8UberNoirVisualTime;
 
             TEXTURE2D_X(_BlitTexture);
             float4 _BlitTexture_TexelSize;
@@ -119,7 +120,7 @@ Shader "Hidden/Hecton8/BilateralUpsample"
             {
                 float2 screenParams = max(_ScreenParams.xy, float2(1.0, 1.0));
                 float2 pixel = floor(saturate(uv) * screenParams);
-                pixel += frac(_Time.y * float2(59.0, 71.0));
+                pixel += frac(_H8UberNoirVisualTime * float2(59.0, 71.0));
                 return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
             }
 
@@ -180,7 +181,7 @@ Shader "Hidden/Hecton8/BilateralUpsample"
                 [branch]
                 if (overkill01 > 0.001)
                 {
-                    float glintSeed = InterleavedGradientNoise(uv * 8.0 + _Time.yy * 0.07);
+                    float glintSeed = InterleavedGradientNoise(uv * 8.0 + _H8UberNoirVisualTime.xx * 0.07);
                     float glintMask = step(0.992 - overkill01 * 0.004, glintSeed) * edge01;
                     color += glintMask * overkill01 * float3(0.16, 0.21, 0.22);
                 }

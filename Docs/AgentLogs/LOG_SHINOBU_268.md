@@ -644,3 +644,30 @@ Verification:
 - `git diff --check` exits 0 with CRLF warnings only.
 - Compiler proof remains blocked by CPU gate: LoadPercentage 100, compiler/Unity process count 0. Build was not launched.
 - Subagent 019e4bd5 was assigned a focused lock-audit prompt, timed out twice, and was closed. No external audit pass is claimed for this loop.
+
+## 2026-05-21 SHINOBU_268 Polish Loop 21 - Active Job Lane Mutation Fence
+
+What was wrong:
+- The Dear Lie route schedules Burst jobs that hold raw native pointers into flora matrix, health, metadata, claim, result, counter, bucket, regen, and telemetry lanes.
+- `Tick` and lane-facing APIs were already partially fenced, but `Tick` could still refresh active caches before testing a prior pending job and `SlowTick` still reached persistence synchronization, corpse node refresh, allelopathic release, and aggressive overgrowth evaluation against the same owner data.
+
+What was done:
+- Added a `_dearLieJobScheduled` guard at the top of `SlowTick`.
+- Moved `Tick`'s already-pending-job guard before `RefreshActiveCachesIfNeeded`, then kept the post-schedule return so downstream owner-lane work waits for `LateFrameTick` / `DispatcherJobSwap` completion and result drain.
+- Confirmed public/internal flora lane mutation/query APIs fail closed while the Dear Lie job is pending.
+- Updated the binary payload ledger and both physics reports with the active-job mutation fence.
+
+Cinematic Cheats used:
+- No physical simulation added. The same Dear Lie remains: matrix basis scale-zero plus optional GPU debris signal after dispatcher completion. The fence protects that fake from concurrent owner-lane mutation.
+
+Exact Microseconds saved:
+- 0 us claimed. Added cost is one boolean branch in `SlowTick`; the saved cost is avoided stall/corruption risk from not force-completing worker jobs or cloning native lanes.
+
+Verification:
+- Code inspection confirms `SlowTick`, `Tick`, and lane-facing APIs check `_dearLieJobScheduled`.
+- Focused forbidden-pattern grep over touched Dear Lie runtime/editor files returned no hits.
+- Direct Dear Lie lock-chain and scene-search scan returned no hits.
+- Dedicated and shared physics JSON reports parse through `ConvertFrom-Json`.
+- CURRENT_BATCH re-extract confirms 20 task lines.
+- `git -c core.fsmonitor=false diff --check` passed; default `git diff --check` hit a Git fsmonitor internal error before the workaround.
+- Compiler proof remains blocked: first gate after docs reported CPU LoadPercentage 96, final recheck reported 100, compiler/Unity process count 0. Build was not launched.

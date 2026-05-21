@@ -255,7 +255,7 @@ namespace Hecton8.AI.Ecosystem
                 activeTuning.GlobalQualityWeight = AuthoritativeQualityWeight;
                 if (tuning.IsCreated && tuning.Length > 0)
                     tuning[0] = activeTuning;
-                const bool runMicroExchangeFrame = true;
+                bool runMicroExchangeFrame = true;
 
                 JobHandle handle = default;
                 if (counters.Length > 0 && counters[0].Initialized == 0)

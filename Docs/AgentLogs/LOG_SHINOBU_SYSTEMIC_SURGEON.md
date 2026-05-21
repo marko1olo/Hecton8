@@ -67,6 +67,24 @@ Remaining blocked/pending:
   <QUALITY status="DRS shader uses continuous scale-deficit curve; no binary low-tier switch added" />
 </SELF_AUDIT>
 
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="EcosystemPopulationSymbiosisMigrationAuthority">
+  <WHAT_WAS_WRONG>
+    Ecology population, symbiosis chemistry, and migration routing still used performance pressure or quality to change gameplay facts: stress could deactivate entities, symbiosis quality could thin exchanges/oxygen/biomass/toxemia/camouflage, and migration quality could change field cadence, interpolation, blood-cloud POI sampling, attraction strength, and grid magnitude.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    `EcosystemPopulationBalancer` keeps `SystemStress01` only in telemetry and no longer stress-culls active ecology entities. `ShinobuFloraFaunaSymbiosisSolver` pins authority quality to 1.0, ignores CSV quality override, runs micro exchange every authority pass, and removes quality from the exchange kernel. `MigrationDirector` uses canonical quality for field rebuild cadence, full trilinear sampling, and the Burst migration field job.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Valid scalability lanes remain presentation-only: scanner VFX count, swarm BRG density, path debug rendering, shader/noise payloads, and optional telemetry cadence. The ecology and migration truth rows do not shed work by hardware.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. This pass removes divergent shortcuts and may increase weak-device authority cost; the payoff is deterministic population, oxygen, biomass, and migration route state. Presentation lanes retain room for continuous quality scaling.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scans found no `HomeostasisBrain` or `ScalabilityTier` reads in the patched symbiosis and migration quality authority paths, no `SystemStress01 &gt;` cull gate in population, and no local symbiosis quality override feeding exchange kernel. `git diff --check` passed for ecosystem files. `dotnet build .\Assembly-CSharp.csproj --no-restore --nologo -m:1` timed out after 124s without diagnostics; `dotnet`/`csc` exited and only resident `VBCSCompiler` remained.
+  </VERIFICATION>
+</SELF_AUDIT>
+
 <SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="BulkheadBatteryFinalCadenceSinks">
   <WHAT_WAS_WRONG>
     Bulkhead closure progression and battery charger cadence still had stale quality-shaped authority paths after the broader power/construction detachment. Bulkhead used a quality-derived cadence scale inside the Burst job, and charger scheduling locked tuning state to sample quality before cadence resolution.
@@ -2481,5 +2499,41 @@ Verification:
   </MICROSECONDS_SAVED>
   <VERIFICATION>
     Targeted `rg` found no `GlobalRegistry.ScalabilityTier` in `DeployableSdfDrillRuntime.cs` or `SaveManager.cs`. Targeted `git diff --check` passed for volcanic, drill, and save files with line-ending warnings only.
+  </VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="AtmosphereAuthorityQuality">
+  <WHAT_WAS_WRONG>
+    Atmosphere and toxic chemistry routes still treated hardware quality as simulation truth. Gas cadence and hibernation distance, base diffusion iteration count, reactor signal capacity, compartment solve budget, cold tick interval, toxic grid resolution, tick interval, source budget, sampling blend, diffusion, flora absorption, exposure, and corrosion all varied by device.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    `GasDynamicsSolver` now uses canonical quality, high cadence, and fixed conservative hibernation distance. `BaseAtmosphereLogisticsRuntime` now runs eight Jacobi iterations and keeps reactor signal capacity fixed across tiers. `BaseAtmosphereEngine` and `BaseAtmosphereMath` now use high 5 Hz cadence and full compartment solve budget. `ToxicOutgassingChemistryRuntime` now pins resolution, tick cadence, source budget, sampling, diffusion, flora, exposure, corrosion, and telemetry quality to 1.0.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Dear Lie lane remains presentation-only: shader caustics, fog, biolum, debug readback, UI, and optional telemetry can still scale separately. The survival gas/toxin state no longer uses the fake-quality path.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. Removed one hot `HomeostasisBrain` dependency from gas and one low-tier SignalBus capacity clamp; the main result is deterministic survival parity, not lower CPU cost.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scans found no `HomeostasisBrain`, `ResolveGlobalQualityWeight`, `ScalabilityTier`, or `SystemStress` hits in `GasDynamicsSolver.cs`, `BaseAtmosphereEngine.cs`, or `BaseAtmosphereMath.cs`. Toxic chemistry scans show all job `GlobalQualityWeight` inputs now originate from canonical `AuthoritativeQualityWeight`. Build was skipped because CPU was 52%, above the project build guard.
+  </VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="GlobalPhysicsCullingAuthority">
+  <WHAT_WAS_WRONG>
+    Physics culling used `HomeostasisBrain.GlobalQualityWeight` to change rigidbody sleep distance, wake distance, and activation radius scale. That changes which bodies keep simulating, which become kinematic, and which collision surfaces are available on weak hardware.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    `ResolveSleepDistanceMeters` now returns the canonical default 50 m. `ResolveWakeDistanceMeters` now returns the canonical 45 m bounded by hysteresis. `ResolvePhysicsCullingHardwareRadiusSqScale` now returns the conservative full-authority 2.25 scale and no longer reads global quality.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Presentation cost must be recovered through collider visualization, debug draw, wake VFX, and non-authority impact effects. The physics sleep/wake authority path no longer uses a visual-quality cheat.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. One hot `HomeostasisBrain` read and several lerps were removed, but the deliberate result is more conservative physics participation parity.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `ResolvePhysicsCullingGlobalQualityWeight`, `LowTierSleepDistanceMeters`, `LowTierWakeDistanceMeters`, or `HomeostasisBrain` hits in the patched culling route. `git diff --check` passed with line-ending warnings only. Build skipped because CPU was 97%.
   </VERIFICATION>
 </SELF_AUDIT>

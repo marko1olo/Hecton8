@@ -92,6 +92,7 @@ namespace Hecton8.Environment
         private const uint MarineSnowTelemetryContextHash = 0x4D534E57u;
         private const uint DispatchedParticleCountTelemetryHash = 0x44504354u;
         private const uint VehicleWakeSourceHash = 0x5653574Bu;
+        private const SystemID VaultOwnerSystem = SystemID.Vfx;
         private const string SiltProfileCsvFileName = "vfx_silt_profiles.csv";
         private const string WakeProfileCsvFileName = "vehicle_wake_profiles.csv";
         private const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_SILT_VFX.h8dump";
@@ -533,17 +534,17 @@ namespace Hecton8.Environment
         [SerializeField, Range(0.1f, 0.5f)] private float fogDensityRenderScale = 0.25f;
 
         private IDataVault _dataVault;
-        private VaultBufferHandle<VehicleWakeJobResult> _vehicleWakeJobResultHandle;
-        private VaultBufferHandle<MarineSnowTelemetryEntry> _telemetryRingHandle;
-        private VaultBufferHandle<VfxConfigurationDTO> _siltTuningHandle;
-        private VaultBufferHandle<DynamicWakeDTO> _dynamicWakeDtoHandle;
-        private VaultBufferHandle<MockFlowField> _mockFlowFieldHandle;
-        private VaultBufferHandle<WakeSource> _proceduralWakeSourcesHandle;
-        private VaultBufferHandle<PropwashEventDTO> _propwashEventHandle;
-        private VaultBufferHandle<PropwashRingCursorDTO> _propwashCursorHandle;
-        private VaultBufferHandle<PropwashTelemetryEntry> _propwashTelemetryHandle;
-        private VaultBufferHandle<PropwashGpuTuningDTO> _propwashTuningHandle;
-        private VaultBufferHandle<PropwashWakeProfileDTO> _propwashWakeProfileHandle;
+        private VaultGenerationHandle<VehicleWakeJobResult> _vehicleWakeJobResultHandle;
+        private VaultGenerationHandle<MarineSnowTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<VfxConfigurationDTO> _siltTuningHandle;
+        private VaultGenerationHandle<DynamicWakeDTO> _dynamicWakeDtoHandle;
+        private VaultGenerationHandle<MockFlowField> _mockFlowFieldHandle;
+        private VaultGenerationHandle<WakeSource> _proceduralWakeSourcesHandle;
+        private VaultGenerationHandle<PropwashEventDTO> _propwashEventHandle;
+        private VaultGenerationHandle<PropwashRingCursorDTO> _propwashCursorHandle;
+        private VaultGenerationHandle<PropwashTelemetryEntry> _propwashTelemetryHandle;
+        private VaultGenerationHandle<PropwashGpuTuningDTO> _propwashTuningHandle;
+        private VaultGenerationHandle<PropwashWakeProfileDTO> _propwashWakeProfileHandle;
         private GraphicsBuffer _particleBufferA;
         private GraphicsBuffer _particleBufferB;
         private GraphicsBuffer _particleMetaBufferA;
@@ -989,6 +990,12 @@ namespace Hecton8.Environment
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                BindDataVault(currentService as IDataVault, previousService as IDataVault);
+                return;
+            }
+
             ApplyRegistryServiceRebind(serviceSlot, currentService);
         }
 
@@ -1029,7 +1036,7 @@ namespace Hecton8.Environment
                     _fluidEngine = currentService as HectonFluidEngine;
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
-                    BindDataVault(currentService as IDataVault);
+                    BindDataVault(currentService as IDataVault, null);
                     break;
                 case GlobalRegistryServiceSlot.Weather:
                     _weatherService = currentService as IWeatherService;
@@ -1043,11 +1050,12 @@ namespace Hecton8.Environment
             }
         }
 
-        private void BindDataVault(IDataVault vault)
+        private void BindDataVault(IDataVault vault, IDataVault previousVault)
         {
             if (ReferenceEquals(_dataVault, vault))
                 return;
 
+            ReleaseOwnedVaultHandles(previousVault ?? _dataVault);
             _dataVault = vault;
             ClearVaultHandleCache();
         }
@@ -1189,7 +1197,8 @@ namespace Hecton8.Environment
             int frame = Time.frameCount;
             if (_dataVault != null && _dataVault.IsCompactionFenceActive)
             {
-                ClearVaultHandleCache();
+                _nativeStateReady = false;
+                _proceduralWakeSourcesHandle = default;
                 if (!force && frame < _nextDataVaultRebindFrame)
                     return false;
             }
@@ -1208,7 +1217,9 @@ namespace Hecton8.Environment
             if (_nativeStateReady)
             {
                 IDataVault cachedVault = _dataVault;
-                if (cachedVault != null && !cachedVault.IsCompactionFenceActive)
+                if (cachedVault != null &&
+                    !cachedVault.IsCompactionFenceActive &&
+                    AreOwnedVaultBuffersReady(cachedVault))
                 {
                     RefreshProceduralWakeSourcesHandle(cachedVault, force: false);
                     return true;
@@ -1230,313 +1241,190 @@ namespace Hecton8.Environment
                 return false;
             }
 
-            if (!vault.TryGetBufferHandle(BufferID.MarineSnowWakeJobResult, out _vehicleWakeJobResultHandle) ||
-                !_vehicleWakeJobResultHandle.IsCreated)
-            {
-                _vehicleWakeJobResultHandle = vault.GetBufferHandle<VehicleWakeJobResult>(
+            _nativeStateReady =
+                EnsureOwnedVaultBuffer(
+                    ref _vehicleWakeJobResultHandle,
                     BufferID.MarineSnowWakeJobResult,
                     1,
-                    SystemID.Vfx,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!vault.TryGetBufferHandle(BufferID.MarineSnowTelemetryRing, out _telemetryRingHandle) ||
-                !_telemetryRingHandle.IsCreated)
-            {
-                _telemetryRingHandle = vault.GetBufferHandle<MarineSnowTelemetryEntry>(
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<VehicleWakeJobResult> _) &&
+                EnsureOwnedVaultBuffer(
+                    ref _telemetryRingHandle,
                     BufferID.MarineSnowTelemetryRing,
                     TelemetryCapacity,
-                    SystemID.Vfx,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!vault.TryGetBufferHandle(BufferID.MarineSnowTuningConstants, out _siltTuningHandle) ||
-                !_siltTuningHandle.IsCreated)
-            {
-                _siltTuningHandle = vault.GetBufferHandle<VfxConfigurationDTO>(
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<MarineSnowTelemetryEntry> _) &&
+                EnsureOwnedVaultBuffer(
+                    ref _siltTuningHandle,
                     BufferID.MarineSnowTuningConstants,
                     1,
-                    SystemID.Vfx,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!vault.TryGetBufferHandle(BufferID.MarineSnowDynamicWakes, out _dynamicWakeDtoHandle) ||
-                !_dynamicWakeDtoHandle.IsCreated)
-            {
-                _dynamicWakeDtoHandle = vault.GetBufferHandle<DynamicWakeDTO>(
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<VfxConfigurationDTO> _) &&
+                EnsureOwnedVaultBuffer(
+                    ref _dynamicWakeDtoHandle,
                     BufferID.MarineSnowDynamicWakes,
                     DynamicWakeDtoCapacity,
-                    SystemID.Vfx,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!vault.TryGetBufferHandle(BufferID.MarineSnowMockFlowField, out _mockFlowFieldHandle) ||
-                !_mockFlowFieldHandle.IsCreated)
-            {
-                _mockFlowFieldHandle = vault.GetBufferHandle<MockFlowField>(
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<DynamicWakeDTO> _) &&
+                EnsureOwnedVaultBuffer(
+                    ref _mockFlowFieldHandle,
                     BufferID.MarineSnowMockFlowField,
                     1,
-                    SystemID.Vfx,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            RefreshProceduralWakeSourcesHandle(vault, force: true);
-
-            if (!vault.TryGetBufferHandle(BufferID.PropwashGpuEventRing, out _propwashEventHandle) ||
-                !_propwashEventHandle.IsCreated)
-            {
-                _propwashEventHandle = vault.GetBufferHandle<PropwashEventDTO>(
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<MockFlowField> _) &&
+                EnsureOwnedVaultBuffer(
+                    ref _propwashEventHandle,
                     BufferID.PropwashGpuEventRing,
                     PropwashEventRingCapacity,
-                    SystemID.Vfx,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!vault.TryGetBufferHandle(BufferID.PropwashGpuRingCursor, out _propwashCursorHandle) ||
-                !_propwashCursorHandle.IsCreated)
-            {
-                _propwashCursorHandle = vault.GetBufferHandle<PropwashRingCursorDTO>(
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<PropwashEventDTO> _) &&
+                EnsureOwnedVaultBuffer(
+                    ref _propwashCursorHandle,
                     BufferID.PropwashGpuRingCursor,
                     1,
-                    SystemID.Vfx,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!vault.TryGetBufferHandle(BufferID.PropwashGpuTelemetryRing, out _propwashTelemetryHandle) ||
-                !_propwashTelemetryHandle.IsCreated)
-            {
-                _propwashTelemetryHandle = vault.GetBufferHandle<PropwashTelemetryEntry>(
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<PropwashRingCursorDTO> _) &&
+                EnsureOwnedVaultBuffer(
+                    ref _propwashTelemetryHandle,
                     BufferID.PropwashGpuTelemetryRing,
                     PropwashGpuContracts.TelemetryCapacity,
-                    SystemID.Vfx,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!vault.TryGetBufferHandle(BufferID.PropwashGpuTuning, out _propwashTuningHandle) ||
-                !_propwashTuningHandle.IsCreated)
-            {
-                _propwashTuningHandle = vault.GetBufferHandle<PropwashGpuTuningDTO>(
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<PropwashTelemetryEntry> _) &&
+                EnsureOwnedVaultBuffer(
+                    ref _propwashTuningHandle,
                     BufferID.PropwashGpuTuning,
                     1,
-                    SystemID.Vfx,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!vault.TryGetBufferHandle(BufferID.PropwashGpuWakeProfiles, out _propwashWakeProfileHandle) ||
-                !_propwashWakeProfileHandle.IsCreated)
-            {
-                _propwashWakeProfileHandle = vault.GetBufferHandle<PropwashWakeProfileDTO>(
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<PropwashGpuTuningDTO> _) &&
+                EnsureOwnedVaultBuffer(
+                    ref _propwashWakeProfileHandle,
                     BufferID.PropwashGpuWakeProfiles,
                     PropwashWakeProfileCapacity,
-                    SystemID.Vfx,
-                    NativeArrayOptions.ClearMemory);
-            }
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<PropwashWakeProfileDTO> _);
 
+            if (!_nativeStateReady)
+                return false;
+
+            RefreshProceduralWakeSourcesHandle(vault, force: true);
             InitializeDefaultSiltTuning(vault);
             InitializeDefaultPropwashTuning(vault);
             InitializeDefaultPropwashWakeProfiles(vault);
-            _nativeStateReady =
-                _vehicleWakeJobResultHandle.IsCreated &&
-                _vehicleWakeJobResultHandle.Length >= 1 &&
-                _telemetryRingHandle.IsCreated &&
-                _telemetryRingHandle.Length >= TelemetryCapacity &&
-                _siltTuningHandle.IsCreated &&
-                _siltTuningHandle.Length >= 1 &&
-                _dynamicWakeDtoHandle.IsCreated &&
-                _dynamicWakeDtoHandle.Length >= DynamicWakeDtoCapacity &&
-                _mockFlowFieldHandle.IsCreated &&
-                _mockFlowFieldHandle.Length >= 1 &&
-                _propwashEventHandle.IsCreated &&
-                _propwashEventHandle.Length >= PropwashEventRingCapacity &&
-                _propwashCursorHandle.IsCreated &&
-                _propwashCursorHandle.Length >= 1 &&
-                _propwashTelemetryHandle.IsCreated &&
-                _propwashTelemetryHandle.Length >= PropwashGpuContracts.TelemetryCapacity &&
-                _propwashTuningHandle.IsCreated &&
-                _propwashTuningHandle.Length >= 1 &&
-                _propwashWakeProfileHandle.IsCreated &&
-                _propwashWakeProfileHandle.Length >= PropwashWakeProfileCapacity;
             return _nativeStateReady;
         }
 
         private void RefreshProceduralWakeSourcesHandle(IDataVault vault, bool force)
         {
-            if (_proceduralWakeSourcesHandle.IsCreated || vault == null || vault.IsCompactionFenceActive)
+            if (HasVaultBuffer(vault, in _proceduralWakeSourcesHandle, BufferID.WakeSources, 1) ||
+                vault == null ||
+                vault.IsCompactionFenceActive)
+            {
                 return;
+            }
 
             int frame = Time.frameCount;
             if (!force && frame < _nextProceduralWakeSourceProbeFrame)
                 return;
 
             _nextProceduralWakeSourceProbeFrame = frame + 30;
-            if (vault.TryGetBufferHandle(BufferID.WakeSources, out VaultBufferHandle<WakeSource> proceduralWakeSourcesHandle) &&
-                proceduralWakeSourcesHandle.IsCreated)
+            if (vault.TryGetGenerationHandle<WakeSource>(BufferID.WakeSources, out VaultGenerationHandle<WakeSource> proceduralWakeSourcesHandle) &&
+                HasVaultBuffer(vault, in proceduralWakeSourcesHandle, BufferID.WakeSources, 1))
             {
                 _proceduralWakeSourcesHandle = proceduralWakeSourcesHandle;
+            }
+            else
+            {
+                _proceduralWakeSourcesHandle = default;
             }
         }
 
         private bool TryResolveVehicleWakeJobResultBuffer(out NativeArray<VehicleWakeJobResult> result)
         {
             result = default;
-            if (!_nativeStateReady ||
-                _dataVault == null ||
-                _dataVault.IsCompactionFenceActive ||
-                !_vehicleWakeJobResultHandle.IsCreated)
-            {
-                return false;
-            }
-
-            result = _vehicleWakeJobResultHandle.Resolve(_dataVault);
-            return result.IsCreated && result.Length >= 1;
+            return _nativeStateReady &&
+                   TryResolveVaultBuffer(ref _vehicleWakeJobResultHandle, BufferID.MarineSnowWakeJobResult, 1, out result);
         }
 
         private bool TryResolveTelemetryRing(out NativeArray<MarineSnowTelemetryEntry> telemetryRing)
         {
             telemetryRing = default;
-            if (!_nativeStateReady ||
-                _dataVault == null ||
-                _dataVault.IsCompactionFenceActive ||
-                !_telemetryRingHandle.IsCreated)
-            {
-                return false;
-            }
-
-            telemetryRing = _telemetryRingHandle.Resolve(_dataVault);
-            return telemetryRing.IsCreated && telemetryRing.Length >= TelemetryCapacity;
+            return _nativeStateReady &&
+                   TryResolveVaultBuffer(ref _telemetryRingHandle, BufferID.MarineSnowTelemetryRing, TelemetryCapacity, out telemetryRing);
         }
 
         private bool TryResolveSiltTuning(out NativeArray<VfxConfigurationDTO> tuning)
         {
             tuning = default;
-            if (!_nativeStateReady ||
-                _dataVault == null ||
-                _dataVault.IsCompactionFenceActive ||
-                !_siltTuningHandle.IsCreated)
-            {
-                return false;
-            }
-
-            tuning = _siltTuningHandle.Resolve(_dataVault);
-            return tuning.IsCreated && tuning.Length >= 1;
+            return _nativeStateReady &&
+                   TryResolveVaultBuffer(ref _siltTuningHandle, BufferID.MarineSnowTuningConstants, 1, out tuning);
         }
 
         private bool TryResolveDynamicWakeDtos(out NativeArray<DynamicWakeDTO> wakes)
         {
             wakes = default;
-            if (!_nativeStateReady ||
-                _dataVault == null ||
-                _dataVault.IsCompactionFenceActive ||
-                !_dynamicWakeDtoHandle.IsCreated)
-            {
-                return false;
-            }
-
-            wakes = _dynamicWakeDtoHandle.Resolve(_dataVault);
-            return wakes.IsCreated && wakes.Length >= MockWakeCapacity;
+            return _nativeStateReady &&
+                   TryResolveVaultBuffer(ref _dynamicWakeDtoHandle, BufferID.MarineSnowDynamicWakes, MockWakeCapacity, out wakes);
         }
 
         private bool TryResolveMockFlowField(out NativeArray<MockFlowField> flowField)
         {
             flowField = default;
-            if (!_nativeStateReady ||
-                _dataVault == null ||
-                _dataVault.IsCompactionFenceActive ||
-                !_mockFlowFieldHandle.IsCreated)
-            {
-                return false;
-            }
-
-            flowField = _mockFlowFieldHandle.Resolve(_dataVault);
-            return flowField.IsCreated && flowField.Length >= 1;
+            return _nativeStateReady &&
+                   TryResolveVaultBuffer(ref _mockFlowFieldHandle, BufferID.MarineSnowMockFlowField, 1, out flowField);
         }
 
         private bool TryAcquireReadyProceduralWakeSources(out NativeArray<WakeSource> wakeSources)
         {
             wakeSources = default;
-            if (!_nativeStateReady ||
-                _dataVault == null ||
-                _dataVault.IsCompactionFenceActive ||
-                !_proceduralWakeSourcesHandle.IsCreated)
+            if (!_nativeStateReady)
                 return false;
 
-            wakeSources = _proceduralWakeSourcesHandle.Resolve(_dataVault);
-            return wakeSources.IsCreated && wakeSources.Length > 0;
+            RefreshProceduralWakeSourcesHandle(_dataVault, force: false);
+            return TryResolveVaultBuffer(ref _proceduralWakeSourcesHandle, BufferID.WakeSources, 1, out wakeSources);
         }
 
         private bool TryAcquireReadyPropwashEvents(out NativeArray<PropwashEventDTO> events)
         {
             events = default;
-            if (!_nativeStateReady ||
-                _dataVault == null ||
-                _dataVault.IsCompactionFenceActive ||
-                !_propwashEventHandle.IsCreated)
-                return false;
-
-            events = _propwashEventHandle.Resolve(_dataVault);
-            return events.IsCreated && events.Length >= PropwashEventRingCapacity;
+            return _nativeStateReady &&
+                   TryResolveVaultBuffer(ref _propwashEventHandle, BufferID.PropwashGpuEventRing, PropwashEventRingCapacity, out events);
         }
 
         private bool TryAcquireReadyPropwashCursor(out NativeArray<PropwashRingCursorDTO> cursor)
         {
             cursor = default;
-            if (!_nativeStateReady ||
-                _dataVault == null ||
-                _dataVault.IsCompactionFenceActive ||
-                !_propwashCursorHandle.IsCreated)
-                return false;
-
-            cursor = _propwashCursorHandle.Resolve(_dataVault);
-            return cursor.IsCreated && cursor.Length >= 1;
+            return _nativeStateReady &&
+                   TryResolveVaultBuffer(ref _propwashCursorHandle, BufferID.PropwashGpuRingCursor, 1, out cursor);
         }
 
         private bool TryAcquireReadyPropwashTelemetry(out NativeArray<PropwashTelemetryEntry> telemetry)
         {
             telemetry = default;
-            if (!_nativeStateReady ||
-                _dataVault == null ||
-                _dataVault.IsCompactionFenceActive ||
-                !_propwashTelemetryHandle.IsCreated)
-                return false;
-
-            telemetry = _propwashTelemetryHandle.Resolve(_dataVault);
-            return telemetry.IsCreated && telemetry.Length >= PropwashGpuContracts.TelemetryCapacity;
+            return _nativeStateReady &&
+                   TryResolveVaultBuffer(ref _propwashTelemetryHandle, BufferID.PropwashGpuTelemetryRing, PropwashGpuContracts.TelemetryCapacity, out telemetry);
         }
 
         private bool TryAcquireReadyPropwashTuning(out NativeArray<PropwashGpuTuningDTO> tuning)
         {
             tuning = default;
-            if (!_nativeStateReady ||
-                _dataVault == null ||
-                _dataVault.IsCompactionFenceActive ||
-                !_propwashTuningHandle.IsCreated)
-                return false;
-
-            tuning = _propwashTuningHandle.Resolve(_dataVault);
-            return tuning.IsCreated && tuning.Length >= 1;
+            return _nativeStateReady &&
+                   TryResolveVaultBuffer(ref _propwashTuningHandle, BufferID.PropwashGpuTuning, 1, out tuning);
         }
 
         private bool TryAcquireReadyPropwashWakeProfiles(out NativeArray<PropwashWakeProfileDTO> profiles)
         {
             profiles = default;
-            if (!_nativeStateReady ||
-                _dataVault == null ||
-                _dataVault.IsCompactionFenceActive ||
-                !_propwashWakeProfileHandle.IsCreated)
-                return false;
-
-            profiles = _propwashWakeProfileHandle.Resolve(_dataVault);
-            return profiles.IsCreated && profiles.Length >= PropwashWakeProfileCapacity;
+            return _nativeStateReady &&
+                   TryResolveVaultBuffer(ref _propwashWakeProfileHandle, BufferID.PropwashGpuWakeProfiles, PropwashWakeProfileCapacity, out profiles);
         }
 
         private void InitializeDefaultSiltTuning(IDataVault vault)
         {
-            if (vault == null || !_siltTuningHandle.IsCreated)
+            if (vault == null ||
+                !TryResolveVaultBuffer(vault, ref _siltTuningHandle, BufferID.MarineSnowTuningConstants, 1, out NativeArray<VfxConfigurationDTO> tuning))
+            {
                 return;
-
-            NativeArray<VfxConfigurationDTO> tuning = _siltTuningHandle.Resolve(vault);
-            if (!tuning.IsCreated || tuning.Length <= 0)
-                return;
+            }
 
             VfxConfigurationDTO current = tuning[0];
             if (current.Version != 0u)
@@ -1577,12 +1465,11 @@ namespace Hecton8.Environment
 
         private void InitializeDefaultPropwashTuning(IDataVault vault)
         {
-            if (vault == null || !_propwashTuningHandle.IsCreated)
+            if (vault == null ||
+                !TryResolveVaultBuffer(vault, ref _propwashTuningHandle, BufferID.PropwashGpuTuning, 1, out NativeArray<PropwashGpuTuningDTO> tuning))
+            {
                 return;
-
-            NativeArray<PropwashGpuTuningDTO> tuning = _propwashTuningHandle.Resolve(vault);
-            if (!tuning.IsCreated || tuning.Length <= 0)
-                return;
+            }
 
             PropwashGpuTuningDTO current = tuning[0];
             if (current.Version != 0u)
@@ -1598,12 +1485,11 @@ namespace Hecton8.Environment
 
         private void InitializeDefaultPropwashWakeProfiles(IDataVault vault)
         {
-            if (vault == null || !_propwashWakeProfileHandle.IsCreated)
+            if (vault == null ||
+                !TryResolveVaultBuffer(vault, ref _propwashWakeProfileHandle, BufferID.PropwashGpuWakeProfiles, PropwashWakeProfileCapacity, out NativeArray<PropwashWakeProfileDTO> profiles))
+            {
                 return;
-
-            NativeArray<PropwashWakeProfileDTO> profiles = _propwashWakeProfileHandle.Resolve(vault);
-            if (!profiles.IsCreated || profiles.Length <= 0)
-                return;
+            }
 
             PropwashWakeProfileDTO current = profiles[0];
             if (current.Version != 0u)
@@ -1629,8 +1515,127 @@ namespace Hecton8.Environment
             return _cachedPropwashTuning;
         }
 
+        private bool EnsureOwnedVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            if (TryResolveVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (vault.IsAllocationLocked)
+                return false;
+
+            ReleaseOwnedVaultHandle(vault, ref handle, bufferId);
+            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystem, options);
+            if (TryResolveVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            ReleaseOwnedVaultHandle(vault, ref handle, bufferId);
+            buffer = default;
+            return false;
+        }
+
+        private bool AreOwnedVaultBuffersReady(IDataVault vault)
+        {
+            return HasVaultBuffer(vault, in _vehicleWakeJobResultHandle, BufferID.MarineSnowWakeJobResult, 1) &&
+                   HasVaultBuffer(vault, in _telemetryRingHandle, BufferID.MarineSnowTelemetryRing, TelemetryCapacity) &&
+                   HasVaultBuffer(vault, in _siltTuningHandle, BufferID.MarineSnowTuningConstants, 1) &&
+                   HasVaultBuffer(vault, in _dynamicWakeDtoHandle, BufferID.MarineSnowDynamicWakes, DynamicWakeDtoCapacity) &&
+                   HasVaultBuffer(vault, in _mockFlowFieldHandle, BufferID.MarineSnowMockFlowField, 1) &&
+                   HasVaultBuffer(vault, in _propwashEventHandle, BufferID.PropwashGpuEventRing, PropwashEventRingCapacity) &&
+                   HasVaultBuffer(vault, in _propwashCursorHandle, BufferID.PropwashGpuRingCursor, 1) &&
+                   HasVaultBuffer(vault, in _propwashTelemetryHandle, BufferID.PropwashGpuTelemetryRing, PropwashGpuContracts.TelemetryCapacity) &&
+                   HasVaultBuffer(vault, in _propwashTuningHandle, BufferID.PropwashGpuTuning, 1) &&
+                   HasVaultBuffer(vault, in _propwashWakeProfileHandle, BufferID.PropwashGpuWakeProfiles, PropwashWakeProfileCapacity);
+        }
+
+        private bool TryResolveVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            return TryResolveVaultBuffer(_dataVault, ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryResolveVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            return IsVfxVaultHandle(in handle, bufferId) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool HasVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
+        {
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   requiredLength > 0 &&
+                   IsVfxVaultHandle(in handle, bufferId) &&
+                   vault.TryReadHandle(in handle, out NativeArray<T> buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool IsVfxVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)VaultOwnerSystem &&
+                   handle.Generation != 0u;
+        }
+
+        private void ReleaseOwnedVaultHandles(IDataVault vault)
+        {
+            ReleaseOwnedVaultHandle(vault, ref _vehicleWakeJobResultHandle, BufferID.MarineSnowWakeJobResult);
+            ReleaseOwnedVaultHandle(vault, ref _telemetryRingHandle, BufferID.MarineSnowTelemetryRing);
+            ReleaseOwnedVaultHandle(vault, ref _siltTuningHandle, BufferID.MarineSnowTuningConstants);
+            ReleaseOwnedVaultHandle(vault, ref _dynamicWakeDtoHandle, BufferID.MarineSnowDynamicWakes);
+            ReleaseOwnedVaultHandle(vault, ref _mockFlowFieldHandle, BufferID.MarineSnowMockFlowField);
+            ReleaseOwnedVaultHandle(vault, ref _propwashEventHandle, BufferID.PropwashGpuEventRing);
+            ReleaseOwnedVaultHandle(vault, ref _propwashCursorHandle, BufferID.PropwashGpuRingCursor);
+            ReleaseOwnedVaultHandle(vault, ref _propwashTelemetryHandle, BufferID.PropwashGpuTelemetryRing);
+            ReleaseOwnedVaultHandle(vault, ref _propwashTuningHandle, BufferID.PropwashGpuTuning);
+            ReleaseOwnedVaultHandle(vault, ref _propwashWakeProfileHandle, BufferID.PropwashGpuWakeProfiles);
+            _proceduralWakeSourcesHandle = default;
+        }
+
+        private static void ReleaseOwnedVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            if (vault != null && IsVfxVaultHandle(in handle, bufferId))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
         private void ClearNativeStateLease()
         {
+            ReleaseOwnedVaultHandles(_dataVault);
             _dataVault = null;
             ClearVaultHandleCache();
             _telemetryWriteIndex = 0;
@@ -4857,5 +4862,3 @@ namespace Hecton8.Environment
         }
     }
 }
-
-

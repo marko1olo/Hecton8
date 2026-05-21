@@ -66,6 +66,7 @@ namespace Hecton8.Atmosphere
         private const float DefaultSuitRuptureThreshold = 0.65f;
         private const float DefaultSuitRuptureDrainPerSecond = 0.35f;
         private const float OxygenDepletedKPa = 1f;
+        private const float AuthoritativeQualityWeight = 1f;
         private const SystemID OwnerSystemId = SystemID.HabitatAtmosphere;
         private const BufferID FrontBufferId = (BufferID)0x42415341; // "BASA"
         private const BufferID BackBufferId = (BufferID)0x42415342; // "BASB"
@@ -115,10 +116,10 @@ namespace Hecton8.Atmosphere
         private int _lastActiveOxygenWholePercent = -1;
         private int _lastSolveBudget;
         private float _tickAccumulator;
-        private float _lastResolvedTickIntervalSeconds = BaseAtmosphereMath.LowColdTickSeconds;
-        private float _lastQualityWeight01;
+        private float _lastResolvedTickIntervalSeconds = BaseAtmosphereMath.HighTickSeconds;
+        private float _lastQualityWeight01 = AuthoritativeQualityWeight;
         private float _activeStaminaRecoveryMultiplier = 1f;
-        private BaseAtmosphereSolveMode _lastSolveMode = BaseAtmosphereSolveMode.ActiveCompartment1Hz;
+        private BaseAtmosphereSolveMode _lastSolveMode = BaseAtmosphereSolveMode.High5Hz;
 
         public int CompartmentCount => TryReadFront(out NativeArray<CompartmentState> front) ? front.Length : 0;
         public int ActiveCompartmentIndex => _activeCompartmentIndex;
@@ -186,11 +187,11 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            float qualityWeight01 = ResolveGlobalQualityWeight01();
+            float qualityWeight01 = AuthoritativeQualityWeight;
             _lastQualityWeight01 = qualityWeight01;
-            _lastResolvedTickIntervalSeconds = BaseAtmosphereMath.ResolveColdTickIntervalSeconds(qualityWeight01);
-            _lastSolveBudget = BaseAtmosphereMath.ResolveCompartmentSolveBudget(front.Length, qualityWeight01);
-            _lastSolveMode = BaseAtmosphereMath.ResolveSolveMode(qualityWeight01, _lastSolveBudget, front.Length);
+            _lastResolvedTickIntervalSeconds = BaseAtmosphereMath.ResolveColdTickIntervalSeconds();
+            _lastSolveBudget = BaseAtmosphereMath.ResolveCompartmentSolveBudget(front.Length);
+            _lastSolveMode = BaseAtmosphereMath.ResolveSolveMode(_lastSolveBudget, front.Length);
             _tickAccumulator += math.max(0f, fixedDeltaTime);
             if (_tickAccumulator + 0.0001f < _lastResolvedTickIntervalSeconds)
                 return;
@@ -639,12 +640,6 @@ namespace Hecton8.Atmosphere
             float netGeneration = powerGrid.TotalGeneration - powerGrid.TotalConsumption;
             float batteryCarrier = battery.TotalStoredEnergyWattSeconds > 1f ? 1f : 0f;
             return math.max(localPower, math.max(netGeneration, batteryCarrier));
-        }
-
-        private static float ResolveGlobalQualityWeight01()
-        {
-            float quality = HomeostasisBrain.GlobalQualityWeight;
-            return math.saturate(math.isfinite(quality) ? quality : 0f);
         }
 
         private static byte EncodeQualityWeightByte(float qualityWeight01)

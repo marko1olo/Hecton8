@@ -3,7 +3,7 @@
 Agent: SHINOBU_260
 Domain: CREST_VERSION_QUARANTINE_DIRECTOR / Echelon 9 Meta & Integration
 Task Count: 20
-Status: POLISH PASS LOOP 15 WITH TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE CPU GATE
+Status: POLISH PASS LOOP 18 WITH TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE CPU GATE
 Batch Source: Docs/Tasks/CURRENT_BATCH.md `<AGENT_PROMPT id="SHINOBU_260" role="CREST_VERSION_QUARANTINE_DIRECTOR">`
 
 ## Hygiene
@@ -340,3 +340,48 @@ Rule quote: `Hecton8.Core` and `Hecton8.Physics` must have zero direct assembly 
   - DOD practice: `python -m py_compile Tools\Crest_Dependency_Scanner.py` passed; `Measure-Command { python Tools\Crest_Dependency_Scanner.py | Out-Null }` reported `SCANNER_SECONDS=35.51`; latest scanner report remains `breach_count=0`.
   - Rejected alternative: Unity/dotnet rebuild was rejected because this loop only changes Python proof tooling.
   - Estimated saving: about 226 seconds per full scanner run on this workspace.
+
+## Loop 16: Assembly Sidecar And GUID Reference Wall
+
+- [x] `.asmref` Crest route scanning added.
+  - DOD practice: `Tools/Crest_Dependency_Scanner.py` now reads both `.asmdef` and `.asmref` JSON, classifies `asmref_reference` hits, and allows them only inside `Assets/_Project/Scripts/Plugins/Crest`.
+  - Rejected alternative: named `.asmdef` scanning alone was rejected because Unity can route assembly references through `.asmref` sidecars.
+  - Estimated saving: runtime 0 microseconds; prevents a future hidden compile-wall edge from bypassing the quarantine scanner.
+- [x] Unity GUID-form Crest asmdef references added to the wall.
+  - DOD practice: scanner treats `GUID:5b35af79ebbe89647a157055d52c59d3` and `GUID:59cd48da98d9e4a80917b613abe9416e` as Crest assembly references, equal to `"Crest"` / `"Crest.Helpers.Editor"`.
+  - Rejected alternative: trusting assembly names only was rejected because Unity asmdefs may store references as GUID strings.
+  - Estimated saving: runtime 0 microseconds; compile-wall proof is stronger.
+- [x] Static proof rerun.
+  - DOD practice: `python -m py_compile Tools\Crest_Dependency_Scanner.py Tools\Crest_Quarantine_Polish_Audit.py`, exact `rg` scans for non-bridge Crest asmdef GUID refs and Crest `.asmref` refs, full dependency scanner, and polish audit passed.
+  - Rejected alternative: Unity/dotnet rebuild was rejected because this loop changes proof tooling and no C# compilation was needed.
+  - Estimated saving: avoids an unnecessary rebuild; full scanner remains `breach_count=0`, `allowed_hit_count=40`.
+
+## Loop 17: Archived Asset GUID Backreference Wall
+
+- [x] Archived Crest5/recovery GUIDs extracted and scanned.
+  - DOD practice: read archived metas for `Crest5_WaveSpectrum.asset`, `Crest5_FoamSettings.asset`, `03_HECTON_WORLD_CREST5.unity`, and `_Recovery.meta`, then ran an active Assets/ProjectSettings/Packages scan for those GUIDs.
+  - Rejected alternative: relying only on asset names/type strings was rejected because Unity YAML can preserve dead links purely by GUID.
+  - Estimated saving: runtime 0 microseconds; prevents silent missing-reference import/editor churn.
+- [x] Dependency scanner now hard-fails active backreferences to those archived GUIDs.
+  - DOD practice: `Tools/Crest_Dependency_Scanner.py` owns `QUARANTINED_ASSET_GUIDS` and includes them in the active serialized breach patterns used by both `rg` and Python fallback.
+  - Rejected alternative: keeping the GUID check as a one-off command was rejected because future regressions need the normal scanner gate.
+  - Estimated saving: runtime 0 microseconds; future proof pass catches dead archive links automatically.
+- [x] Static proof rerun.
+  - DOD practice: py_compile passed; exact archived-GUID scan reports no active refs; dependency scanner reports `breach_count=0`; polish audit reports `failed_count=0`.
+  - Rejected alternative: Unity/dotnet rebuild was rejected because this loop changes proof tooling/docs only.
+  - Estimated saving: no frame claim; avoids needless build wall.
+
+## Loop 18: AutoReferenced Donor And Bridge Fence
+
+- [x] Active Crest donor and bridge asmdefs verified as opt-in only.
+  - DOD practice: exact checks confirmed `autoReferenced=false` in Crest donor runtime/editor asmdefs and Crest bridge runtime/editor asmdefs.
+  - Rejected alternative: relying on direct-reference scans alone was rejected because an auto-referenced donor assembly can widen compile scope without a first-party reference line.
+  - Estimated saving: runtime 0 microseconds; protects editor compile fanout.
+- [x] Dependency scanner now hard-fails autoReferenced regressions.
+  - DOD practice: scanner fails `crest_donor_asmdef_auto_referenced` for active Crest donor asmdefs and `bridge_crest_asmdef_auto_referenced` for allowed bridge asmdefs that reference Crest while auto-referenced.
+  - Rejected alternative: audit-only proof was rejected because compile-wall regressions must fail the normal dependency scanner.
+  - Estimated saving: runtime 0 microseconds; prevents future seconds-scale editor recompile fanout.
+- [x] Static proof rerun.
+  - DOD practice: py_compile passed; dependency scanner reports `breach_count=0`; polish audit reports `failed_count=0`.
+  - Rejected alternative: Unity/dotnet rebuild was rejected because this loop changes proof tooling/docs only.
+  - Estimated saving: no frame claim; avoids needless build wall.

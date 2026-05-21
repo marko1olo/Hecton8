@@ -25,6 +25,8 @@ namespace Hecton8.Atmosphere
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_221.bin";
         private const int CsvPollCadenceFrames = 128;
         private const uint ReactorSignalLaneHash = 0x52474153u; // RGAS
+        private const float AuthoritativeQualityWeight = 1f;
+        private const int AuthoritativeDiffusionIterations = 8;
 
         private static readonly int _GasScalarsShaderId = Shader.PropertyToID("_H8BaseAtmosphereGasScalars");
         private static readonly int _GasQualityShaderId = Shader.PropertyToID("_H8BaseAtmosphereQualityWeight");
@@ -272,7 +274,7 @@ namespace Hecton8.Atmosphere
             SignalBus<FluidIncursionSignal>.EnsureInitialized();
             SignalBus<PlayerBaseEnterSignal>.EnsureInitialized();
             SignalBus<PlayerBaseExitSignal>.EnsureInitialized();
-            SignalBus<ReactorDamageSignal>.Configure(64, maxFrameSignals: 64, lowTierFrameSignals: 8, laneHash: ReactorSignalLaneHash);
+            SignalBus<ReactorDamageSignal>.Configure(64, maxFrameSignals: 64, lowTierFrameSignals: 64, laneHash: ReactorSignalLaneHash);
             SignalBus<ReactorDamageSignal>.EnsureInitialized();
             RegisterDispatcherPhases();
             Application.quitting -= ShutdownActive;
@@ -465,8 +467,7 @@ namespace Hecton8.Atmosphere
             }
 
             AtmosphereTuningDTO tune = tuning.Length > 0 ? tuning[0] : DefaultTuning();
-            float quality = math.saturate(FiniteOr(tune.GlobalQualityWeight, ResolveGlobalQualityWeight()));
-            int iterations = math.max(1, (int)math.lerp(1f, 8f, quality));
+            int iterations = AuthoritativeDiffusionIterations;
             float dt = ResolveSimulationTickDelta(in timing);
 
                 JobHandle handle = new AtmosphereClearDeltaJob
@@ -638,7 +639,7 @@ namespace Hecton8.Atmosphere
             {
                 AtmosphereShaderPayloadDTO scalar = payload[0];
                 Shader.SetGlobalVector(_GasScalarsShaderId, new Vector4(scalar.Oxygen01, scalar.CarbonDioxide01, scalar.Toxin01, scalar.Flow01));
-                Shader.SetGlobalFloat(_GasQualityShaderId, ResolveGlobalQualityWeight());
+                Shader.SetGlobalFloat(_GasQualityShaderId, _smoothedQualityWeight01);
             }
         }
 
@@ -742,12 +743,12 @@ namespace Hecton8.Atmosphere
                 return;
 
             AtmosphereTuningDTO tune = tuning[0];
-            float targetQuality = ResolveGlobalQualityWeight();
+            float targetQuality = ResolveVisualQualityWeight();
             _smoothedQualityWeight01 = SmoothQualityWeight(_smoothedQualityWeight01, targetQuality, ResolveSimulationTickDelta(in timing));
             tune.BaseDiffusionRate = math.clamp(FiniteOr(s_pendingBaseDiffusionRate, 0.35f), 0f, 4f);
             tune.InhalationMultiplier = math.clamp(FiniteOr(s_pendingInhalationMultiplier, 1f), 0f, 4f);
             tune.ToxinDissipationSpeed = math.clamp(FiniteOr(s_pendingToxinDissipationSpeed, 0.005f), 0f, 1f);
-            tune.GlobalQualityWeight = _smoothedQualityWeight01;
+            tune.GlobalQualityWeight = AuthoritativeQualityWeight;
             tune.CellSizeMeters = math.clamp(FiniteOr(tune.CellSizeMeters, 2f), AtmosphereLogisticsConstants.MinimumCellSizeMeters, AtmosphereLogisticsConstants.MaximumCellSizeMeters);
             tune.AmbientTemperatureCelsius = FiniteOr(tune.AmbientTemperatureCelsius, AtmosphereLogisticsConstants.DefaultTemperatureCelsius);
             tune.LeakDrainMultiplier = math.clamp(FiniteOr(tune.LeakDrainMultiplier, 1f), 0f, 8f);
@@ -1192,7 +1193,7 @@ namespace Hecton8.Atmosphere
                 BaseDiffusionRate = s_pendingBaseDiffusionRate,
                 InhalationMultiplier = s_pendingInhalationMultiplier,
                 ToxinDissipationSpeed = s_pendingToxinDissipationSpeed,
-                GlobalQualityWeight = ResolveGlobalQualityWeight(),
+                GlobalQualityWeight = AuthoritativeQualityWeight,
                 CellSizeMeters = 2f,
                 AmbientTemperatureCelsius = AtmosphereLogisticsConstants.DefaultTemperatureCelsius,
                 LeakDrainMultiplier = 1f,
@@ -1401,7 +1402,7 @@ namespace Hecton8.Atmosphere
             return math.lerp(safeCurrent, safeTarget, eased);
         }
 
-        private static float ResolveGlobalQualityWeight()
+        private static float ResolveVisualQualityWeight()
         {
             return math.saturate(FiniteOr(HomeostasisBrain.GlobalQualityWeight, 1f));
         }

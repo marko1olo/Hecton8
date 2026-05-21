@@ -143,7 +143,7 @@
   "shinobu_275_screen_space_wound_decal_compressor": {
     "agentId": "SHINOBU_275",
     "scanner": "Decal_Projector_Inquisition",
-    "timestampUtc": "2026-05-21T18:52:59Z",
+    "timestampUtc": "2026-05-21T19:25:56Z",
     "evidenceClass": "STATIC_SOURCE_TARGETED",
     "scannedAssetCount": 5825,
     "candidateAssetCount": 336,
@@ -212,6 +212,7 @@
     "pureReadAccessorPatch": "Public TryGet* copy accessors use GlobalDataVault.TryReadHandle via TryReadVaultBuffer, leaving TryResolveHandle only on owner/write scheduling paths.",
     "ownerMutationSurfacePatch": "OpenTerminalStateRefForOwner, ForceDirty, and ForceAllDirty are private owner helpers; public mutable-ref/dirty-flag escape hatches are not exposed.",
     "shaderVariantPatch": "Hecton_DiegeticTerminal uses a material scalar _HectonTerminalInstancedMode instead of shader_feature_local/keyword toggles, avoiding a runtime variant warmup hitch.",
+    "shaderReadBoundsPatch": "_GlobalDecryptionPuzzleCount is bound to the last successful bounded GPU upload count, clamped by terminal capacity; upload failure clears the material count to zero so the shader fails closed instead of reading stale or beyond-upload DTO rows.",
     "status": "STATIC_PASS_COMPILE_BLOCKED_BY_CPU_GATE",
     "notes": "Terminal hacking now routes through Vault DTOs and shader buffer overlay. DataMonolith static_data.h8bin is missing, so CSV/mock data is fallback only. dotnet build remains gated by CPU/compiler policy."
   },

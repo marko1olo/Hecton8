@@ -1,6 +1,6 @@
 # Rationale_SHINOBU_260
 
-Status: POLISH PASS LOOP 15 WITH TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE CPU GATE
+Status: POLISH PASS LOOP 18 WITH TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE CPU GATE
 
 ## Decision 001: Resolve Duplicate SHINOBU_260 Prompt By ID And Role
 
@@ -146,3 +146,27 @@ Solution: Use `rg --json -n -a` for active serialized/shader hard-breach search 
 Rejected Alternatives: Returning to `_Project`-only scanning was rejected because it already missed Easy Save, root TestRunner scenes, and recovery payloads. Keeping full Python asset reads was rejected because proof tooling should not create minutes of IO pressure on every pass. Failing closed when `rg` is absent was rejected because CI or developer machines may still need a pure-Python fallback.
 Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. The gain is developer-iteration scalability: broader static proof can now be rerun during future Crest edits without turning every check into a multi-minute IO event.
 Hardware Impact: On this workspace, full scanner wall time dropped from about 262 seconds to about 35.5 seconds, saving roughly 226 seconds per full proof pass. Runtime frame saving remains 0 microseconds.
+
+## Decision 019: Close Unity Assembly Sidecar And GUID Reference Gaps
+
+Problem: The dependency wall scanner proved named `.asmdef` references to Crest, but Unity can also store assembly references as `GUID:<asmdef-guid>` and route folders through `.asmref` files. Active Crest 4 asmdef GUIDs are `5b35af79ebbe89647a157055d52c59d3` for `Crest` and `59cd48da98d9e4a80917b613abe9416e` for `Crest.Helpers.Editor`.
+Solution: Expand `Tools/Crest_Dependency_Scanner.py` to collect both `.asmdef` and `.asmref` files, classify `.asmref` references, and treat the Crest asmdef GUID strings as hard Crest references outside `Assets/_Project/Scripts/Plugins/Crest`. Add a polish audit gate proving this scanner behavior is present.
+Rejected Alternatives: Relying on assembly names was rejected because a future Unity inspector change can rewrite references to GUID form without changing compile behavior. Treating `.asmref` as harmless was rejected because it can attach a folder to an assembly and bypass the named asmdef reference list.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. Developer scalability improves because the compile-wall proof now covers the Unity sidecar formats that can silently widen recompile fanout.
+Hardware Impact: Runtime frame saving is 0 microseconds. The hardware benefit is avoided future editor/compiler churn: exact scans now prove no non-bridge Crest asmdef GUID or Crest `.asmref` route is active.
+
+## Decision 020: Block Active Backreferences To Archived Crest Assets By GUID
+
+Problem: Moving Crest5 settings, the Crest5 sandbox scene, and `_Recovery` outside Unity visibility removes the source files, but active YAML could still hold pure GUID references to those archived objects without containing `WaveHarmonic.Crest` or file-name text.
+Solution: Extract the archived GUIDs and add them to `Tools/Crest_Dependency_Scanner.py` as `QUARANTINED_ASSET_GUIDS`: `ed12880d16f3f2f4e80ceee64594101d`, `149ebcba5c729ad49911b1ea4b8456fd`, `0ef7bde4d259c9d4abcc93f41b0903a0`, and `a73ab923bdc811242bdca5f288eb3877`. Include the GUIDs in both ripgrep and Python active serialized breach patterns, and add a polish audit gate for this behavior.
+Rejected Alternatives: Keeping the GUID search as a one-off manual command was rejected because future agents could reintroduce an active reference and still pass the normal scanner. Failing on all archived GUIDs under `Docs/Archive` was rejected; the breach scope is active Unity-visible `Assets`, `ProjectSettings`, and `Packages`.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. The benefit is asset lifecycle scalability: inactive donor assets stay restorable in archive without becoming hidden active dependencies.
+Hardware Impact: Runtime frame saving is 0 microseconds. Developer hardware impact is avoided missing-reference/import churn when Unity refreshes scenes or serialized assets.
+
+## Decision 021: Fail The Scanner If Crest Donor Or Bridge Becomes Auto-Referenced
+
+Problem: A direct-reference scanner can report clean while `autoReferenced=true` silently lets Unity inject Crest or the bridge into broader compilation. The current files are guarded, but the proof was audit-local and not part of the hard dependency scanner.
+Solution: Add scanner checks for active Crest donor asmdefs and bridge asmdefs that reference Crest. `crest_donor_asmdef_auto_referenced` fails if Crest donor runtime/editor asmdefs are not explicitly `autoReferenced=false`. `bridge_crest_asmdef_auto_referenced` fails if an allowed bridge asmdef references Crest while auto-referenced. Polish audit now gates both source behavior and current runtime/editor bridge/donor asmdef state.
+Rejected Alternatives: Trusting status documentation was rejected because a future Unity inspector toggle can alter `autoReferenced` without adding any C# or asmdef reference line. Audit-only checking was rejected because the dependency scanner is the primary repeatable wall gate.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. Developer scalability improves because Crest donor changes stay leaf-scoped instead of forcing unrelated assemblies into the compile wall.
+Hardware Impact: Runtime frame saving is 0 microseconds. Editor hardware impact is avoided seconds-scale domain reload/recompile fanout if an asmdef toggle regresses.

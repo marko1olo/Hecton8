@@ -67,6 +67,72 @@ BINARY_HARDWARE_TIER_COMPARISON_RE = re.compile(
     r"(?<![=>])(?:==|!=|<=|>=|<|>)(?![=>])\s*(?:\w+\.)*\b(?:QualityTier|HardwareTier)\b"
 )
 BINARY_HARDWARE_SWITCH_RE = re.compile(r"^\s*(?:switch|case)\b")
+PRIVATE_NATIVE_OWNER_LOCAL_SCRATCH_RE = re.compile(
+    r"(?:scratch|openSet|closedSet|queue|commands|hits|slots|sortRecords|toLoad|toUnload)",
+    re.IGNORECASE,
+)
+PRIVATE_NATIVE_BLACKBOX_RE = re.compile(r"(?:blackBox|black_box|telemetry|Telemetry|Ring|ring)")
+PRIVATE_NATIVE_VAULT_ALIAS_RE = re.compile(
+    r"\b(?:Vault alias|GlobalDataVault owns backing memory|owner owns backing memory)\b",
+    re.IGNORECASE,
+)
+PRIVATE_NATIVE_STATIC_QUEUE_RE = re.compile(r"^\s*private\s+static\s+NativeQueue\s*<")
+PRIVATE_NATIVE_DECL_RE = re.compile(
+    r"^\s*private\s+(?P<modifiers>(?:static\s+|readonly\s+|volatile\s+|unsafe\s+)*)"
+    r"Native(?:Array|List|HashMap|ParallelHashMap|Queue)\s*<[^>]+>\s*(?P<tail>.*)"
+)
+PRIVATE_NATIVE_METHOD_RETURN_RE = re.compile(r"^\w+\s*(?:<[^>]+>)?\s*\(")
+PRIVATE_NATIVE_QA_DEV_RE = re.compile(
+    r"(?:/QA/|/Dev/|SmokeTester|Fuzzer|Harness|Baker|Validator|XRay|TunerWindow)",
+    re.IGNORECASE,
+)
+PRIVATE_NATIVE_SIGNAL_BRIDGE_RE = re.compile(
+    r"(?:Signal|Signals|Event|Events|Bus|GlobalSignals|_pending|_nextFrame|_signals|_events)",
+    re.IGNORECASE,
+)
+PRIVATE_NATIVE_VAULT_RESOLVER_RE = re.compile(
+    r"(?:Vault alias|GlobalDataVault owns backing memory|owner owns backing memory|ResolveVault|VaultGenerationHandle|IDataVault|BufferID|SystemID|TryResolveHandle)",
+    re.IGNORECASE,
+)
+PRIVATE_NATIVE_CLASSIFICATION_KEYS = (
+    "privateNativeCollectionVaultAlias",
+    "privateNativeCollectionStaticQueueLane",
+    "privateNativeCollectionBlackBoxTelemetry",
+    "privateNativeCollectionOwnerLocalScratch",
+    "privateNativeCollectionUnclassified",
+)
+PRIVATE_NATIVE_DECLARATION_KIND_KEYS = (
+    "privateNativeDeclarationField",
+    "privateNativeDeclarationMethodReturn",
+    "privateNativeDeclarationAmbiguous",
+)
+PRIVATE_NATIVE_BUILD_SURFACE_KEYS = (
+    "privateNativeBuildPlayerRuntime",
+    "privateNativeBuildEditorOnly",
+    "privateNativeBuildQaDevProof",
+)
+PRIVATE_NATIVE_PRIMARY_RISK_BUCKET_KEYS = (
+    "privateNativeRiskMethodReturningNativeCollection",
+    "privateNativeRiskJobStructNativeView",
+    "privateNativeRiskStaticSignalOrEventBridge",
+    "privateNativeRiskStaticGlobalNativeState",
+    "privateNativeRiskVaultAliasOrVaultResolver",
+    "privateNativeRiskOwnerLocalRuntimeNativeState",
+    "privateNativeRiskEditorOrProofNativeState",
+    "privateNativeRiskUnclassifiedNativeCollection",
+)
+PUBLIC_API_NATIVE_COLLECTION_RE = re.compile(
+    r"^\s*(?:public|internal|protected)\s+"
+    r"(?:static\s+|readonly\s+|virtual\s+|override\s+|sealed\s+|unsafe\s+)*"
+)
+NATIVE_COLLECTION_TOKEN_RE = re.compile(r"\bNative(?:Array|List|HashMap|ParallelHashMap|Queue)\s*<")
+NATIVE_COLLECTION_READONLY_RE = re.compile(r"\bNativeArray\s*<[^>]+>\s*\.ReadOnly\b")
+PUBLIC_NATIVE_RETURN_RE = re.compile(
+    r"^\s*(?:public|internal|protected)\s+"
+    r"(?:static\s+|readonly\s+|virtual\s+|override\s+|sealed\s+|unsafe\s+)*"
+    r"Native(?:Array|List|HashMap|ParallelHashMap|Queue)\s*<"
+)
+PUBLIC_NATIVE_OUT_REF_RE = re.compile(r"\b(?:out|ref)\s+Native(?:Array|List|HashMap|ParallelHashMap|Queue)\s*<")
 STRING_LITERAL_RE = re.compile(
     r"""
     (?:
@@ -128,6 +194,159 @@ def is_binary_hardware_switch_line(scan_code: str) -> bool:
     return False
 
 
+def classify_private_native_collection(raw_line: str) -> str:
+    if PRIVATE_NATIVE_VAULT_ALIAS_RE.search(raw_line):
+        return "privateNativeCollectionVaultAlias"
+    if PRIVATE_NATIVE_STATIC_QUEUE_RE.search(raw_line):
+        return "privateNativeCollectionStaticQueueLane"
+    if PRIVATE_NATIVE_BLACKBOX_RE.search(raw_line):
+        return "privateNativeCollectionBlackBoxTelemetry"
+    if PRIVATE_NATIVE_OWNER_LOCAL_SCRATCH_RE.search(raw_line):
+        return "privateNativeCollectionOwnerLocalScratch"
+    return "privateNativeCollectionUnclassified"
+
+
+def classify_private_native_declaration_kind(scan_code: str) -> str:
+    match = PRIVATE_NATIVE_DECL_RE.search(scan_code)
+    if match is None:
+        return "privateNativeDeclarationAmbiguous"
+
+    tail = match.group("tail").strip()
+    paren_index = tail.find("(")
+    semicolon_index = tail.find(";")
+    if semicolon_index >= 0 and (paren_index < 0 or semicolon_index < paren_index):
+        return "privateNativeDeclarationField"
+    if PRIVATE_NATIVE_METHOD_RETURN_RE.search(tail):
+        return "privateNativeDeclarationMethodReturn"
+    return "privateNativeDeclarationAmbiguous"
+
+
+def classify_private_native_build_surface(rel: str) -> str:
+    normalized = rel.replace("\\", "/")
+    if "/Editor/" in normalized or normalized.endswith(".Editor.cs"):
+        return "privateNativeBuildEditorOnly"
+    if PRIVATE_NATIVE_QA_DEV_RE.search(normalized):
+        return "privateNativeBuildQaDevProof"
+    return "privateNativeBuildPlayerRuntime"
+
+
+def private_native_context(lines: list[str] | None, line_number: int, before: int, after: int) -> str:
+    if lines is None:
+        return ""
+    start = max(0, line_number - 1 - before)
+    end = min(len(lines), line_number + after)
+    return "\n".join(lines[start:end])
+
+
+def private_native_preceding_comments(lines: list[str] | None, line_number: int, limit: int = 3) -> str:
+    if lines is None:
+        return ""
+    comments: list[str] = []
+    cursor = line_number - 2
+    while cursor >= 0 and len(comments) < limit:
+        stripped = lines[cursor].strip()
+        if stripped == "":
+            cursor -= 1
+            continue
+        if stripped.startswith("//"):
+            comments.append(stripped)
+            cursor -= 1
+            continue
+        break
+    comments.reverse()
+    return "\n".join(comments)
+
+
+def is_private_native_job_struct_view(lines: list[str] | None, line_number: int) -> bool:
+    context = private_native_context(lines, line_number, before=20, after=4)
+    return "[BurstCompile" in context or re.search(r"\bIJob(?:For|ParallelFor|Chunk)?\b", context) is not None
+
+
+def classify_private_native_primary_risk(
+    rel: str,
+    raw_line: str,
+    scan_code: str,
+    lines: list[str] | None,
+    line_number: int,
+    declaration_kind: str,
+    build_surface: str,
+) -> str:
+    if declaration_kind == "privateNativeDeclarationMethodReturn":
+        return "privateNativeRiskMethodReturningNativeCollection"
+    if build_surface != "privateNativeBuildPlayerRuntime":
+        return "privateNativeRiskEditorOrProofNativeState"
+    if is_private_native_job_struct_view(lines, line_number):
+        return "privateNativeRiskJobStructNativeView"
+    if "static" in (PRIVATE_NATIVE_DECL_RE.search(scan_code).group("modifiers") if PRIVATE_NATIVE_DECL_RE.search(scan_code) else ""):
+        if "NativeQueue" in scan_code or PRIVATE_NATIVE_SIGNAL_BRIDGE_RE.search(rel) or PRIVATE_NATIVE_SIGNAL_BRIDGE_RE.search(raw_line):
+            return "privateNativeRiskStaticSignalOrEventBridge"
+        return "privateNativeRiskStaticGlobalNativeState"
+    vault_context = raw_line + "\n" + private_native_preceding_comments(lines, line_number)
+    if PRIVATE_NATIVE_VAULT_RESOLVER_RE.search(vault_context) or "ResolveVault" in scan_code:
+        return "privateNativeRiskVaultAliasOrVaultResolver"
+    if declaration_kind == "privateNativeDeclarationField":
+        return "privateNativeRiskOwnerLocalRuntimeNativeState"
+    return "privateNativeRiskUnclassifiedNativeCollection"
+
+
+def record_private_native_classification(
+    results: dict[str, list[Finding]],
+    finding: Finding,
+    rel: str,
+    line_number: int,
+    raw_line: str,
+    scan_code: str,
+    lines: list[str] | None,
+) -> None:
+    results[classify_private_native_collection(raw_line)].append(finding)
+    declaration_kind = classify_private_native_declaration_kind(scan_code)
+    build_surface = classify_private_native_build_surface(rel)
+    primary_risk = classify_private_native_primary_risk(
+        rel,
+        raw_line,
+        scan_code,
+        lines,
+        line_number,
+        declaration_kind,
+        build_surface,
+    )
+    results[declaration_kind].append(finding)
+    results[build_surface].append(finding)
+    results[primary_risk].append(finding)
+
+
+def collect_signature(lines: list[str], line_number: int, max_lines: int = 12) -> str:
+    parts: list[str] = []
+    balance = 0
+    for cursor in range(line_number - 1, min(len(lines), line_number - 1 + max_lines)):
+        code = strip_string_literals(strip_line_comment(lines[cursor])).strip()
+        if not code:
+            continue
+        parts.append(code)
+        balance += code.count("(") - code.count(")")
+        if "=>" in code or "{" in code or ";" in code or (balance <= 0 and ")" in code):
+            break
+    return " ".join(parts)
+
+
+def is_public_mutable_native_api_exposure(lines: list[str], line_number: int, scan_code: str) -> bool:
+    if PUBLIC_API_NATIVE_COLLECTION_RE.search(scan_code) is None:
+        return False
+
+    signature = collect_signature(lines, line_number)
+    if NATIVE_COLLECTION_TOKEN_RE.search(signature) is None:
+        return False
+    if NATIVE_COLLECTION_READONLY_RE.search(signature) is not None:
+        return False
+
+    returns_native_view = PUBLIC_NATIVE_RETURN_RE.search(signature) is not None and (
+        "(" in signature or "=>" in signature
+    )
+    if "=>" in signature and not returns_native_view:
+        return False
+    return returns_native_view or PUBLIC_NATIVE_OUT_REF_RE.search(signature) is not None
+
+
 def empty_results() -> dict[str, list[Finding]]:
     results: dict[str, list[Finding]] = {key: [] for key in LINE_PATTERNS}
     results.update(
@@ -137,8 +356,16 @@ def empty_results() -> dict[str, list[Finding]]:
             "burstMissingCompileSynchronously": [],
             "burstMissingFloatMode": [],
             "burstMissingFloatPrecision": [],
+            "nativeCollectionPublicMutableApiExposure": [],
         }
     )
+    for key in (
+        *PRIVATE_NATIVE_CLASSIFICATION_KEYS,
+        *PRIVATE_NATIVE_DECLARATION_KIND_KEYS,
+        *PRIVATE_NATIVE_BUILD_SURFACE_KEYS,
+        *PRIVATE_NATIVE_PRIMARY_RISK_BUCKET_KEYS,
+    ):
+        results[key] = []
     return results
 
 
@@ -164,6 +391,7 @@ def record_line_patterns(
     line_number: int,
     raw_line: str,
     code: str,
+    lines: list[str] | None = None,
 ) -> None:
     scan_code = strip_string_literals(code)
     checks = (
@@ -179,7 +407,18 @@ def record_line_patterns(
     )
     for key, token in checks:
         if token in scan_code and LINE_PATTERNS[key].search(scan_code):
-            results[key].append(Finding(rel, line_number, raw_line.strip()))
+            finding = Finding(rel, line_number, raw_line.strip())
+            results[key].append(finding)
+            if key == "privateNativeCollectionField":
+                record_private_native_classification(
+                    results,
+                    finding,
+                    rel,
+                    line_number,
+                    raw_line,
+                    scan_code,
+                    lines,
+                )
 
     if is_binary_hardware_switch_line(scan_code):
         results["binaryHardwareSwitch"].append(Finding(rel, line_number, raw_line.strip()))
@@ -199,7 +438,11 @@ def scan_all(files: Iterable[Path]) -> dict[str, list[Finding]]:
             code = strip_line_comment(raw_line)
             scan_code = strip_string_literals(code)
 
-            record_line_patterns(results, rel, line_number, raw_line, code)
+            record_line_patterns(results, rel, line_number, raw_line, code, lines)
+            if is_public_mutable_native_api_exposure(lines, line_number, scan_code):
+                results["nativeCollectionPublicMutableApiExposure"].append(
+                    Finding(rel, line_number, collect_signature(lines, line_number))
+                )
 
             if "[BurstCompile" in scan_code:
                 attr_parts = [scan_code.strip()]

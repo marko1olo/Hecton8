@@ -127,8 +127,13 @@
       "status": "PASS"
     },
     {
-      "detail": "Runtime Crest bridge stays opt-in and cannot leak into unrelated assemblies by auto-reference.",
+      "detail": "Runtime and editor Crest bridge assemblies stay opt-in and cannot leak into unrelated assemblies by auto-reference.",
       "name": "bridge_asmdef_not_auto_referenced",
+      "status": "PASS"
+    },
+    {
+      "detail": "Active Crest donor runtime/editor asmdefs are leaf-import guarded with autoReferenced=false.",
+      "name": "crest_donor_asmdefs_not_auto_referenced",
       "status": "PASS"
     },
     {
@@ -199,6 +204,21 @@
     {
       "detail": "Dependency scanner uses ripgrep for the widened active serialized surface, keeps bounded Python fallback, and hard-fails visible Crest5 package reactivation.",
       "name": "dependency_scanner_uses_rg_for_broad_serialized_surface",
+      "status": "PASS"
+    },
+    {
+      "detail": "Dependency scanner treats Unity GUID-form asmdef references and .asmref sidecars as Crest wall breaches unless they are inside the bridge.",
+      "name": "dependency_scanner_covers_asmref_and_crest_guid_references",
+      "status": "PASS"
+    },
+    {
+      "detail": "Dependency scanner fails active references to archived Crest5 settings, Crest5 scene, and recovery folder GUIDs.",
+      "name": "dependency_scanner_blocks_archived_asset_guid_references",
+      "status": "PASS"
+    },
+    {
+      "detail": "Dependency scanner hard-fails Crest donor or bridge asmdefs if autoReferenced is re-enabled.",
+      "name": "dependency_scanner_blocks_auto_referenced_crest_assemblies",
       "status": "PASS"
     }
   ],

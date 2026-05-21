@@ -305,11 +305,20 @@ def main() -> int:
     )
 
     asmdef = read_text("Assets/_Project/Scripts/Plugins/Crest/Hecton8.Crest.Bridge.asmdef")
+    editor_bridge_asmdef = read_text("Assets/_Project/Scripts/Plugins/Crest/Editor/Hecton8.Crest.Bridge.Editor.asmdef")
+    crest_donor_asmdef = read_text("Assets/Crest/Crest/Scripts/Crest.asmdef")
+    crest_donor_editor_asmdef = read_text("Assets/Crest/Crest/Scripts/Editor/Crest.Editor.asmdef")
     add_check(
         checks,
         "bridge_asmdef_not_auto_referenced",
-        '"autoReferenced": false' in asmdef,
-        "Runtime Crest bridge stays opt-in and cannot leak into unrelated assemblies by auto-reference.",
+        '"autoReferenced": false' in asmdef and '"autoReferenced": false' in editor_bridge_asmdef,
+        "Runtime and editor Crest bridge assemblies stay opt-in and cannot leak into unrelated assemblies by auto-reference.",
+    )
+    add_check(
+        checks,
+        "crest_donor_asmdefs_not_auto_referenced",
+        '"autoReferenced": false' in crest_donor_asmdef and '"autoReferenced": false' in crest_donor_editor_asmdef,
+        "Active Crest donor runtime/editor asmdefs are leaf-import guarded with autoReferenced=false.",
     )
 
     bridge = read_text("Assets/_Project/Scripts/Plugins/Crest/CrestBridge.cs")
@@ -427,11 +436,10 @@ def main() -> int:
         "TryBuildBurstTuning reads the cached Crest owner and does not route through logging resolver or registry fallback.",
     )
 
-    editor_asmdef = read_text("Assets/_Project/Scripts/Plugins/Crest/Editor/Hecton8.Crest.Bridge.Editor.asmdef")
     add_check(
         checks,
         "editor_bridge_no_easysave3_reference",
-        "EasySave3" not in editor_asmdef,
+        "EasySave3" not in editor_bridge_asmdef,
         "Crest bridge editor assembly no longer references the forbidden EasySave3 assembly.",
     )
 
@@ -462,6 +470,34 @@ def main() -> int:
         and "handle.read(MAX_ACTIVE_ASSET_SCAN_BYTES)" in dependency_scanner_source
         and "active_crest5_package_visible" in dependency_scanner_source,
         "Dependency scanner uses ripgrep for the widened active serialized surface, keeps bounded Python fallback, and hard-fails visible Crest5 package reactivation.",
+    )
+    add_check(
+        checks,
+        "dependency_scanner_covers_asmref_and_crest_guid_references",
+        "CREST_ASMDEF_GUID_REFERENCES" in dependency_scanner_source
+        and "5b35af79ebbe89647a157055d52c59d3" in dependency_scanner_source
+        and "59cd48da98d9e4a80917b613abe9416e" in dependency_scanner_source
+        and "asmref_reference" in dependency_scanner_source
+        and 'root.rglob("*.asmref")' in dependency_scanner_source,
+        "Dependency scanner treats Unity GUID-form asmdef references and .asmref sidecars as Crest wall breaches unless they are inside the bridge.",
+    )
+    add_check(
+        checks,
+        "dependency_scanner_blocks_archived_asset_guid_references",
+        "QUARANTINED_ASSET_GUIDS" in dependency_scanner_source
+        and "ed12880d16f3f2f4e80ceee64594101d" in dependency_scanner_source
+        and "149ebcba5c729ad49911b1ea4b8456fd" in dependency_scanner_source
+        and "0ef7bde4d259c9d4abcc93f41b0903a0" in dependency_scanner_source
+        and "a73ab923bdc811242bdca5f288eb3877" in dependency_scanner_source,
+        "Dependency scanner fails active references to archived Crest5 settings, Crest5 scene, and recovery folder GUIDs.",
+    )
+    add_check(
+        checks,
+        "dependency_scanner_blocks_auto_referenced_crest_assemblies",
+        "scan_crest_donor_autoreference" in dependency_scanner_source
+        and "crest_donor_asmdef_auto_referenced" in dependency_scanner_source
+        and "bridge_crest_asmdef_auto_referenced" in dependency_scanner_source,
+        "Dependency scanner hard-fails Crest donor or bridge asmdefs if autoReferenced is re-enabled.",
     )
 
     failed = [check for check in checks if check["status"] != "PASS"]

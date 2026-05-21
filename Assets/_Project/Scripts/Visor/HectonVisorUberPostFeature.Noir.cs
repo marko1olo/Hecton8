@@ -203,8 +203,10 @@ namespace Hecton8.Visor
         private VaultBufferHandle<byte> _noirCsvScratchHandle;
         private NoirPostProcessDTO _lastNoirConstants;
         private NoirColorProfileDTO _cachedNoirColorProfile;
+        private readonly NoirColorProfileDTO[] _noirColorProfileCache = new NoirColorProfileDTO[NoirColorProfileCapacity]; // COLD ALLOC: NoirColorProfileDTO[32] - color CSV snapshot for LateFrame profile selection without Vault profile reads - owner: HectonVisorUberPostFeature
         private uint _cachedNoirColorProfileLookupHash;
         private int _cachedNoirColorProfileFrame = int.MinValue;
+        private int _noirColorProfileCacheCount;
         private int _noirBufferIndex;
         private int _noirTelemetryCursor;
         private int _nextNoirPlayerRefreshFrame;
@@ -218,7 +220,7 @@ namespace Hecton8.Visor
         private bool _noirColorCsvLoaded;
         private bool _noirColorCsvLoadAttempted;
         private bool _noirPlayerSnapshotsAvailable;
-        private bool _registeredNoirLateFrameTick;
+        private bool _registeredLateFrameTick;
         private IPlayerRuntimeContext _noirPlayerContext;
         private IResolutionScalerService _noirResolutionScaler;
         private bool _hotSwapRegistered;
@@ -451,16 +453,25 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            if (settings == null ||
-                !settings.deepSeaNoirUnifiedPass ||
-                _material == null ||
-                !NoirConstantsBuffersReady() ||
-                !NoirVaultHandlesReady())
+            if (settings == null)
             {
                 return;
             }
 
-            TryUpdateNoirConstants();
+            if (settings.deepSeaNoirUnifiedPass)
+            {
+                if (_material == null ||
+                    !NoirConstantsBuffersReady() ||
+                    !NoirVaultHandlesReady())
+                {
+                    return;
+                }
+
+                TryUpdateNoirConstants();
+                return;
+            }
+
+            TryUpdateReconstructionConstantsLate();
         }
 
         private void EnsureNoirPassCold()
@@ -468,25 +479,25 @@ namespace Hecton8.Visor
             _noirPass ??= new NoirPostProcessPass();
         }
 
-        private void TryRegisterNoirLateFrameTickable()
+        private void TryRegisterLateFrameTickable()
         {
-            if (_registeredNoirLateFrameTick ||
+            if (_registeredLateFrameTick ||
                 !Application.isPlaying ||
                 GlobalRegistry.Dispatcher == null)
             {
                 return;
             }
 
-            _registeredNoirLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
-        private void TryUnregisterNoirLateFrameTickable()
+        private void TryUnregisterLateFrameTickable()
         {
-            if (!_registeredNoirLateFrameTick)
+            if (!_registeredLateFrameTick)
                 return;
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
-            _registeredNoirLateFrameTick = false;
+            _registeredLateFrameTick = false;
         }
 
         private void RefreshNoirCachedDependenciesCold()
@@ -683,6 +694,7 @@ namespace Hecton8.Visor
             _noirCsvScratchHandle = default;
             _hasCachedNoirColorProfile = false;
             _hasCachedNoirColorProfileLookup = false;
+            _noirColorProfileCacheCount = 0;
             _noirColorCsvLoaded = false;
             _noirColorCsvLoadAttempted = false;
             ResetNoirClockState();
@@ -983,12 +995,8 @@ namespace Hecton8.Visor
                 return _hasCachedNoirColorProfile;
             }
 
-            if (!_noirColorCsvLoaded ||
-                _dataVault == null ||
-                !_noirColorProfileHandle.IsCreated ||
-                !_dataVault.TryResolveHandle(in _noirColorProfileHandle, out NativeArray<NoirColorProfileDTO> profiles) ||
-                !profiles.IsCreated ||
-                profiles.Length <= 0)
+            int count = math.min(_noirColorProfileCacheCount, _noirColorProfileCache.Length);
+            if (!_noirColorCsvLoaded || count <= 0)
             {
                 profile = default;
                 return false;
@@ -996,9 +1004,9 @@ namespace Hecton8.Visor
 
             float depthMeters = math.max(0f, SanitizeFinite(input.DepthMeters, 0f));
             float stress01 = Sanitize01(input.Stress01);
-            for (int i = 0; i < profiles.Length; i++)
+            for (int i = 0; i < count; i++)
             {
-                NoirColorProfileDTO candidate = profiles[i];
+                NoirColorProfileDTO candidate = _noirColorProfileCache[i];
                 if (candidate.ProfileHash == 0u || candidate.Flags == 0u)
                     continue;
 
@@ -1078,6 +1086,7 @@ namespace Hecton8.Visor
 
                 int parsed = ParseNoirColorCsv(scratch, read, profiles);
                 _noirColorCsvLoaded = parsed > 0;
+                CacheNoirColorProfiles(profiles, parsed);
                 _hasCachedNoirColorProfile = false;
                 _hasCachedNoirColorProfileLookup = false;
                 return _noirColorCsvLoaded;
@@ -1088,6 +1097,20 @@ namespace Hecton8.Visor
                     _dataVault.TryUnlockBuffer(NoirColorProfilesVaultId, SystemID.GraphicsScalability);
                 _dataVault.TryUnlockBuffer(NoirCsvScratchVaultId, SystemID.GraphicsScalability);
             }
+        }
+
+        private void CacheNoirColorProfiles(
+            NativeArray<NoirColorProfileDTO> profiles,
+            int parsed)
+        {
+            int count = math.min(math.max(0, parsed), math.min(profiles.Length, _noirColorProfileCache.Length));
+            for (int i = 0; i < count; i++)
+                _noirColorProfileCache[i] = profiles[i];
+
+            for (int i = count; i < _noirColorProfileCache.Length; i++)
+                _noirColorProfileCache[i] = default;
+
+            _noirColorProfileCacheCount = count;
         }
 
         private static int ParseNoirColorCsv(

@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using AOT;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Burst;
@@ -162,6 +163,37 @@ namespace Hecton8.World.FloraAmbientSway
         }
     }
 
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal unsafe delegate void GenerateMockAmbientFlowKernelDelegate(GenerateMockAmbientFlowJob* job);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal unsafe delegate void CalculateFloraSwayParametersKernelDelegate(CalculateFloraSwayParametersJob* job);
+
+    internal static unsafe class FloraAmbientSwayBurstKernelEntrypoints
+    {
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        [MonoPInvokeCallback(typeof(GenerateMockAmbientFlowKernelDelegate))]
+        internal static void GenerateMockAmbientFlow(GenerateMockAmbientFlowJob* job)
+        {
+            if (job == null)
+                return;
+
+            ref GenerateMockAmbientFlowJob jobRef = ref UnsafeUtility.AsRef<GenerateMockAmbientFlowJob>(job);
+            jobRef.Execute();
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        [MonoPInvokeCallback(typeof(CalculateFloraSwayParametersKernelDelegate))]
+        internal static void CalculateFloraSwayParameters(CalculateFloraSwayParametersJob* job)
+        {
+            if (job == null)
+                return;
+
+            ref CalculateFloraSwayParametersJob jobRef = ref UnsafeUtility.AsRef<CalculateFloraSwayParametersJob>(job);
+            jobRef.Execute();
+        }
+    }
+
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-96)]
     public sealed unsafe class FloraAmbientSwayRuntime : MonoBehaviour, IDispatcherSystem, IServiceShutdown, IGlobalRegistryHotSwapListener
@@ -186,9 +218,12 @@ namespace Hecton8.World.FloraAmbientSway
         private const uint TelemetryFlagConstantBufferUnsupported = 1u << 1;
         private const uint TelemetryFlagInvalidNumber = 1u << 2;
         private const uint TelemetryFlagUploadSkipped = 1u << 3;
+        private const uint TelemetryFlagBurstKernelUnavailable = 1u << 4;
         private const uint TelemetrySourceHash = 0x53465759u;
 
         private static int s_runtimeClaimed;
+        private static FunctionPointer<GenerateMockAmbientFlowKernelDelegate> s_generateMockKernel;
+        private static FunctionPointer<CalculateFloraSwayParametersKernelDelegate> s_calculateKernel;
 
         [SerializeField, Range(0f, 2f)] private float _globalAmplitudeMeters = 0.42f;
         [SerializeField, Range(0.001f, 8f)] private float _frequency = 1.1f;
@@ -230,6 +265,8 @@ namespace Hecton8.World.FloraAmbientSway
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
             Volatile.Write(ref s_runtimeClaimed, 0);
+            s_generateMockKernel = default;
+            s_calculateKernel = default;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -417,7 +454,11 @@ namespace Hecton8.World.FloraAmbientSway
                     MockIntensity = _mockFlowIntensity,
                     Frame = frame
                 };
-                mockFlowJob.Execute();
+                if (!RunMockAmbientFlowKernel(mockFlowJob))
+                {
+                    RecordTelemetry(frame, TelemetryFlagBurstKernelUnavailable, default);
+                    return;
+                }
             }
 
             var parametersJob = new CalculateFloraSwayParametersJob
@@ -428,7 +469,11 @@ namespace Hecton8.World.FloraAmbientSway
                 DeltaTime = deltaTime,
                 GlobalQualityWeight = ResolveGlobalQualityWeight()
             };
-            parametersJob.Execute();
+            if (!RunCalculateFloraSwayParametersKernel(parametersJob))
+            {
+                RecordTelemetry(frame, TelemetryFlagBurstKernelUnavailable, default);
+                return;
+            }
 
             FloraSwayParamsDTO dto = parameters[0];
             uint flags = ValidateParams(in dto) ? 0u : TelemetryFlagInvalidNumber;
@@ -572,6 +617,7 @@ namespace Hecton8.World.FloraAmbientSway
 
             _dumped = false;
             _tuningDirty = true;
+            EnsureBurstKernelsCold();
             WriteTuningToVault(force: true);
 #if UNITY_EDITOR
             if (_loadBiomeProfilesOnEnable)
@@ -580,6 +626,39 @@ namespace Hecton8.World.FloraAmbientSway
             if (SystemInfo.supportsSetConstantBuffer)
                 EnsureShaderParamsBuffers();
 
+            return true;
+        }
+
+        private static void EnsureBurstKernelsCold()
+        {
+            if (!s_generateMockKernel.IsCreated)
+            {
+                s_generateMockKernel = BurstCompiler.CompileFunctionPointer<GenerateMockAmbientFlowKernelDelegate>(
+                    FloraAmbientSwayBurstKernelEntrypoints.GenerateMockAmbientFlow);
+            }
+
+            if (!s_calculateKernel.IsCreated)
+            {
+                s_calculateKernel = BurstCompiler.CompileFunctionPointer<CalculateFloraSwayParametersKernelDelegate>(
+                    FloraAmbientSwayBurstKernelEntrypoints.CalculateFloraSwayParameters);
+            }
+        }
+
+        private static unsafe bool RunMockAmbientFlowKernel(GenerateMockAmbientFlowJob job)
+        {
+            if (!s_generateMockKernel.IsCreated)
+                return false;
+
+            s_generateMockKernel.Invoke(&job);
+            return true;
+        }
+
+        private static unsafe bool RunCalculateFloraSwayParametersKernel(CalculateFloraSwayParametersJob job)
+        {
+            if (!s_calculateKernel.IsCreated)
+                return false;
+
+            s_calculateKernel.Invoke(&job);
             return true;
         }
 

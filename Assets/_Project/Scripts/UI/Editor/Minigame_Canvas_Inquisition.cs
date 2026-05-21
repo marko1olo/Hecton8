@@ -91,6 +91,7 @@ namespace Hecton8.UI.Editor
             builder.AppendLine("    \"pureReadAccessorPatch\": \"Public TryGet* copy accessors use GlobalDataVault.TryReadHandle via TryReadVaultBuffer, leaving TryResolveHandle only on owner/write scheduling paths.\",");
             builder.AppendLine("    \"ownerMutationSurfacePatch\": \"OpenTerminalStateRefForOwner, ForceDirty, and ForceAllDirty are private owner helpers; public mutable-ref/dirty-flag escape hatches are not exposed.\",");
             builder.AppendLine("    \"shaderVariantPatch\": \"Hecton_DiegeticTerminal uses a material scalar _HectonTerminalInstancedMode instead of shader_feature_local/keyword toggles, avoiding a runtime variant warmup hitch.\",");
+            builder.AppendLine("    \"shaderReadBoundsPatch\": \"_GlobalDecryptionPuzzleCount is bound to the last successful bounded GPU upload count, clamped by terminal capacity; upload failure clears the material count to zero so the shader fails closed instead of reading stale or beyond-upload DTO rows.\",");
             builder.AppendLine("    \"status\": \"STATIC_PASS_COMPILE_BLOCKED_BY_CPU_GATE\",");
             builder.AppendLine("    \"notes\": \"Terminal hacking routes through Vault DTOs and shader buffer overlay. DataMonolith static_data.h8bin is missing, so CSV/mock data is fallback only. dotnet build remains gated by CPU/compiler policy.\"");
             builder.Append("  }");

@@ -60,6 +60,7 @@ namespace Hecton8.Atmosphere
         private const ushort RoomFlagInternalFire = (ushort)GasDynamicsRoomFlags.InternalFire;
         private const ushort RoomFlagBreached = (ushort)GasDynamicsRoomFlags.Breached;
         private const ushort RoomFlagOccupied = (ushort)GasDynamicsRoomFlags.Occupied;
+        private const float AuthoritativeQualityWeight = 1f;
         private const string NativeMemoryOwner = nameof(GasDynamicsSolver);
         private const Allocator DataVaultExemptSceneScratchAllocator = Allocator.Persistent;
         private const string DumpFileName = "Dump_HABITAT_O2_SCRUBBER_LOD.bin";
@@ -84,9 +85,9 @@ namespace Hecton8.Atmosphere
         [Header("Base Hibernation")]
         [Tooltip("Maximum atmosphere islands tracked by the hibernation mask.")]
         [SerializeField, Range(1, MaxBaseCapacity)] private int baseCapacity = 8;
-        [Tooltip("Standard hibernation distance for Mid+ quality tiers.")]
+        [Tooltip("Authoritative hibernation distance. Hardware quality must not alter gas truth.")]
         [SerializeField, Min(1f)] private float hibernationDistanceMeters = DefaultHibernationDistanceMeters;
-        [Tooltip("Low/MX350 hibernation distance used to shut down distant base math earlier.")]
+        [Tooltip("Legacy serialized fallback. Gas authority treats this only as a conservative distance floor.")]
         [SerializeField, Min(1f)] private float lowTierHibernationDistanceMeters = DefaultLowTierHibernationDistanceMeters;
         [Tooltip("Distance band preventing awake/sleep flicker around the hibernation threshold.")]
         [SerializeField, Min(3f)] private float hibernationHysteresisMeters = DefaultHibernationHysteresisMeters;
@@ -158,9 +159,8 @@ namespace Hecton8.Atmosphere
         private int _telemetryWriteIndex;
         private int _tickCount;
         private float _tickAccumulator;
-        private float _lastCadenceSeconds = 2.0f;
-        private float _lastQualityWeight01;
-        private GasDynamicsMathLod _lastMathLod = GasDynamicsMathLod.Low;
+        private float _lastCadenceSeconds = 0.1f;
+        private GasDynamicsMathLod _lastMathLod = GasDynamicsMathLod.Ultra;
         private ITickDispatcher _tickDispatcher;
         private IPlayerMovementContracts _playerMovementContracts;
         private IDataVault _dataVault;
@@ -256,10 +256,9 @@ namespace Hecton8.Atmosphere
             DrainBaseTransitionSignals(allowWake: true);
             DrainHullRepairedSignals();
             WakePlayerInsideSleepingBases(now);
-            float qualityWeight01 = ResolveGlobalQualityWeight01();
-            _lastQualityWeight01 = qualityWeight01;
+            float qualityWeight01 = AuthoritativeQualityWeight;
             _lastMathLod = ResolveMathLod(qualityWeight01);
-            _lastCadenceSeconds = ResolveCadenceSeconds(qualityWeight01);
+            _lastCadenceSeconds = ResolveCadenceSeconds();
             _tickAccumulator += math.max(0f, fixedDeltaTime);
             if (_tickAccumulator + 0.0001f < _lastCadenceSeconds)
                 return;
@@ -1408,7 +1407,7 @@ namespace Hecton8.Atmosphere
 
             double now = ResolveUnscaledTimeSeconds();
             bool hasPlayerAup = TryResolvePlayerAup(out AbsoluteUniversePosition playerAup);
-            float sleepDistance = ResolveHibernationDistanceMeters(_lastQualityWeight01);
+            float sleepDistance = ResolveHibernationDistanceMeters();
             float wakeDistance = math.max(0f, sleepDistance - math.max(3f, hibernationHysteresisMeters));
             double sleepDistanceSq = (double)sleepDistance * sleepDistance;
             double wakeDistanceSq = (double)wakeDistance * wakeDistance;
@@ -1528,13 +1527,11 @@ namespace Hecton8.Atmosphere
                    math.isfinite(position.LocalZ);
         }
 
-        private float ResolveHibernationDistanceMeters(float qualityWeight01)
+        private float ResolveHibernationDistanceMeters()
         {
-            float lowDistance = math.max(1f, lowTierHibernationDistanceMeters);
             float normalDistance = math.max(1f, hibernationDistanceMeters);
-            float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 0f);
-            float curve = Smooth01(math.saturate((quality - 0.25f) * 1.5384616f));
-            return math.lerp(lowDistance, normalDistance, curve);
+            float legacyDistanceFloor = math.max(1f, lowTierHibernationDistanceMeters);
+            return math.max(normalDistance, legacyDistanceFloor);
         }
 
         private bool AreRoomStateLanesReady(int requiredCount)
@@ -1969,21 +1966,12 @@ namespace Hecton8.Atmosphere
             return GasDynamicsMathLod.Low;
         }
 
-        private float ResolveCadenceSeconds(float qualityWeight01)
+        private float ResolveCadenceSeconds()
         {
             float lowCadence = math.max(0.1f, lowTierColdTickSeconds);
             float midCadence = math.max(0.05f, midTierColdTickSeconds);
             float highCadence = math.max(0.02f, highTierColdTickSeconds);
-            float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 0f);
-            float midCurve = Smooth01(math.saturate((quality - 0.18f) * 1.7241379f));
-            float highCurve = Smooth01(math.saturate((quality - 0.62f) * 2.631579f));
-            return math.lerp(math.lerp(lowCadence, midCadence, midCurve), highCadence, highCurve);
-        }
-
-        private static float ResolveGlobalQualityWeight01()
-        {
-            float quality = HomeostasisBrain.GlobalQualityWeight;
-            return math.saturate(math.isfinite(quality) ? quality : 0f);
+            return math.max(0.02f, math.min(highCadence, math.min(midCadence, lowCadence)));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

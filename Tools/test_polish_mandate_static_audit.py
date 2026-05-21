@@ -159,6 +159,160 @@ public static class TierAccessor
             cats = payload["categories"]
             self.assertEqual(cats["binaryHardwareSwitch"]["matches"], 0)
 
+    def test_private_native_collection_classification_preserves_raw_total(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            src = root / "NativeCollections.cs"
+            src.write_text(
+                """
+using Unity.Collections;
+
+public sealed class NativeCollections
+{
+    private NativeArray<int> _state;
+    private NativeArray<float> _voicePool; // Vault alias; GlobalDataVault owns backing memory.
+    private static NativeQueue<EventPayload> _pendingEvents;
+    private NativeArray<TelemetryEntry> _telemetryRing;
+    private NativeList<int> _scratch;
+}
+""",
+                encoding="utf-8",
+            )
+
+            payload = audit.build_payload(root)
+            cats = payload["categories"]
+            self.assertEqual(cats["privateNativeCollectionField"]["matches"], 5)
+            classified_total = (
+                cats["privateNativeCollectionVaultAlias"]["matches"]
+                + cats["privateNativeCollectionStaticQueueLane"]["matches"]
+                + cats["privateNativeCollectionBlackBoxTelemetry"]["matches"]
+                + cats["privateNativeCollectionOwnerLocalScratch"]["matches"]
+                + cats["privateNativeCollectionUnclassified"]["matches"]
+            )
+            self.assertEqual(classified_total, cats["privateNativeCollectionField"]["matches"])
+            self.assertEqual(cats["privateNativeCollectionVaultAlias"]["matches"], 1)
+            self.assertEqual(cats["privateNativeCollectionStaticQueueLane"]["matches"], 1)
+            self.assertEqual(cats["privateNativeCollectionBlackBoxTelemetry"]["matches"], 1)
+            self.assertEqual(cats["privateNativeCollectionOwnerLocalScratch"]["matches"], 1)
+            self.assertEqual(cats["privateNativeCollectionUnclassified"]["matches"], 1)
+            self.assertEqual(cats["privateNativeDeclarationField"]["matches"], 5)
+            self.assertEqual(cats["privateNativeDeclarationMethodReturn"]["matches"], 0)
+            self.assertEqual(cats["privateNativeBuildPlayerRuntime"]["matches"], 5)
+            self.assertEqual(cats["privateNativeRiskStaticSignalOrEventBridge"]["matches"], 1)
+            self.assertEqual(cats["privateNativeRiskVaultAliasOrVaultResolver"]["matches"], 1)
+            self.assertEqual(cats["privateNativeRiskOwnerLocalRuntimeNativeState"]["matches"], 3)
+
+    def test_private_native_collection_classifies_method_returns(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            src = root / "VaultResolver.cs"
+            src.write_text(
+                """
+using Unity.Collections;
+
+public sealed class VaultResolver
+{
+    private static NativeArray<int> ResolveVaultBuffer<T>(int capacity)
+    {
+        return default;
+    }
+}
+""",
+                encoding="utf-8",
+            )
+
+            payload = audit.build_payload(root)
+            cats = payload["categories"]
+            self.assertEqual(cats["privateNativeCollectionField"]["matches"], 1)
+            self.assertEqual(cats["privateNativeDeclarationMethodReturn"]["matches"], 1)
+            self.assertEqual(cats["privateNativeDeclarationField"]["matches"], 0)
+            self.assertEqual(cats["privateNativeRiskMethodReturningNativeCollection"]["matches"], 1)
+
+    def test_private_native_collection_classifies_job_struct_view(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            src = root / "JobView.cs"
+            src.write_text(
+                """
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
+
+[BurstCompile]
+public struct JobView : IJob
+{
+    private NativeArray<int> _state;
+
+    public void Execute() {}
+}
+""",
+                encoding="utf-8",
+            )
+
+            payload = audit.build_payload(root)
+            cats = payload["categories"]
+            self.assertEqual(cats["privateNativeCollectionField"]["matches"], 1)
+            self.assertEqual(cats["privateNativeRiskJobStructNativeView"]["matches"], 1)
+
+    def test_private_native_collection_classifies_editor_surface(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            editor = root / "Editor"
+            editor.mkdir()
+            src = editor / "NativeWindow.cs"
+            src.write_text(
+                """
+using Unity.Collections;
+
+public sealed class NativeWindow
+{
+    private NativeArray<int> _previewRows;
+}
+""",
+                encoding="utf-8",
+            )
+
+            payload = audit.build_payload(root)
+            cats = payload["categories"]
+            self.assertEqual(cats["privateNativeCollectionField"]["matches"], 1)
+            self.assertEqual(cats["privateNativeBuildEditorOnly"]["matches"], 1)
+            self.assertEqual(cats["privateNativeRiskEditorOrProofNativeState"]["matches"], 1)
+
+    def test_detects_public_mutable_native_api_exposure(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            src = root / "NativeApi.cs"
+            src.write_text(
+                """
+using Unity.Collections;
+
+public sealed class NativeApi
+{
+    public NativeArray<int> MutableRows => _rows;
+
+    public bool TryGetRows(
+        out NativeArray<float> rows,
+        out int count)
+    {
+        rows = default;
+        count = 0;
+        return false;
+    }
+
+    public bool TryReadRows(out NativeArray<int>.ReadOnly rows)
+    {
+        rows = default;
+        return false;
+    }
+}
+""",
+                encoding="utf-8",
+            )
+
+            payload = audit.build_payload(root)
+            cats = payload["categories"]
+            self.assertEqual(cats["nativeCollectionPublicMutableApiExposure"]["matches"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()

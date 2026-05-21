@@ -17,6 +17,8 @@ Route:
 - Existing visor noir postprocessing consumes the same visual language through `Hecton_VisorGlitchACES.shader`: torn-edge serration and procedural crack masks are active in the serialized PC renderer route.
 - Noir integration is pre-tonemap. URP Volume Tonemapping owns final ACES; the active Noir shader performs grade/glitch/crack shaping without a local fragment tonemap curve or `saturate(color)` HDR clamp.
 - Active Noir constant generation/upload is dispatcher-owned through `HectonVisorUberPostFeature.LateFrameTick`; `AddRenderPasses()` only checks the last valid `GraphicsBuffer` and enqueues the RenderGraph pass. The one-row mock/parameter math is direct scalar code, not tiny `IJob.Run()`.
+- Reconstruction constant publication uses A/B `GraphicsBuffer.Target.Constant` targets and a published active buffer. `AddRenderPasses()` only checks cold-created handles, writes changed constants into the next mapped buffer, and lets RenderGraph bind AB split inside the raster command rather than mutating material state during enqueue.
+- Reconstruction aesthetic CSV rows are loaded only from cold create/DataVault hot-swap lanes, then copied into a fixed 32-row cold cache. Render enqueue selects profiles from that snapshot and does not lock the profile Vault buffer or retry file IO.
 - Shared visor host state no longer calls `PlayerRuntimeContextService.TryGetActiveRuntimeContext()` from render enqueue. It consumes the cached `IPlayerRuntimeContext` snapshot route for player camera, survival status, and movement stress; wet-lens scalar remains a presentation read from the cached movement owner. The touched host file no longer imports `Hecton8.Gameplay`.
 - The touched shared host no longer imports `Hecton8.Physics`, caches `HectonFluidEngine`, or subscribes to `GlobalRegistryServiceSlot.FluidRuntime` for Noir/wound visuals. The removed concrete maelstrom warp is replaced by a pressure/stress screen-space surge scalar derived from existing presentation inputs until a contracts-only fluid read model exists.
 - The live matrix debug view is editor-owned by `ScreenSpaceDecalTunerWindow` through `SceneView.duringSceneGui`; `DynamicDecalGizmoVisualizer` is compiled only under `UNITY_EDITOR`, so player builds do not carry a scene-component proof surface.
@@ -27,6 +29,7 @@ Constraints:
 - No `DecalProjector` GameObjects, Canvas blood overlays, material clones, or per-wound GameObject hierarchy.
 - No direct Unity `Time.*` dependency in owned visor wound runtime/feature/active Noir route code; dispatcher frame delta drives decay and visual phase, while `TimeSliceScheduler.CurrentFrameId` drives signal dedupe/state/profile cadence.
 - The touched `HectonVisorUberPostFeature` host path routes reconstruction telemetry frame and depthless-TBDR cache through the dispatcher frame source instead of `Time.frameCount`; no fluid runtime rebind cadence remains in this host.
+- Legacy `HectonVisorUberPost.shader` quality gates for heat haze, VR comfort mask blending, light shafts, water refraction, and droplet refraction use continuous `smoothstep`/`lerp` weights; no hard low-tier branch is accepted for those paths.
 - No active Noir synchronous Burst job route remains; batched visor wound work still uses Burst, while the one-record Noir CBuffer math stays owner-local to avoid a scheduler tax.
 - No runtime damage ingress path may call `EnsureInitialized()`; cold initialization is confined to `TryInitializeColdStorage`, hot-swap rebind, CSV/profile/editor tuning, mock generation, and fault dump/bootstrap lanes.
 - Active wounds scale continuously from 8 to 128 via `HomeostasisBrain.GlobalQualityWeight`; thermal pressure accelerates fade.
@@ -35,7 +38,7 @@ Constraints:
 - Gameplay authority and rollback state are not mutated by the renderer; wounds are presentation-only signal consumers.
 
 Proof:
-- `Tools/Decal_Projector_Inquisition.py` writes `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json`; latest run 2026-05-21T18:52:59Z reports 0 active GameObject/URP decal violations.
+- `Tools/Decal_Projector_Inquisition.py` writes `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json`; latest run 2026-05-21T19:12:28Z reports 0 active GameObject/URP decal violations.
 - Binary payload ledger and route card are synchronized with the active C#/HLSL ABI: offset 72 is `BirthTime`; lifetime is packed inside `DecalTypeHash` bits 8..23, shader branch reads low 4 type bits, and atlas sampling reads bits 4..7.
 - Black-box telemetry uses 300 `VisorWoundTelemetryEntry` records and dumps to `Docs/AgentLogs/Dump_SHINOBU_275.bin` on layout/non-finite/upload faults.
 - Shader binding proof: `Hecton_VisorGlitchACES.shader.meta` GUID `2b2a9f18d90f4b35b8b4f9d1a8e23501`; `Hecton_VisorWounds.shader.meta` GUID `0a2df57d7a4e4d44a95b1b4c4bfb2750`.

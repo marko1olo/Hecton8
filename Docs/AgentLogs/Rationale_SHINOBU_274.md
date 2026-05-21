@@ -59,7 +59,7 @@ Scalability potential: Low devices use conservative tuning; Middle/High increase
 Hardware Impact: Estimated 35 us/frame avoided in diagnostics by using fixed native telemetry instead of managed log/list history.
 
 Problem: Integrators need proof that the old physics radiation route is gone or isolated.
-Solution: RadiationTriggerDebtScanner writes Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json and flags remaining generic EnvironmentalHazard trigger/overlap debt as outside the SHINOBU_274 radiation authority.
+Solution: RadiationTriggerDebtScanner writes Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_274.json and preserves Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json as a shared pointer/aggregate; remaining generic EnvironmentalHazard trigger/overlap debt is flagged outside the SHINOBU_274 radiation authority.
 Rejected Alternatives: Chat-only audit or manual notes. File artifact is required and repeatable from the editor window.
 Scalability potential: No runtime cost; prevents future regressions that would tax low-end CPUs and waste high-end visual budget.
 Hardware Impact: 0 us/frame; architectural prevention artifact.
@@ -237,3 +237,29 @@ Solution: Introduced `RadiationShieldingReportPaths` as the shared editor-only p
 Rejected Alternatives: Keeping manual checked-in JSON as the only proof was rejected because the editor scanner must reproduce the same evidence. Making the path constants public on the window was rejected because the scanner is the report writer, not a UI child of the tuner.
 Scalability potential: Editor-only. Smaller deterministic output keeps low-end editor validation cheaper, while high-tier validation can still inspect the broad static count.
 Hardware Impact: Editor-only; no player frame cost. Static scanner remains bounded by file text scan and top-three finding emission.
+
+## 2026-05-21 Loop 14 - Fail-Closed Sampler and Compatibility Audit
+
+Problem: Subagent runtime audit found that the read-only radiation compatibility sampler and save/load lane could still accept non-finite state outside the already-hardened Burst kernel.
+Solution: `SampleGridNearest` now fails closed on non-finite grid cells; `SampleInverseSquare` skips non-finite source AUP/intensity/radius and guards squared distance before reciprocal math. Save/load clamps dose and grid cell size through explicit finite checks. Source registration rejects non-finite AUP and inactive/zero-intensity sources before touching grid state.
+Rejected Alternatives: Trusting the Burst kernel alone or relying on content import validation. Read accessors and save hydration are independent ingress points and must not be able to poison health, shader globals, or telemetry.
+Scalability potential: Low devices get the same cheap fail-closed nearest/source sampler; Middle/High/Ultra can still raise source counts and SDF/bulkhead samples without changing the safety policy.
+Hardware Impact: Adds only bounded scalar finite checks in read/save lanes, estimated under 1 us per compatibility sample, and prevents unbounded NaN propagation cost.
+
+Problem: Stale naming and visual/health scalar lanes still allowed policy drift: `doseScalePerFrostTick` contradicted the Simulation phase route, and raw dose values could flow into player context or shader globals if corrupted before presentation.
+Solution: Renamed the serialized field to `doseScalePerSimulationSecond` with `FormerlySerializedAs("doseScalePerFrostTick")` to preserve existing serialized data. Player context and shader global dose now finite-guard before fatigue and GPU mutation scalar calculation.
+Rejected Alternatives: Breaking serialized scenes/prefabs with a raw rename or leaving the FrostTick name as documentation debt. The route is Simulation seconds, not maintenance tick cadence.
+Scalability potential: The scalar route remains continuous across quality tiers; only the sanitized dose value feeds health and UberNoir mutation strength.
+Hardware Impact: No measurable frame cost; avoids false shader/health escalation from corrupt persisted dose.
+
+Problem: Compatibility bridge audit found generic hazard state still used `FloatMode.Fast` and the step loop called a cold resolver that could fall back to `GlobalRegistry.Player`.
+Solution: `EvaluateHazardExposureJob` now uses deterministic Burst mode. `AdvanceHazardStep` uses `RefreshPlayerContextSnapshot`, which reads the runtime context snapshot and cached references only; the old full resolver remains for Awake/OnEnable cold binding.
+Rejected Alternatives: Treating heat/toxicity/biohazard as pure presentation was rejected because these values can affect survival/trauma state. Keeping the cold resolver in the step loop was rejected because registry fallback belongs to bootstrap/hot-swap, not runtime cadence.
+Scalability potential: Low devices avoid registry fallback and scene search in the runtime loop; Middle/High/Ultra keep deterministic generic hazard exposure while radiation remains routed to the RadiationHazardGrid owner.
+Hardware Impact: Removes a hot cold-path branch and possible registry access from each hazard step; estimate 1-4 us per step under active hazard manager on low-end CPU.
+
+Problem: Tooling proof drift remained between the editor scanner generator, dedicated SHINOBU_274 JSON report, shared physics report, and early rationale text.
+Solution: Aligned `finding_list_policy` text across generator, dedicated report, and shared report. Corrected the early rationale entry to state that the scanner writes the dedicated report and preserves the shared aggregate/pointer.
+Rejected Alternatives: Allowing the next scanner run to rewrite evidence text again. Deterministic proof artifacts must be reproducible.
+Scalability potential: Editor-only; no runtime tier effect.
+Hardware Impact: Editor-only.

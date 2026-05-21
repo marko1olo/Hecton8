@@ -15,6 +15,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Stopwatch = System.Diagnostics.Stopwatch;
 using VoxelSdfReadModel = Hecton8.Core.Contracts.IVoxelSonarSdfReadModel;
 
@@ -71,7 +72,8 @@ namespace Hecton8.Gameplay
         internal static RadiationHazardGrid ActiveRuntimeInstance { get; private set; }
 
         [SerializeField, Min(0.5f)] private float cellSizeMeters = DefaultCellSizeMeters;
-        [SerializeField, Min(0f)] private float doseScalePerFrostTick = 1f;
+        [FormerlySerializedAs("doseScalePerFrostTick")]
+        [SerializeField, Min(0f)] private float doseScalePerSimulationSecond = 1f;
         [SerializeField] private TextAsset radiationProfilesCsv;
         [SerializeField] private bool enableEmergencyMockSource;
         [SerializeField, Min(0f)] private float emergencyMockIntensity = 80f;
@@ -444,8 +446,8 @@ namespace Hecton8.Gameplay
 
             EnsureNativeBuffers();
             CompleteDiffusionJobIfReady();
-            data.radiationDose = _accumulatedRadiationDose;
-            data.radiationGridCellSizeMeters = math.max(0.5f, cellSizeMeters);
+            data.radiationDose = math.max(0f, math.isfinite(_accumulatedRadiationDose) ? _accumulatedRadiationDose : 0f);
+            data.radiationGridCellSizeMeters = SanitizeRange(cellSizeMeters, DefaultCellSizeMeters, 0.5f, 1000f);
             double3 origin = _hasGridOrigin ? _gridOriginAup.ToAbsoluteDouble3() : double3.zero;
             data.radiationGridOriginX = origin.x;
             data.radiationGridOriginY = origin.y;
@@ -482,7 +484,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _accumulatedRadiationDose = math.max(0f, data.radiationDose);
+            _accumulatedRadiationDose = math.max(0f, math.isfinite(data.radiationDose) ? data.radiationDose : 0f);
             if (_radiationStates.IsCreated && _radiationStates.Length > 0)
             {
                 RadiationStateDTO state = _radiationStates[0];
@@ -490,7 +492,7 @@ namespace Hecton8.Gameplay
                 state.CurrentExposureRate = _lastGridIntensity01;
                 _radiationStates[0] = state;
             }
-            cellSizeMeters = math.max(0.5f, data.radiationGridCellSizeMeters);
+            cellSizeMeters = SanitizeRange(data.radiationGridCellSizeMeters, DefaultCellSizeMeters, 0.5f, 1000f);
             if (math.isfinite(data.radiationGridOriginX) &&
                 math.isfinite(data.radiationGridOriginY) &&
                 math.isfinite(data.radiationGridOriginZ))
@@ -513,7 +515,15 @@ namespace Hecton8.Gameplay
                 return;
 
             float sourceIntensity01 = NormalizeSourceIntensity(intensity);
-            float sourceRadiusMeters = math.max(0.5f, radiusMeters > 0f ? radiusMeters : DefaultSourceRadiusMeters);
+            if (!AbsoluteUniversePosition.IsFinite(in sourceAup) || sourceIntensity01 <= 0f)
+            {
+                UnregisterSourceInternal(sourceId);
+                return;
+            }
+
+            float sourceRadiusMeters = math.isfinite(radiusMeters) && radiusMeters > 0f
+                ? math.max(0.5f, radiusMeters)
+                : DefaultSourceRadiusMeters;
             if (!_hasGridOrigin)
             {
                 _gridOriginAup = sourceAup;
@@ -1313,7 +1323,7 @@ namespace Hecton8.Gameplay
                 return;
 
             double3 origin = _gridOriginAup.ToAbsoluteDouble3();
-            float safeCellSize = math.max(0.5f, cellSizeMeters);
+            float safeCellSize = SanitizeRange(cellSizeMeters, DefaultCellSizeMeters, 0.5f, 1000f);
             int half = GridResolution >> 1;
 
             for (int sourceIndex = 0; sourceIndex < MaxSourceCount; sourceIndex++)
@@ -1466,7 +1476,8 @@ namespace Hecton8.Gameplay
             if (!TryResolveGridCell(in sampleAup, out int x, out int y, out int z))
                 return 0f;
 
-            return math.saturate(_gridRead[Flatten(x, y, z)]);
+            float value = _gridRead[Flatten(x, y, z)];
+            return math.isfinite(value) ? math.saturate(value) : 0f;
         }
 
         private float SampleInverseSquare(in AbsoluteUniversePosition sampleAup)
@@ -1482,10 +1493,21 @@ namespace Hecton8.Gameplay
                 if (source.Active == 0 || source.Intensity01 <= 0f)
                     continue;
 
+                if (!math.all(math.isfinite(source.PositionAup)) ||
+                    !math.isfinite(source.Intensity01) ||
+                    !math.isfinite(source.RadiusMeters))
+                {
+                    continue;
+                }
+
                 double3 delta = sampleAbsolute - source.PositionAup;
                 double distanceSq = math.lengthsq(delta);
-                float radiusSq = source.RadiusMeters * source.RadiusMeters;
-                float inverseSq = radiusSq * math.rcp((float)math.max(1d, distanceSq));
+                if (!math.isfinite(distanceSq))
+                    continue;
+
+                float radius = math.max(0.5f, source.RadiusMeters);
+                float radiusSq = radius * radius;
+                float inverseSq = radiusSq * math.rcp(math.max((float)distanceSq, 0.0001f));
                 total += source.Intensity01 * math.saturate(inverseSq);
             }
 
@@ -1692,7 +1714,7 @@ namespace Hecton8.Gameplay
                           math.abs(externalDoseDelta) > 0.0001f;
             bool evaluate = forced || _radiationCadenceAccumulatorSeconds >= tickInterval;
             float accumulatedSeconds = _radiationCadenceAccumulatorSeconds;
-            integrationDelta = math.max(0f, doseScalePerFrostTick) * accumulatedSeconds;
+            integrationDelta = math.max(0f, math.isfinite(doseScalePerSimulationSecond) ? doseScalePerSimulationSecond : 0f) * accumulatedSeconds;
             if (evaluate)
                 _radiationCadenceAccumulatorSeconds = 0f;
             return evaluate;
@@ -1715,7 +1737,7 @@ namespace Hecton8.Gameplay
             double3 origin = _gridOriginAup.ToAbsoluteDouble3();
             double3 sample = sampleAup.ToAbsoluteDouble3();
             double3 offset = sample - origin;
-            float safeCellSize = math.max(0.5f, cellSizeMeters);
+            float safeCellSize = SanitizeRange(cellSizeMeters, DefaultCellSizeMeters, 0.5f, 1000f);
             int half = GridResolution >> 1;
             x = (int)math.floor(offset.x / safeCellSize) + half;
             y = (int)math.floor(offset.y / safeCellSize) + half;
@@ -1792,10 +1814,12 @@ namespace Hecton8.Gameplay
                 return;
 
             float doseReduction = doseReductionRad;
-            float pendingReduction = math.min(_pendingExternalDoseRad, doseReduction);
-            _pendingExternalDoseRad = math.max(0f, _pendingExternalDoseRad - pendingReduction);
+            float pendingDose = math.max(0f, math.isfinite(_pendingExternalDoseRad) ? _pendingExternalDoseRad : 0f);
+            float accumulatedDose = math.max(0f, math.isfinite(_accumulatedRadiationDose) ? _accumulatedRadiationDose : 0f);
+            float pendingReduction = math.min(pendingDose, doseReduction);
+            _pendingExternalDoseRad = math.max(0f, pendingDose - pendingReduction);
             doseReduction = math.max(0f, doseReduction - pendingReduction);
-            _accumulatedRadiationDose = math.max(0f, _accumulatedRadiationDose - doseReduction);
+            _accumulatedRadiationDose = math.max(0f, accumulatedDose - doseReduction);
             if (_radiationStates.IsCreated && _radiationStates.Length > 0)
             {
                 RadiationStateDTO state = _radiationStates[0];
@@ -1938,7 +1962,7 @@ namespace Hecton8.Gameplay
             if (playerContext == null)
                 return;
 
-            float safeDose = math.max(0f, dose);
+            float safeDose = math.max(0f, math.isfinite(dose) ? dose : 0f);
             float penalty01 = math.saturate(1f - HectonPlayerHealth.ResolveRadiationFatigueScale(safeDose));
             playerContext.RadiationDose = safeDose;
             playerContext.RadiationIntensity01 = math.saturate(intensity01);
@@ -2003,7 +2027,7 @@ namespace Hecton8.Gameplay
 
         private void PushVisualGlobals(float dose, float intensity01)
         {
-            float safeDose = math.max(0f, dose);
+            float safeDose = math.max(0f, math.isfinite(dose) ? dose : 0f);
             float exposureRate = math.max(0f, math.isfinite(intensity01) ? intensity01 : 0f);
             float safeIntensity = math.saturate(exposureRate);
             float mutation01 = math.saturate(math.max(_lastCellularDegradation01, safeDose * 0.01f));

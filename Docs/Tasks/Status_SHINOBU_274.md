@@ -5,7 +5,7 @@ Role: RADIATION_DOSE_ACCUMULATOR
 Domain: Radiation Scrubber
 Batch source: Docs/Tasks/CURRENT_BATCH.md
 Task count: 20
-State: POLISH_LOOP_13_RUNTIME_RACE_AND_TOOLING_DRIFT_AUDIT_COMPILE_BLOCKED_BY_CPU
+State: POLISH_LOOP_14_FAIL_CLOSED_SAMPLER_AND_COMPATIBILITY_AUDIT_COMPILE_BLOCKED_BY_CPU
 Compile gate: BLOCKED_BY_CPU_100_PERCENT_AND_EXTERNAL_DEPENDENCIES
 
 ## Mandates Selected Before Coding
@@ -118,6 +118,7 @@ Compile gate: BLOCKED_BY_CPU_100_PERCENT_AND_EXTERNAL_DEPENDENCIES
 - Loop 11: Signal snapshot preservation. While a previous radiation job is active, source snapshots are requeued to `SignalBus<RadiationSourceSignal>`, external dose snapshots are folded into `_pendingExternalDoseRad`, and iodine item snapshots are folded into `_pendingIodineDoseReductionRad`; no live Vault source/state buffer is mutated and no job is force-completed. Radiation read compatibility now samples only the stable read-grid during a live radiation job.
 - Loop 12: Runtime route and tooling audit. `HazardZoneManager` radiation reads now delegate to `RadiationHazardGrid`; generic hazard exposure jobs zero radiation cache slots and publish only non-radiation masks. Generic unregister no longer deletes radiation sources; source components track whether they actually registered radiation before emitting remove signals. `LoadFromSaveData` and DataVault hot-swap now defer structural mutation until PostSimulation has no active radiation/diffusion job; force-complete is teardown-only. Editor scanner writes a SHINOBU_274 dedicated report, masks comments/strings, sorts deterministically, and the tuner reads the telemetry ring/cursor instead of state slot zero.
 - Loop 13: Runtime race and tooling drift audit. `RadiationHazardGrid` dose math now sanitizes non-finite tuning/source/SDF/bulkhead values before inverse-square and SDF sampling. `HazardZoneManager` defers DataVault handle release/rebind while its generic exposure job is active and force-completes only during native teardown. `HectonHazardManager` now tracks untyped radiation facade IDs in a fixed cold table so legacy untyped unregister can remove its own radiation source without deleting unrelated IDs. The editor scanner shares one path owner, writes the dedicated SHINOBU_274 report, preserves the shared pointer, masks comments/strings before domain filtering, and emits microsecond estimate fields.
+- Loop 14: Subagent-aided fail-closed audit. `RadiationHazardGrid` now sanitizes save/load dose and grid cell size, rejects non-finite radiation source AUPs, clamps read-only sampler grid/source values, renames the stale FrostTick serialized field with `FormerlySerializedAs`, and finite-guards health/shader dose scalars. `HazardZoneManager` generic exposure job is deterministic and no longer calls the GlobalRegistry fallback from its step loop. Scanner/report policy text and stale rationale report route were aligned.
 
 ## Verification
 
@@ -149,3 +150,8 @@ Compile gate: BLOCKED_BY_CPU_100_PERCENT_AND_EXTERNAL_DEPENDENCIES
 - Loop 12 build gate: BLOCKED. CPU sampled at 98.1 percent, then 100 percent, with no dotnet/csc/MSBuild/VBCSCompiler process active; repository protocol still forbids launching build above 50 percent CPU.
 - Loop 13 build gate: BLOCKED. `typeperf "\\Processor(_Total)\\% Processor Time" -sc 1` sampled CPU at `100.000000` twice, latest at 22:58; `Get-Process dotnet,csc,MSBuild,VBCSCompiler` returned no process rows, but the CPU gate still forbids dotnet rebuild.
 - `git diff --check` on latest SHINOBU_274-touched files: PASS with line-ending warnings only.
+- Loop 14 read-only sampler scan: PASS. `SampleGridNearest` now returns zero for non-finite grid cells; `SampleInverseSquare` skips non-finite source AUP/intensity/radius and guards `distanceSq` before reciprocal math.
+- Loop 14 save/load scan: PASS. `PopulateSaveData` and `ApplySaveDataImmediate` finite-guard radiation dose and sanitize grid cell size through `SanitizeRange`.
+- Loop 14 compatibility scan: PASS. `EvaluateHazardExposureJob` uses `FloatMode.Deterministic`, and `AdvanceHazardStep` calls `RefreshPlayerContextSnapshot` instead of the cold `ResolvePlayerContext` path that can fall back to `GlobalRegistry.Player`.
+- Loop 14 scanner/report scan: PASS. Generated, dedicated, and shared `finding_list_policy` strings match; both JSON reports parse through `ConvertFrom-Json`.
+- Loop 14 build gate: BLOCKED. `typeperf "\\Processor(_Total)\\% Processor Time" -sc 1` sampled CPU at `100.000000`; `Get-Process dotnet,csc,MSBuild,VBCSCompiler` returned no rows, but the repository protocol forbids dotnet rebuild above 50 percent CPU.

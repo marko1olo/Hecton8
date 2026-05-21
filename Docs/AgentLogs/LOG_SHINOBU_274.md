@@ -96,6 +96,69 @@ Verification:
   <Compile status="not_run" reason="CPU load 100 percent; protocol forbids dotnet/csc above 50 percent" />
 </SELF_AUDIT>
 
+## 2026-05-21 Loop 14 - Fail-Closed Sampler and Compatibility Audit
+
+What was wrong:
+- Read-only radiation compatibility sampling still trusted `_gridRead` cell values and `_sources` fields enough that non-finite values could bypass the hardened Burst dose kernel.
+- Save/load still used insufficient `math.max`-style hydration for radiation dose and grid cell size.
+- The serialized field `doseScalePerFrostTick` contradicted the Simulation-second cadence route.
+- Generic hazard compatibility code still ran an authoritative exposure job in `FloatMode.Fast` and called a cold resolver with `GlobalRegistry.Player` fallback from the runtime step loop.
+- Scanner generator, dedicated report, shared report, and early rationale text still drifted on report policy/route wording.
+
+What was done:
+- Added finite guards to `SampleGridNearest`, `SampleInverseSquare`, save/load dose, save/load grid cell size, source registration, iodine reduction inputs, player-context dose, and shader-global dose.
+- Renamed `doseScalePerFrostTick` to `doseScalePerSimulationSecond` with `FormerlySerializedAs` to preserve existing serialized scenes/prefabs.
+- Switched `EvaluateHazardExposureJob` to `FloatMode.Deterministic`.
+- Replaced the runtime `AdvanceHazardStep -> ResolvePlayerContext` call with `RefreshPlayerContextSnapshot`; the cold GlobalRegistry fallback remains only for Awake/OnEnable binding.
+- Aligned scanner/report `finding_list_policy` text and corrected the stale rationale report route.
+
+Cinematic cheats used:
+- Radiation remains inverse-square source math plus sampled SDF/bulkhead attenuation; no trigger, collider, raycast, CPU mesh, decal, or blendshape route was added.
+- Hand mutation remains an UberNoir GPU scalar vertex fake.
+
+Exact microseconds saved, estimate lane pending Unity profiler:
+- Read sampler finite checks add under 1 us per compatibility sample but avoid unbounded NaN propagation into health/shader/telemetry.
+- Removing hot cold-resolver fallback from generic hazard step saves an estimated 1-4 us per active hazard step on i3/MX350-class CPU.
+- Deterministic Burst mode may cost a small ALU margin versus fast math, accepted for gameplay-facing heat/toxicity/biohazard determinism.
+- Scanner/report fixes are editor-only.
+
+Verification:
+- `git diff --check` on the current touched file set passed with line-ending warnings only.
+- Both `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json` and `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_274.json` parsed through `ConvertFrom-Json`.
+- Static scan confirmed no raw `math.max(0f, dose)`, no raw save/load `math.max(0f, data.radiationDose)`, no raw `math.max(0.5f, cellSizeMeters)`, and no `FloatMode.Fast` in the audited radiation/generic hazard files.
+- Build was not relaunched: CPU sampled at `100.000000`; no dotnet/csc/MSBuild/VBCSCompiler rows were returned, but the explicit repository gate forbids rebuild above 50 percent CPU.
+
+<SELF_AUDIT agent="SHINOBU_274" domain="Radiation Scrubber" date="2026-05-21" pass="loop_14_incremental">
+  <TaskReconciliation>
+    <Task id="01" status="PASS">No trigger route restored; scanner/report policy aligned.</Task>
+    <Task id="02" status="PASS">No PhysX shield route added; sampler still uses math/SDF-compatible data.</Task>
+    <Task id="03" status="PASS">No hot DTO properties added.</Task>
+    <Task id="04" status="PASS">No SHINOBU_274 DTO layout changed.</Task>
+    <Task id="05" status="PASS">Mock source route unchanged; source registration now rejects non-finite AUP.</Task>
+    <Task id="06" status="PASS">Burst dose kernel remains authoritative; read sampler now matches fail-closed policy.</Task>
+    <Task id="07" status="PASS">SDF/grid cell size hydration now finite-sanitized before grid math.</Task>
+    <Task id="08" status="PASS">Health dose scalar finite-guarded before `HectonPlayerHealth` fatigue calculation.</Task>
+    <Task id="09" status="PASS">GPU hand mutation scalar finite-guarded; no CPU deformation added.</Task>
+    <Task id="10" status="PASS">Continuous cadence preserved; FrostTick name removed with serialized migration.</Task>
+    <Task id="11" status="PASS">Damage SignalBus route unchanged.</Task>
+    <Task id="12" status="PASS">Shader global route unchanged except finite-guarded dose input.</Task>
+    <Task id="13" status="PASS">AUP source registration and inverse-square sampler now reject non-finite position data.</Task>
+    <Task id="14" status="PASS">Generic hazard compatibility job made deterministic; radiation DTO unchanged.</Task>
+    <Task id="15" status="PASS">Telemetry route unchanged and protected from non-finite sampled dose.</Task>
+    <Task id="16" status="PASS">Editor facade proof text aligned with generated report.</Task>
+    <Task id="17" status="PASS">CSV/profile ingress unchanged; save/load and sampler now fail closed on bad scalar data.</Task>
+    <Task id="18" status="PASS">Gizmo route unchanged.</Task>
+    <Task id="19" status="PASS">Scanner/report generator and JSON artifacts now share identical policy text.</Task>
+    <Task id="20" status="PARTIAL">Static proof updated; Unity import/build/profiler proof still blocked by CPU/external dependency gate.</Task>
+  </TaskReconciliation>
+  <StructLayout>No primary radiation DTO layout changed. `RadiationStateDTO` remains explicit 32 bytes: offsets 0/4/8/12 float lanes, 16/20 uint lanes, 24..31 pad.</StructLayout>
+  <ScalabilityCurve>Below quality 0.3, cadence remains sparse and sampler fails closed with one finite nearest-grid read plus bounded source loop; higher tiers may still spend saved CPU on more SDF/bulkhead samples and stronger GPU mutation scalars without changing dose truth.</ScalabilityCurve>
+  <VaultStatus localPersistentAllocations="0">SHINOBU_274 owned Vault BufferIDs remain 72740..72751; Loop 14 did not add any persistent private native collection.</VaultStatus>
+  <DependencyGraph>`EvaluateHazardExposureJob` now deterministic; no new `.Complete()` or same-frame readback path was added. Radiation jobs still return handles to dispatcher phases.</DependencyGraph>
+  <CompileGuard>No sibling asmdef dependency was added. Build remains blocked by CPU gate and known external dependency wall.</CompileGuard>
+  <DearLie before="trigger/collider/raycast and CPU deformation cost" after="finite-safe inverse-square/SDF math plus GPU scalar mutation">The visual radiation sickness remains a shader fake, not simulated hand geometry.</DearLie>
+</SELF_AUDIT>
+
 ## 2026-05-21 - Loop 12 Runtime Route and Tooling Audit Closure
 
 What was wrong:

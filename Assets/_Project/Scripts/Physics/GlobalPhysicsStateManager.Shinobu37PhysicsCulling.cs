@@ -929,18 +929,7 @@ namespace Hecton8.Physics
 
         private static float ResolvePhysicsCullingHardwareRadiusSqScale()
         {
-            float q = ResolvePhysicsCullingGlobalQualityWeight();
-            float smooth = q * q * (3f - (2f * q));
-            float baseScale = math.lerp(0.25f, 1.44f, smooth);
-            float ultraRamp = math.saturate((q - 0.75f) / math.max(0.0001f, 0.25f));
-            ultraRamp = ultraRamp * ultraRamp * math.step(0.75f, q);
-            return math.lerp(baseScale, 2.25f, ultraRamp);
-        }
-
-        private static float ResolvePhysicsCullingGlobalQualityWeight()
-        {
-            float weight = HomeostasisBrain.GlobalQualityWeight;
-            return math.saturate(math.select(0.5f, weight, math.isfinite(weight)));
+            return 2.25f;
         }
 
         private float ResolvePhysicsCullingHysteresisSeconds()

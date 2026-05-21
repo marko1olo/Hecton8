@@ -5144,3 +5144,50 @@ Exact microseconds saved:
 Static verification:
 - Focused scan on `DiegeticVisorLensRuntime.cs` finds no executable legacy handle/direct-buffer/Vault resolve/byref/latest-created/generation-id/word-boundary `ResolveBuffer` hits. Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `OpenVaultArray`, `TryResolveVaultArray`, `TryReadVaultArray`, `ReleaseVisorVaultHandle`, and `ReleaseBuffer(in handle)`. Brace count is `155/155`. `git diff --check` has CRLF warning only. Build was not relaunched.
 - Preexisting same-file diffs in `DiegeticVisorLensRuntime.cs` are not claimed by this loop.
+
+## 2026-05-21 - Loop 219 - Dynamic Decal Descriptor Route
+
+What was wrong:
+- `Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs` retained seven VFX Vault lanes as pointer-era handles.
+- Decal instances, upload scratch, runtime state, telemetry ring, tuning, material profile table, and CSV scratch opened through `GetBufferHandle`, `.Resolve(vault)`, retained handle checks, and `GetElementAsRef`.
+- The static runtime spans scheduled decal jobs, editor buffer readback, material CSV import, GPU upload timing, blackbox dumps, and cold-storage rebinds, so retained pointers were stale-view risks.
+
+What was done:
+- Converted all seven retained lanes to `VaultGenerationHandle<T>`.
+- Added Dynamic Decal descriptor helpers that validate exact BufferID, `SystemID.Vfx`, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated`.
+- Visual sync, pending finalization, tuning writes, editor readback, material CSV load, material profile resolve, state fault mark, GPU telemetry patch, and dump now open phase-local views through descriptors.
+- Subsystem reset and cold-storage rebind release all seven VFX-owned descriptors through `ReleaseBuffer(in handle)` and tombstone route state. Reacquisition is blocked while the Vault compaction fence is active.
+
+Cinematic cheats used:
+- Existing decal behavior remains a visual fake: impact wounds/scorches are packed as `float4x4` decal DTOs and uploaded to the renderer instead of spawning GameObjects, MeshColliders, or persistent physical surface deformation. This loop does not add physics, scene searches, shader variants, or new gameplay truth routes.
+
+Exact microseconds saved:
+- No measured runtime saving claimed. The loop removes stale pointer trust and ambiguous release ownership. Decal DTO strides, BufferIDs, NativeQueue request lane, material CSV byte contract, SignalBus ingestion, GPU upload ABI, telemetry dump format, and job math are unchanged.
+
+Static verification:
+- Focused scan on `DynamicDecalVaultRuntime.cs` finds no executable legacy handle/direct-buffer/Vault resolve/byref/latest-created/generation-id/word-boundary `ResolveBuffer` hits. Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `TryResolveDynamicDecalVaultBuffer`, `HasDynamicDecalVaultBuffer`, `ReleaseDynamicDecalVaultHandle`, and `ReleaseBuffer(in handle)`. Brace count is `223/223`. `git diff --check` has CRLF warning only. Build was not relaunched.
+- Preexisting same-file diff (`13/18` numstat before this loop) is not claimed by this loop.
+
+## 2026-05-21 - Loop 220 - Marine Snow Descriptor Route
+
+What was wrong:
+- `Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs` retained eleven VFX Vault lanes as pointer-era handles.
+- Wake result, telemetry, silt tuning, dynamic wake DTOs, mock flow field, propwash event/cursor/telemetry/tuning/profile lanes, and borrowed `WakeSources` opened through `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(vault)`, retained handle created checks, and retained handle length checks.
+- The compaction-fence branch cleared owned handles without release, which dropped local proof for later `ReleaseBuffer(in handle)`.
+
+What was done:
+- Converted all retained lanes to `VaultGenerationHandle<T>`.
+- Added Marine Snow descriptor helpers that validate exact BufferID, `SystemID.Vfx`, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated`.
+- Owned VFX lanes now acquire through `GetGenerationHandle`, revalidate while `_nativeStateReady` is true, and release through `ReleaseBuffer(in handle)` on disable/destroy/DataVault replacement.
+- Borrowed `WakeSources` now acquires only with `TryGetGenerationHandle`, validates the existing VFX descriptor, and is tombstoned locally without release.
+- Compaction-fence handling now marks native state not-ready and drops the borrowed alias without discarding owned descriptors.
+
+Cinematic cheats used:
+- Existing marine-snow presentation remains a render fake: camera-local shell particles, mock curl-flow DTO, low-resolution sonar glow, fog-density injection, propwash ring DTOs, and shader globals drive the look instead of CPU simulating individual silt particles, fluid vortices, or physical fog volumes. This loop does not add GameObjects, physics colliders, shader variants, scene searches, or new gameplay truth routes.
+
+Exact microseconds saved:
+- No measured runtime saving claimed. The loop removes stale pointer trust, release ambiguity, and compaction-fence provenance loss. Marine-snow DTO strides, BufferIDs, compute kernels, graphics buffer strides, indirect draw ABI, shader property IDs, CSV byte contracts, SignalBus payloads, telemetry dump format, and Vfx authority are unchanged.
+
+Static verification:
+- Focused scan on `HectonMarineSnowRenderer.cs` finds no executable legacy handle/direct-buffer/Vault resolve/byref/latest-created/generation-id/word-boundary `ResolveBuffer` hits. Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryGetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `AreOwnedVaultBuffersReady`, `EnsureOwnedVaultBuffer`, `TryResolveVaultBuffer`, `HasVaultBuffer`, `ReleaseOwnedVaultHandle`, and `ReleaseBuffer(in handle)`. Brace count is `383/383`; EOF check passed. No-index diff check reported only LF/CRLF warning. Build was not relaunched.
+- `git status --short` reports `HectonMarineSnowRenderer.cs` as untracked in this workspace; this loop claims the on-disk runtime edit only.

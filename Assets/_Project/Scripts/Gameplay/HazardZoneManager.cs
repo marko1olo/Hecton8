@@ -62,7 +62,7 @@ namespace Hecton8.Gameplay
         [FieldOffset(120)] private ulong _pad8;
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct EvaluateHazardExposureJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<HazardVolumeData> Volumes;
@@ -731,7 +731,7 @@ namespace Hecton8.Gameplay
 
         private void AdvanceHazardStep(float dt)
         {
-            ResolvePlayerContext();
+            RefreshPlayerContextSnapshot();
             ApplyToxicityDose(dt);
             ApplyPendingMutationsIfIdle();
             ScheduleExposureJob();
@@ -873,6 +873,35 @@ namespace Hecton8.Gameplay
 
             if (_playerCollider == null)
                 _playerCollider = ResolvePrimaryCollider(_playerTransform);
+
+            IPlayerTransportLifecycleOwner resolvedOwner = null;
+            if (_playerTransportCoordinator != null)
+                _playerTransportCoordinator.TryResolveTransportLifecycleOwner(out resolvedOwner);
+
+            if (ReferenceEquals(_activeTransportOwner, resolvedOwner))
+                return;
+
+            _activeTransportOwner = resolvedOwner;
+            _activeTransportBehaviour = resolvedOwner as MonoBehaviour;
+            _activeTransportCollider = _activeTransportBehaviour != null
+                ? ResolvePrimaryCollider(_activeTransportBehaviour.transform)
+                : null;
+        }
+
+        private void RefreshPlayerContextSnapshot()
+        {
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+            {
+                ApplyPlayerContextReferences(
+                    runtimeContext.PlayerTransform,
+                    runtimeContext.PlayerCollider,
+                    runtimeContext.SurvivalSystem,
+                    runtimeContext.TraumaDispatcher,
+                    runtimeContext.PlayerTransportCoordinator);
+            }
+
+            if (_playerTransform == null)
+                return;
 
             IPlayerTransportLifecycleOwner resolvedOwner = null;
             if (_playerTransportCoordinator != null)

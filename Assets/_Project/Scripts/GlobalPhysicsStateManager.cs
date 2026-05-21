@@ -750,9 +750,7 @@ namespace Hecton8.Physics
         private const float HeavyImpactIntensity = 0.95f;
         private const float MediumImpactIntensity = 0.45f;
         private const float DefaultSleepDistanceMeters = 50f;
-        private const float LowTierSleepDistanceMeters = 40f;
         private const float DefaultWakeDistanceMeters = 45f;
-        private const float LowTierWakeDistanceMeters = 36f;
         private const float SleepWakeHysteresisMeters = 5f;
         private const float BehindCameraSleepDistanceScale = 0.5f;
         private const float AbyssalDepthSleepDistanceScale = 0.8f;
@@ -3262,17 +3260,12 @@ namespace Hecton8.Physics
 
         private static float ResolveSleepDistanceMeters()
         {
-            float q = ResolvePhysicsCullingGlobalQualityWeight();
-            float smooth = q * q * (3f - (2f * q));
-            return math.lerp(LowTierSleepDistanceMeters, DefaultSleepDistanceMeters, smooth);
+            return DefaultSleepDistanceMeters;
         }
 
         private static float ResolveWakeDistanceMeters(float sleepDistanceMeters)
         {
-            float q = ResolvePhysicsCullingGlobalQualityWeight();
-            float smooth = q * q * (3f - (2f * q));
-            float configuredWake = math.lerp(LowTierWakeDistanceMeters, DefaultWakeDistanceMeters, smooth);
-            return math.min(configuredWake, sleepDistanceMeters - SleepWakeHysteresisMeters);
+            return math.min(DefaultWakeDistanceMeters, sleepDistanceMeters - SleepWakeHysteresisMeters);
         }
 
         private static bool TryResolvePhysicsCullingPlayerState(

@@ -1,0 +1,1750 @@
+{
+  "categories": {
+    "binaryHardwareSwitch": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "burstCompile": {
+      "examples": [
+        {
+          "line": 1452,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 1621,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 1667,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 1757,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 13,
+          "path": "Assets/_Project/Scripts/AI/Cognition/LeviathanStalkJob.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 13,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 77,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 12,
+          "path": "Assets/_Project/Scripts/AI/Ecology/Migration/MacroSwarm.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 1059,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 3407,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 3441,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 3465,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 3542,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 3596,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 3826,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 3887,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 3960,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 3999,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 2011,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 2207,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        }
+      ],
+      "files": 330,
+      "matches": 1379,
+      "topFiles": [
+        {
+          "count": 42,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs"
+        },
+        {
+          "count": 18,
+          "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs"
+        },
+        {
+          "count": 18,
+          "path": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs"
+        },
+        {
+          "count": 17,
+          "path": "Assets/_Project/Scripts/Core/DistanceMath.cs"
+        },
+        {
+          "count": 17,
+          "path": "Assets/_Project/Scripts/SaveSystem/EntityDeltaCompressionArchitecture.cs"
+        },
+        {
+          "count": 16,
+          "path": "Assets/_Project/Scripts/Cartography/CartographyGridJobs.cs"
+        },
+        {
+          "count": 16,
+          "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityTypes.cs"
+        },
+        {
+          "count": 16,
+          "path": "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs"
+        },
+        {
+          "count": 15,
+          "path": "Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs"
+        },
+        {
+          "count": 15,
+          "path": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs"
+        }
+      ]
+    },
+    "burstMissingCompileSynchronously": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "burstMissingFloatMode": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "burstMissingFloatPrecision": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "globalQualityWeight": {
+      "examples": [
+        {
+          "line": 837,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "float quality = HomeostasisBrain.GlobalQualityWeight;"
+        },
+        {
+          "line": 51,
+          "path": "Assets/_Project/Scripts/AI/Cognition/Editor/LeviathanCortexTunerWindow.cs",
+          "text": "_tuning.GlobalQualityWeight = EditorGUILayout.Slider(\"Global Quality Weight\", _tuning.GlobalQualityWeight, 0f, 1f);"
+        },
+        {
+          "line": 97,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainContracts.cs",
+          "text": "tuning.GlobalQualityWeight = 1f;"
+        },
+        {
+          "line": 243,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainContracts.cs",
+          "text": "[FieldOffset(32)] public float GlobalQualityWeight;"
+        },
+        {
+          "line": 355,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainContracts.cs",
+          "text": "[FieldOffset(92)] public float GlobalQualityWeight;"
+        },
+        {
+          "line": 169,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainJobs.cs",
+          "text": "float quality = ResolveQuality(tuning.GlobalQualityWeight);"
+        },
+        {
+          "line": 736,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainJobs.cs",
+          "text": "float resolvedQuality = ResolveQuality(tuning.GlobalQualityWeight);"
+        },
+        {
+          "line": 753,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainJobs.cs",
+          "text": "GlobalQualityWeight = resolvedQuality,"
+        },
+        {
+          "line": 419,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs",
+          "text": "quality = ResolveSchedulingQuality(buffers.Tuning[0].GlobalQualityWeight);"
+        },
+        {
+          "line": 820,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs",
+          "text": "tuning.GlobalQualityWeight = math.saturate(math.select(fallback.GlobalQualityWeight, tuning.GlobalQualityWeight, math.isfinite(tuning.GlobalQualityWeight)));"
+        },
+        {
+          "line": 889,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs",
+          "text": "tuning.GlobalQualityWeight = math.saturate(value);"
+        },
+        {
+          "line": 1128,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs",
+          "text": "writer.Write(entry.GlobalQualityWeight);"
+        },
+        {
+          "line": 385,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "GlobalQualityWeight = authorityQualityWeight,"
+        },
+        {
+          "line": 442,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "GlobalQualityWeight = authorityQualityWeight,"
+        },
+        {
+          "line": 462,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "GlobalQualityWeight = visualQualityWeight,"
+        },
+        {
+          "line": 1342,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "GlobalQualityWeight = AuthoritativeQualityWeight,"
+        },
+        {
+          "line": 1505,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "GlobalQualityWeight = _lastGlobalQualityWeight,"
+        },
+        {
+          "line": 1812,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "float weight = HomeostasisBrain.GlobalQualityWeight;"
+        },
+        {
+          "line": 2032,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "GlobalQualityWeight = math.saturate(globalQualityWeight),"
+        },
+        {
+          "line": 2168,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "writer.Write(entry.GlobalQualityWeight);"
+        }
+      ],
+      "files": 424,
+      "matches": 1906,
+      "topFiles": [
+        {
+          "count": 27,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs"
+        },
+        {
+          "count": 26,
+          "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs"
+        },
+        {
+          "count": 26,
+          "path": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs"
+        },
+        {
+          "count": 25,
+          "path": "Assets/_Project/Scripts/FabricationAssemblerRuntime.cs"
+        },
+        {
+          "count": 24,
+          "path": "Assets/_Project/Scripts/Habitat/Deformation/Editor/DamageBake/HabitatDamageBakePipeline.cs"
+        },
+        {
+          "count": 22,
+          "path": "Assets/_Project/Scripts/Cartography/CartographyGridJobs.cs"
+        },
+        {
+          "count": 21,
+          "path": "Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs"
+        },
+        {
+          "count": 20,
+          "path": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs"
+        },
+        {
+          "count": 20,
+          "path": "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs"
+        },
+        {
+          "count": 20,
+          "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs"
+        }
+      ]
+    },
+    "jobHandleComplete": {
+      "examples": [
+        {
+          "line": 485,
+          "path": "Assets/_Project/Scripts/Core/Data/Editor/CacheBTreeTopologyXRayWindow.cs",
+          "text": "handle.Complete();"
+        },
+        {
+          "line": 78,
+          "path": "Assets/_Project/Scripts/Core/DispatcherJobFence.cs",
+          "text": "handle.Complete();"
+        },
+        {
+          "line": 89,
+          "path": "Assets/_Project/Scripts/Core/DispatcherJobFence.cs",
+          "text": "handle.Complete();"
+        },
+        {
+          "line": 176,
+          "path": "Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureMockMeshJobs.cs",
+          "text": "JobHandle.CombineDependencies(vertexHandle, indexHandle).Complete();"
+        },
+        {
+          "line": 224,
+          "path": "Assets/_Project/Scripts/Editor/AnomalySmokeTester.cs",
+          "text": "pillarHandle.Complete();"
+        },
+        {
+          "line": 298,
+          "path": "Assets/_Project/Scripts/Editor/AnomalySmokeTester.cs",
+          "text": "handle.Complete();"
+        },
+        {
+          "line": 183,
+          "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+          "text": "handle.Complete();"
+        },
+        {
+          "line": 200,
+          "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+          "text": "handle.Complete();"
+        },
+        {
+          "line": 217,
+          "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+          "text": "handle.Complete();"
+        },
+        {
+          "line": 427,
+          "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+          "text": "handle.Complete();"
+        },
+        {
+          "line": 497,
+          "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+          "text": "handle.Complete();"
+        },
+        {
+          "line": 573,
+          "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+          "text": "scanHandle.Complete();"
+        },
+        {
+          "line": 595,
+          "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+          "text": "sliceHandle.Complete();"
+        },
+        {
+          "line": 709,
+          "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+          "text": "sliceHandle.Complete();"
+        },
+        {
+          "line": 731,
+          "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+          "text": "sliceHandle.Complete();"
+        },
+        {
+          "line": 759,
+          "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+          "text": "sliceHandle.Complete();"
+        },
+        {
+          "line": 867,
+          "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+          "text": "sliceHandle.Complete();"
+        },
+        {
+          "line": 919,
+          "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+          "text": "handle.Complete();"
+        },
+        {
+          "line": 1003,
+          "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+          "text": "handle.Complete();"
+        },
+        {
+          "line": 1059,
+          "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+          "text": "handle.Complete();"
+        }
+      ],
+      "files": 31,
+      "matches": 112,
+      "topFiles": [
+        {
+          "count": 15,
+          "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs"
+        },
+        {
+          "count": 10,
+          "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs"
+        },
+        {
+          "count": 7,
+          "path": "Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeGenerator.cs"
+        },
+        {
+          "count": 7,
+          "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/World/StaticCaveSdfBaker/Editor/StaticCaveSdfBakePipeline.cs"
+        },
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForge.cs"
+        },
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/Editor/TextureChannelPacker/HectonArmTextureChannelPacker.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/Editor/HectonOctahedralImpostorBaker.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/Editor/HydraulicErosionForge/Shinobu242/HydraulicErosionForgeBaker.cs"
+        }
+      ]
+    },
+    "linqSurface": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "noAlias": {
+      "examples": [
+        {
+          "line": 1455,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<AbsoluteUniversePosition> Aups;"
+        },
+        {
+          "line": 1456,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<float4> Velocities;"
+        },
+        {
+          "line": 1457,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<AmbientBiotaState> States;"
+        },
+        {
+          "line": 1459,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<int> Counters;"
+        },
+        {
+          "line": 1624,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<AbsoluteUniversePosition> Aups;"
+        },
+        {
+          "line": 1625,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<float4> Velocities;"
+        },
+        {
+          "line": 1626,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<AmbientBiotaState> States;"
+        },
+        {
+          "line": 1627,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<int> Counters;"
+        },
+        {
+          "line": 1670,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<AbsoluteUniversePosition> Aups;"
+        },
+        {
+          "line": 1671,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<float4> Velocities;"
+        },
+        {
+          "line": 1672,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<AmbientBiotaState> States;"
+        },
+        {
+          "line": 1760,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<AbsoluteUniversePosition> Aups;"
+        },
+        {
+          "line": 1761,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<float4> Velocities;"
+        },
+        {
+          "line": 1762,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<AmbientBiotaState> States;"
+        },
+        {
+          "line": 16,
+          "path": "Assets/_Project/Scripts/AI/Cognition/LeviathanStalkJob.cs",
+          "text": "[NoAlias]"
+        },
+        {
+          "line": 20,
+          "path": "Assets/_Project/Scripts/AI/Cognition/LeviathanStalkJob.cs",
+          "text": "[NoAlias]"
+        },
+        {
+          "line": 16,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainJobs.cs",
+          "text": "[NoAlias] public NativeArray<MockPlayerAUP> Targets;"
+        },
+        {
+          "line": 80,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainJobs.cs",
+          "text": "[NoAlias] public NativeArray<ApexStateDTO> States;"
+        },
+        {
+          "line": 86,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainJobs.cs",
+          "text": "[NoAlias] public NativeArray<ApexBrainOutputDTO> Outputs;"
+        },
+        {
+          "line": 87,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainJobs.cs",
+          "text": "[NoAlias] public NativeArray<ApexProximitySignal> ProximitySignals;"
+        }
+      ],
+      "files": 214,
+      "matches": 2130,
+      "topFiles": [
+        {
+          "count": 73,
+          "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs"
+        },
+        {
+          "count": 60,
+          "path": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs"
+        },
+        {
+          "count": 57,
+          "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs"
+        },
+        {
+          "count": 42,
+          "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorTypes.cs"
+        },
+        {
+          "count": 40,
+          "path": "Assets/_Project/Scripts/Cartography/CartographyGridJobs.cs"
+        },
+        {
+          "count": 39,
+          "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralJobs.cs"
+        },
+        {
+          "count": 38,
+          "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityTypes.cs"
+        },
+        {
+          "count": 38,
+          "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs"
+        },
+        {
+          "count": 37,
+          "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs"
+        },
+        {
+          "count": 35,
+          "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageJobs.cs"
+        }
+      ]
+    },
+    "packOne": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "privateNativeCollectionBlackBoxTelemetry": {
+      "examples": [
+        {
+          "line": 134,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<GasDynamicsTelemetryEntry> _telemetryRing;"
+        },
+        {
+          "line": 7675,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+          "text": "private NativeArray<AudioTransitionState> ResolvePrologueTransitionRing()"
+        },
+        {
+          "line": 7685,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+          "text": "private NativeArray<PrologueAudioTransitionTelemetryEntry> ResolvePrologueTransitionTelemetryRing()"
+        },
+        {
+          "line": 7695,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+          "text": "private NativeArray<GranularAudioTelemetryEntry> ResolveGranularTelemetryRing()"
+        },
+        {
+          "line": 700,
+          "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+          "text": "private static NativeArray<DroneAStarTelemetry> s_DroneAStarTelemetry;"
+        },
+        {
+          "line": 702,
+          "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+          "text": "private static NativeArray<int> s_FleetTelemetryAccumulator;"
+        },
+        {
+          "line": 53,
+          "path": "Assets/_Project/Scripts/Construction/FluidPipeGraphRuntime.cs",
+          "text": "private NativeArray<FluidPipeTelemetryEntry> _telemetryRing;"
+        },
+        {
+          "line": 54,
+          "path": "Assets/_Project/Scripts/Construction/FluidPipeGraphRuntime.cs",
+          "text": "private NativeArray<FluidPipeRuptureRecord> _ruptureTelemetryRing;"
+        },
+        {
+          "line": 167,
+          "path": "Assets/_Project/Scripts/ConstructionManager.cs",
+          "text": "private NativeArray<HabitatDeconstructionTelemetryEntry> _deconstructionBlackBox;"
+        },
+        {
+          "line": 936,
+          "path": "Assets/_Project/Scripts/Core/DodReplayRecorder.cs",
+          "text": "private static NativeArray<T> AllocateNativeArray<T>(int length, string label, NativeArrayOptions options)"
+        },
+        {
+          "line": 301,
+          "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
+          "text": "private NativeArray<FoveatedSimulationTelemetryEntry> _telemetryRing;"
+        },
+        {
+          "line": 96,
+          "path": "Assets/_Project/Scripts/Core/GlobalTelemetryBus.cs",
+          "text": "private static NativeArray<TelemetryEvent> _snapshotBuffer;"
+        },
+        {
+          "line": 676,
+          "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+          "text": "private NativeArray<MemoryDefragTelemetryEntry> _defragBlackBox;"
+        },
+        {
+          "line": 1802,
+          "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+          "text": "private static NativeArray<H8MemoryTelemetryEntry> _blackBox;"
+        },
+        {
+          "line": 1803,
+          "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+          "text": "private static NativeArray<H8MemoryTelemetryEntry> _eventBlackBox;"
+        },
+        {
+          "line": 274,
+          "path": "Assets/_Project/Scripts/CrashTelemetryBuffer.cs",
+          "text": "private NativeArray<TelemetryEntry> _ringBuffer;"
+        },
+        {
+          "line": 275,
+          "path": "Assets/_Project/Scripts/CrashTelemetryBuffer.cs",
+          "text": "private NativeArray<TelemetryEntry> _exportSnapshot;"
+        },
+        {
+          "line": 501,
+          "path": "Assets/_Project/Scripts/Dev/HabitatStressSmokeTester.cs",
+          "text": "private static NativeArray<T> AllocateSmokeArray<T>(int length, string label)"
+        },
+        {
+          "line": 15,
+          "path": "Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureBakeBlackBox.cs",
+          "text": "private static NativeArray<AITextureBakeTelemetryEntry> _ring;"
+        },
+        {
+          "line": 44,
+          "path": "Assets/_Project/Scripts/Editor/ChroniclerDiagnosticHeatmapWindow.cs",
+          "text": "private NativeArray<SignalLaneTelemetry> _signalLanes;"
+        }
+      ],
+      "files": 59,
+      "matches": 83,
+      "topFiles": [
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/HectonFluidEngine.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/EncounterDirector.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/SaveManager.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/Construction/FluidPipeGraphRuntime.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/CrashTelemetryBuffer.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/Editor/ChroniclerDiagnosticHeatmapWindow.cs"
+        }
+      ]
+    },
+    "privateNativeCollectionField": {
+      "examples": [
+        {
+          "line": 176,
+          "path": "Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs",
+          "text": "private static NativeQueue<Atlas6EventPayload> _pendingEvents;"
+        },
+        {
+          "line": 177,
+          "path": "Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs",
+          "text": "private static NativeQueue<Atlas6EventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 130,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+          "text": "private static NativeQueue<AtlasSignalEventPayload> _pendingEvents;"
+        },
+        {
+          "line": 131,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+          "text": "private static NativeQueue<AtlasSignalEventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 103,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> RoomO2;"
+        },
+        {
+          "line": 104,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> RoomCO2;"
+        },
+        {
+          "line": 105,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> RoomPressure;"
+        },
+        {
+          "line": 106,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomO2Back;"
+        },
+        {
+          "line": 107,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomCO2Back;"
+        },
+        {
+          "line": 108,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomNitrogen;"
+        },
+        {
+          "line": 109,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomNitrogenBack;"
+        },
+        {
+          "line": 110,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomPressureBack;"
+        },
+        {
+          "line": 111,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomAmbientPressure;"
+        },
+        {
+          "line": 112,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomSubmerged01;"
+        },
+        {
+          "line": 113,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomPlayerStress01;"
+        },
+        {
+          "line": 114,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomPlayerHeartRateBpm;"
+        },
+        {
+          "line": 115,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomTemperatureCelsius;"
+        },
+        {
+          "line": 116,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<byte> _roomPlayerPresent;"
+        },
+        {
+          "line": 117,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<byte> _roomScrubberPowered;"
+        },
+        {
+          "line": 118,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<ushort> _roomFlags;"
+        }
+      ],
+      "files": 229,
+      "matches": 1316,
+      "topFiles": [
+        {
+          "count": 75,
+          "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs"
+        },
+        {
+          "count": 51,
+          "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs"
+        },
+        {
+          "count": 49,
+          "path": "Assets/_Project/Scripts/PlayerInventory.cs"
+        },
+        {
+          "count": 49,
+          "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs"
+        },
+        {
+          "count": 40,
+          "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs"
+        },
+        {
+          "count": 40,
+          "path": "Assets/_Project/Scripts/HectonFluidEngine.cs"
+        },
+        {
+          "count": 37,
+          "path": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs"
+        },
+        {
+          "count": 36,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs"
+        },
+        {
+          "count": 35,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs"
+        },
+        {
+          "count": 29,
+          "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs"
+        }
+      ]
+    },
+    "privateNativeCollectionOwnerLocalScratch": {
+      "examples": [
+        {
+          "line": 135,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeQueue<ToxicitySignal> _toxicitySignals;"
+        },
+        {
+          "line": 84,
+          "path": "Assets/_Project/Scripts/AudioLog/AudioLogSystem.cs",
+          "text": "private NativeQueue<uint> _queuedLogHashes;"
+        },
+        {
+          "line": 143,
+          "path": "Assets/_Project/Scripts/Construction/CultivationManager.cs",
+          "text": "private NativeArray<CultivationSlotState> _slots;"
+        },
+        {
+          "line": 703,
+          "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+          "text": "private static NativeArray<RaycastCommand> s_DockingRaycastCommands;"
+        },
+        {
+          "line": 704,
+          "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+          "text": "private static NativeArray<RaycastHit> s_DockingRaycastHits;"
+        },
+        {
+          "line": 705,
+          "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+          "text": "private static NativeArray<int> s_DockingRaycastSlots;"
+        },
+        {
+          "line": 718,
+          "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+          "text": "private static NativeArray<byte> s_DroneSpecsCsvScratch;"
+        },
+        {
+          "line": 786,
+          "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+          "text": "private static NativeArray<DroneServiceCommand> s_DroneServiceCommands;"
+        },
+        {
+          "line": 56,
+          "path": "Assets/_Project/Scripts/Construction/FluidPipeGraphRuntime.cs",
+          "text": "private NativeQueue<FluidPipeRuptureRecord> _ruptureQueue;"
+        },
+        {
+          "line": 279,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "private NativeArray<int> _anchorTraversalQueue;"
+        },
+        {
+          "line": 39,
+          "path": "Assets/_Project/Scripts/Construction/LogisticsPipeTransportScheduler.cs",
+          "text": "private static NativeArray<int> _queue;"
+        },
+        {
+          "line": 168,
+          "path": "Assets/_Project/Scripts/ConstructionManager.cs",
+          "text": "private NativeArray<RaycastCommand> _deconstructionRaycastCommands;"
+        },
+        {
+          "line": 169,
+          "path": "Assets/_Project/Scripts/ConstructionManager.cs",
+          "text": "private NativeArray<RaycastHit> _deconstructionRaycastHits;"
+        },
+        {
+          "line": 41,
+          "path": "Assets/_Project/Scripts/Core/BurstCallback.cs",
+          "text": "private NativeQueue<int> _events;"
+        },
+        {
+          "line": 240,
+          "path": "Assets/_Project/Scripts/Core/BurstCallback.cs",
+          "text": "private NativeQueue<int>.ParallelWriter _events;"
+        },
+        {
+          "line": 382,
+          "path": "Assets/_Project/Scripts/Core/DodReplayRecorder.cs",
+          "text": "private NativeArray<byte> _snapshotScratch;"
+        },
+        {
+          "line": 302,
+          "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
+          "text": "private NativeArray<RaycastCommand> _pendingDeferredRaycastCommands;"
+        },
+        {
+          "line": 304,
+          "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
+          "text": "private NativeArray<RaycastCommand> _deferredRaycastCommands;"
+        },
+        {
+          "line": 97,
+          "path": "Assets/_Project/Scripts/Core/GlobalTelemetryBus.cs",
+          "text": "private static NativeArray<byte> _exportScratch;"
+        },
+        {
+          "line": 36,
+          "path": "Assets/_Project/Scripts/Core/Memory/VaultMockSignalBus.cs",
+          "text": "private NativeQueue<T> _queue;"
+        }
+      ],
+      "files": 50,
+      "matches": 79,
+      "topFiles": [
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs"
+        },
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/ConstructionManager.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/Core/BurstCallback.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/Gameplay/TraumaDispatcher.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs"
+        }
+      ]
+    },
+    "privateNativeCollectionStaticQueueLane": {
+      "examples": [
+        {
+          "line": 176,
+          "path": "Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs",
+          "text": "private static NativeQueue<Atlas6EventPayload> _pendingEvents;"
+        },
+        {
+          "line": 177,
+          "path": "Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs",
+          "text": "private static NativeQueue<Atlas6EventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 130,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+          "text": "private static NativeQueue<AtlasSignalEventPayload> _pendingEvents;"
+        },
+        {
+          "line": 131,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+          "text": "private static NativeQueue<AtlasSignalEventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 140,
+          "path": "Assets/_Project/Scripts/AudioLog/AudioLogEvents.cs",
+          "text": "private static NativeQueue<AudioLogEventPayload> _pendingEvents;"
+        },
+        {
+          "line": 141,
+          "path": "Assets/_Project/Scripts/AudioLog/AudioLogEvents.cs",
+          "text": "private static NativeQueue<AudioLogEventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 67,
+          "path": "Assets/_Project/Scripts/BiomeMatrixDirector.cs",
+          "text": "private static NativeQueue<BiomeMatrixEventPayload> _pendingEvents;"
+        },
+        {
+          "line": 68,
+          "path": "Assets/_Project/Scripts/BiomeMatrixDirector.cs",
+          "text": "private static NativeQueue<BiomeMatrixEventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 136,
+          "path": "Assets/_Project/Scripts/Bootstrap/BootstrapEvents.cs",
+          "text": "private static NativeQueue<BootstrapEventPayload> _pendingEvents;"
+        },
+        {
+          "line": 137,
+          "path": "Assets/_Project/Scripts/Bootstrap/BootstrapEvents.cs",
+          "text": "private static NativeQueue<BootstrapEventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 186,
+          "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+          "text": "private static NativeQueue<GameBootstrapperEventPayload> _pendingEvents;"
+        },
+        {
+          "line": 187,
+          "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+          "text": "private static NativeQueue<GameBootstrapperEventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 88,
+          "path": "Assets/_Project/Scripts/Construction/RepairDroneEntity.cs",
+          "text": "private static NativeQueue<RepairDroneTorchAcousticPayload> _pendingEvents;"
+        },
+        {
+          "line": 89,
+          "path": "Assets/_Project/Scripts/Construction/RepairDroneEntity.cs",
+          "text": "private static NativeQueue<RepairDroneTorchAcousticPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 631,
+          "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+          "text": "private static NativeQueue<RegistryEventPayload> _pendingServiceRebounds;"
+        },
+        {
+          "line": 632,
+          "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+          "text": "private static NativeQueue<RegistryEventPayload> _nextFrameServiceRebounds;"
+        },
+        {
+          "line": 1854,
+          "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+          "text": "private static NativeQueue<T> _queue;"
+        },
+        {
+          "line": 5693,
+          "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+          "text": "private static NativeQueue<ImpactSignal> _impactSignals;"
+        },
+        {
+          "line": 5694,
+          "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+          "text": "private static NativeQueue<AupPreShiftSignal> _aupPreShiftSignals;"
+        },
+        {
+          "line": 5695,
+          "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+          "text": "private static NativeQueue<AupShiftSignal> _aupShiftSignals;"
+        }
+      ],
+      "files": 58,
+      "matches": 209,
+      "topFiles": [
+        {
+          "count": 74,
+          "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs"
+        },
+        {
+          "count": 12,
+          "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs"
+        },
+        {
+          "count": 7,
+          "path": "Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/Gameplay/PlayerSignalEvents.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/AudioLog/AudioLogEvents.cs"
+        }
+      ]
+    },
+    "privateNativeCollectionUnclassified": {
+      "examples": [
+        {
+          "line": 103,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> RoomO2;"
+        },
+        {
+          "line": 104,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> RoomCO2;"
+        },
+        {
+          "line": 105,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> RoomPressure;"
+        },
+        {
+          "line": 106,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomO2Back;"
+        },
+        {
+          "line": 107,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomCO2Back;"
+        },
+        {
+          "line": 108,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomNitrogen;"
+        },
+        {
+          "line": 109,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomNitrogenBack;"
+        },
+        {
+          "line": 110,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomPressureBack;"
+        },
+        {
+          "line": 111,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomAmbientPressure;"
+        },
+        {
+          "line": 112,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomSubmerged01;"
+        },
+        {
+          "line": 113,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomPlayerStress01;"
+        },
+        {
+          "line": 114,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomPlayerHeartRateBpm;"
+        },
+        {
+          "line": 115,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomTemperatureCelsius;"
+        },
+        {
+          "line": 116,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<byte> _roomPlayerPresent;"
+        },
+        {
+          "line": 117,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<byte> _roomScrubberPowered;"
+        },
+        {
+          "line": 118,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<ushort> _roomFlags;"
+        },
+        {
+          "line": 119,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<int> _roomBaseIndex;"
+        },
+        {
+          "line": 120,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<byte> BaseAwakeState;"
+        },
+        {
+          "line": 121,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<byte> _basePlayerInside;"
+        },
+        {
+          "line": 122,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<int> _basePlayerInsideCount;"
+        }
+      ],
+      "files": 148,
+      "matches": 917,
+      "topFiles": [
+        {
+          "count": 47,
+          "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs"
+        },
+        {
+          "count": 46,
+          "path": "Assets/_Project/Scripts/PlayerInventory.cs"
+        },
+        {
+          "count": 46,
+          "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs"
+        },
+        {
+          "count": 34,
+          "path": "Assets/_Project/Scripts/HectonFluidEngine.cs"
+        },
+        {
+          "count": 33,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs"
+        },
+        {
+          "count": 33,
+          "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs"
+        },
+        {
+          "count": 33,
+          "path": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs"
+        },
+        {
+          "count": 23,
+          "path": "Assets/_Project/Scripts/TetherInstance.cs"
+        },
+        {
+          "count": 23,
+          "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs"
+        },
+        {
+          "count": 21,
+          "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs"
+        }
+      ]
+    },
+    "privateNativeCollectionVaultAlias": {
+      "examples": [
+        {
+          "line": 919,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+          "text": "private NativeArray<float> _acousticRadarIntensityBins; // Vault alias; GlobalDataVault owns backing memory."
+        },
+        {
+          "line": 920,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+          "text": "private NativeArray<float> _acousticRadarGrid; // Vault alias; GlobalDataVault owns backing memory."
+        },
+        {
+          "line": 1023,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+          "text": "private NativeArray<VirtualVoice> _virtualVoiceWritePool; // Vault alias; GlobalDataVault owns backing memory."
+        },
+        {
+          "line": 1024,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+          "text": "private NativeArray<VirtualVoice> _virtualVoiceSortPool; // Vault alias; GlobalDataVault owns backing memory."
+        },
+        {
+          "line": 1025,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+          "text": "private NativeArray<VirtualVoiceDTO> _virtualVoiceDtoPool; // Vault alias; GlobalDataVault owns backing memory."
+        },
+        {
+          "line": 1026,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+          "text": "private NativeArray<VirtualVoiceSortKey> _virtualVoiceSortKeyPool; // Vault alias; GlobalDataVault owns backing memory."
+        },
+        {
+          "line": 1027,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+          "text": "private NativeArray<VirtualVoiceSelection> _virtualVoiceSelections; // Vault alias; GlobalDataVault owns backing memory."
+        },
+        {
+          "line": 1028,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+          "text": "private NativeArray<VirtualVoiceStatistics> _virtualVoiceStatistics; // Vault alias; GlobalDataVault owns backing memory."
+        },
+        {
+          "line": 1029,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+          "text": "private NativeArray<AcousticOcclusionTelemetryEntry> _virtualVoiceBlackBox; // Vault alias; GlobalDataVault owns backing memory."
+        },
+        {
+          "line": 1030,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+          "text": "private NativeArray<VirtualVoiceTuningSnapshot> _virtualVoiceTuningVault; // Vault alias; GlobalDataVault owns backing memory."
+        },
+        {
+          "line": 1031,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+          "text": "private NativeArray<AcousticSourceDTO> _acousticSourceWritePool; // Vault alias; GlobalDataVault owns backing memory."
+        },
+        {
+          "line": 1032,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+          "text": "private NativeArray<AcousticSourceDTO> _acousticSourceSortPool; // Vault alias; GlobalDataVault owns backing memory."
+        },
+        {
+          "line": 1033,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+          "text": "private NativeArray<double3> _acousticPreviousAupWritePool; // Vault alias; GlobalDataVault owns backing memory."
+        },
+        {
+          "line": 1034,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+          "text": "private NativeArray<double3> _acousticPreviousAupSortPool; // Vault alias; GlobalDataVault owns backing memory."
+        },
+        {
+          "line": 1035,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+          "text": "private NativeArray<AcousticDspOutputDTO> _acousticDspOutputPool; // Vault alias; GlobalDataVault owns backing memory."
+        },
+        {
+          "line": 1036,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+          "text": "private NativeArray<AcousticMaterialCoefficientDTO> _acousticMaterialRows; // Vault alias; GlobalDataVault owns backing memory."
+        },
+        {
+          "line": 1037,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+          "text": "private NativeArray<AcousticSourceDTO> _acousticSelectedSourcePool; // Vault alias; GlobalDataVault owns backing memory."
+        },
+        {
+          "line": 1038,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+          "text": "private NativeArray<double3> _acousticSelectedPreviousAupPool; // Vault alias; GlobalDataVault owns backing memory."
+        },
+        {
+          "line": 1040,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+          "text": "private NativeArray<byte> _acousticVoxelSdfTexture3D; // External read-only Vault alias; voxel owner owns backing memory."
+        },
+        {
+          "line": 1041,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+          "text": "private NativeArray<ScalabilityStateDTO> _virtualVoiceScalabilityState; // Vault alias; Homeostasis owns backing memory."
+        }
+      ],
+      "files": 1,
+      "matches": 28,
+      "topFiles": [
+        {
+          "count": 28,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs"
+        }
+      ]
+    },
+    "structAutoProperties": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "unityRandom": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "unityTimeCritical": {
+      "examples": [
+        {
+          "line": 929,
+          "path": "Assets/_Project/Scripts/AcousticZoneController.cs",
+          "text": "int frame = Time.frameCount;"
+        },
+        {
+          "line": 698,
+          "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
+          "text": "Frame = Time.frameCount,"
+        },
+        {
+          "line": 855,
+          "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
+          "text": "uint frame = unchecked((uint)Time.frameCount);"
+        },
+        {
+          "line": 961,
+          "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
+          "text": "Frame = (uint)Time.frameCount,"
+        },
+        {
+          "line": 996,
+          "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
+          "text": "int frame = Time.frameCount;"
+        },
+        {
+          "line": 651,
+          "path": "Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs",
+          "text": "int frame = Time.frameCount;"
+        },
+        {
+          "line": 665,
+          "path": "Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs",
+          "text": "int frame = Time.frameCount;"
+        },
+        {
+          "line": 637,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+          "text": "int frame = Time.frameCount;"
+        },
+        {
+          "line": 652,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+          "text": "int frame = Time.frameCount;"
+        },
+        {
+          "line": 666,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+          "text": "int frame = Time.frameCount;"
+        },
+        {
+          "line": 680,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+          "text": "int frame = Time.frameCount;"
+        },
+        {
+          "line": 694,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+          "text": "int frame = Time.frameCount;"
+        },
+        {
+          "line": 708,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+          "text": "int frame = Time.frameCount;"
+        },
+        {
+          "line": 709,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalSystem.cs",
+          "text": "if (Time.time < _nextSignalLogTime)"
+        },
+        {
+          "line": 712,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalSystem.cs",
+          "text": "_nextSignalLogTime = Time.time + 5f;"
+        },
+        {
+          "line": 333,
+          "path": "Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs",
+          "text": "int currentFrame = Time.frameCount;"
+        },
+        {
+          "line": 1002,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "FrameIndex = (uint)math.max(0, Time.frameCount),"
+        },
+        {
+          "line": 1629,
+          "path": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+          "text": "Time.frameCount < _nextSurfaceWeatherPerformanceWarningFrame)"
+        },
+        {
+          "line": 1639,
+          "path": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+          "text": "_nextSurfaceWeatherPerformanceWarningFrame = Time.frameCount + SurfaceWeatherPerformanceWarningCooldownFrames;"
+        },
+        {
+          "line": 173,
+          "path": "Assets/_Project/Scripts/Atmosphere/SurfaceWeatherVfxRig.cs",
+          "text": "impulse.z = Time.time;"
+        }
+      ],
+      "files": 261,
+      "matches": 964,
+      "topFiles": [
+        {
+          "count": 36,
+          "path": "Assets/_Project/Scripts/CrashTelemetryBuffer.cs"
+        },
+        {
+          "count": 33,
+          "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs"
+        },
+        {
+          "count": 32,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs"
+        },
+        {
+          "count": 26,
+          "path": "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs"
+        },
+        {
+          "count": 22,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs"
+        },
+        {
+          "count": 18,
+          "path": "Assets/_Project/Scripts/Core/InputDispatcher.cs"
+        },
+        {
+          "count": 18,
+          "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs"
+        },
+        {
+          "count": 17,
+          "path": "Assets/_Project/Scripts/SaveManager.cs"
+        },
+        {
+          "count": 16,
+          "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs"
+        },
+        {
+          "count": 16,
+          "path": "Assets/_Project/Scripts/HectonPlayerMovement.cs"
+        }
+      ]
+    },
+    "unityUpdateMethod": {
+      "examples": [
+        {
+          "line": 64,
+          "path": "Assets/_Project/Scripts/Editor/FloraDearLieXRayWindow.cs",
+          "text": "private void Update()"
+        },
+        {
+          "line": 83,
+          "path": "Assets/_Project/Scripts/Editor/SubmarineDynoTunerWindow.cs",
+          "text": "private void Update()"
+        },
+        {
+          "line": 39,
+          "path": "Assets/_Project/Scripts/Editor/SumpPumpPipeGridTunerWindow.cs",
+          "text": "private void Update()"
+        },
+        {
+          "line": 86,
+          "path": "Assets/_Project/Scripts/Editor/VerletTowTunerWindow.cs",
+          "text": "private void Update()"
+        },
+        {
+          "line": 117,
+          "path": "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalWaveTunerWindow.Editor.cs",
+          "text": "private void Update()"
+        },
+        {
+          "line": 65,
+          "path": "Assets/_Project/Scripts/Physics/Buoyancy/Editor/PhysicsSleepStateXRayWindow.cs",
+          "text": "private void Update()"
+        },
+        {
+          "line": 83,
+          "path": "Assets/_Project/Scripts/Physics/KCC/Editor/HydrodynamicKccTunerWindow.cs",
+          "text": "private void Update()"
+        },
+        {
+          "line": 108,
+          "path": "Assets/_Project/Scripts/Physics/Seaglide/Editor/SeaglideHydrodynamicsEditorTools.cs",
+          "text": "private void Update()"
+        },
+        {
+          "line": 138,
+          "path": "Assets/_Project/Scripts/Rendering/WaterOptics/Editor/AbyssalOpticsTunerWindow.cs",
+          "text": "private void Update()"
+        },
+        {
+          "line": 108,
+          "path": "Assets/_Project/Scripts/SaveSystem/Editor/EntitySaveTunerWindow.cs",
+          "text": "private void Update()"
+        },
+        {
+          "line": 81,
+          "path": "Assets/_Project/Scripts/SaveSystem/Editor/VoxelSaveTunerWindow.cs",
+          "text": "private void Update()"
+        }
+      ],
+      "files": 11,
+      "matches": 11,
+      "topFiles": [
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Editor/FloraDearLieXRayWindow.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Editor/SubmarineDynoTunerWindow.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Editor/SumpPumpPipeGridTunerWindow.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Editor/VerletTowTunerWindow.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalWaveTunerWindow.Editor.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Physics/Buoyancy/Editor/PhysicsSleepStateXRayWindow.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Physics/KCC/Editor/HydrodynamicKccTunerWindow.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Physics/Seaglide/Editor/SeaglideHydrodynamicsEditorTools.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Rendering/WaterOptics/Editor/AbyssalOpticsTunerWindow.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/SaveSystem/Editor/EntitySaveTunerWindow.cs"
+        }
+      ]
+    }
+  },
+  "csFileCount": 2198,
+  "schema": "hecton8.polish_mandate_static_audit.v1",
+  "sourceRoot": "Assets/_Project/Scripts"
+}

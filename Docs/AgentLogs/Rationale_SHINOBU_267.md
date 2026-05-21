@@ -373,3 +373,63 @@ Solution: Extended `FloraAmbientSwaySelfAudit` to verify hot owner-phase pointer
 Rejected Alternatives: Leaving this as log-only evidence was rejected because Task 20 requires a runnable proof hook. Adding exact forbidden literals to the editor file was rejected because it would recreate P30/P32 false-positive scan debt.
 Scalability potential: No runtime behavior change. Continuous quality, DTO layout, BufferIDs, and shader route are unchanged.
 Hardware Impact: Editor-only audit logic, 0 runtime us.
+
+## Polish Pass 35 Decisions
+Problem: `FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md` requires every product/runtime task to state the first-20-minutes route moment it improves or the blocker it removes. SHINOBU_267 had strong ABI/GPU/Vault proof but no explicit route binding in its owned status/rationale/log/architecture card.
+Solution: Added a SHINOBU_267 route binding that scopes ambient flora sway to World load and swim readability on the selected Copper Wire route biome. The lane removes the early-route blocker of CPU-bone/per-flora animation by keeping kelp/grass motion as one visual-only CBuffer and alpha-tested shader deformation.
+Rejected Alternatives: Claiming route readiness from static source was rejected because the contract requires Unity import, Console, Play Mode/player run, profiler/GC, visual capture, and save/load proof. Expanding into flora ecology, harvesting, colliders, or extra biome content was rejected because that is parked until the selected route is proven.
+Scalability potential: Low route quality keeps static alpha-tested silhouettes; middle restores cheap current sway; high/ultra add richer shader detail through the same continuous quality lane if captured on the route.
+Hardware Impact: Documentation-only, 0 runtime us. The runtime route remains the existing one 32B CBuffer upload plus shader fake; proof remains pending Unity route evidence.
+First 20 Minutes moment: World load and swim readability on the selected Copper Wire route biome.
+Route impact: Removes CPU-bone/per-flora-sway route blocker while keeping flora motion visual-only and out of save/rollback state.
+Proof required: Unity import/Console, Play Mode or player run through the selected route, 60-second profiler/GC capture, Frame Debugger or equivalent shader-route evidence, screenshot/clip, and save/load diff.
+Parked work rejected: Net-new flora ecology, harvest gameplay, CPU vegetation colliders, extra biome spread, and visual-overkill work not captured in the selected route.
+Static verification: route-binding fields are present in status, rationale, log, and architecture doc; SHINOBU_267 XML extraction remains 15929 chars with 20 task labels; owned forbidden scan is clean; runtime/editor/shader preprocessor balance is zero; `git diff --check` reports no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=0, csc=0.
+
+## Polish Pass 36 Decisions
+Problem: P16 removed ordinary runtime `.Run()` and same-frame job fences, but direct managed `mockFlowJob.Execute()` / `parametersJob.Execute()` did not prove that the one-row mathematical kernels were actually entering Burst.
+Solution: Added cold-compiled Burst `FunctionPointer` entrypoints for `GenerateMockAmbientFlowJob` and `CalculateFloraSwayParametersJob`. `TryColdBootstrapVault()` compiles the pointers once during cold bootstrap; `PreSimulationTick` invokes the pointers and records a fixed telemetry fault flag if the kernel pointers are unavailable.
+Rejected Alternatives: Reintroducing `Schedule().Complete()` or `.Run()` was rejected because the work is one DTO and the dispatcher doctrine rejects tiny synchronous jobs. Leaving direct managed `Execute()` was rejected because it made the Burst attributes an import-time hint rather than a runtime proof route.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged. The same 32B CBuffer and continuous quality curves remain; this only changes how the scalar presentation kernels are entered.
+Hardware Impact: Expected runtime delta is below measurement noise for one-row math, but the route avoids Job System runner overhead and removes Burst-proof ambiguity. Build/import proof remains pending CPU-gated Unity/dotnet verification.
+First 20 Minutes moment: World load and swim readability on the selected Copper Wire route biome.
+Route impact: Keeps the early-route flora presentation fake in Burst-backed scalar math without adding scheduling fences or CPU animation.
+Proof required: Unity import/Console, route Play Mode/player run, profiler/GC, Burst inspector/import proof if available, Frame Debugger shader-route proof, and save/load diff.
+Parked work rejected: Jobified broad flora simulation, CPU vegetation physics, gameplay flora ecology, and unmeasured visual-overkill breadth.
+Static verification: function-pointer compile/invoke/self-audit checks all returned true; direct managed scalar-kernel calls are absent; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; `git diff --check` reports no whitespace errors. Build not launched because CPU preflight reported 65%, dotnet=0, csc=0.
+
+## Polish Pass 37 Decisions
+Problem: The central binary payload ledger still described the SHINOBU_267 runtime route as direct one-row `Execute()` even after P36 moved PRE_SIMULATION kernel entry to cold-compiled Burst `FunctionPointer`s.
+Solution: Updated the SHINOBU_267 ledger row to state cold FunctionPointer compilation, PRE_SIMULATION pointer invocation, no `.Run()`, no same-frame `Schedule().Complete()`, and unchanged 32B CBuffer upload.
+Rejected Alternatives: Leaving stale ledger prose was rejected because integrators read the central payload ledger before chat history. Rewriting historical agent-log entries was rejected because those entries are chronological audit evidence; P36/P37 supersede them at the tail.
+Scalability potential: No quality behavior change. Low/Middle/High/Ultra keep the same CBuffer and shader quality curves.
+Hardware Impact: Documentation-only, 0 runtime us.
+First 20 Minutes moment: World load and swim readability on the selected Copper Wire route biome.
+Route impact: Keeps the central payload record aligned with the Burst-backed visual fake used by the first route.
+Proof required: Static ledger/source scan now; Unity import, route run, profiler/GC, Burst/import evidence, Frame Debugger, screenshot/clip, and save/load diff still required for runtime proof.
+Parked work rejected: Rewriting historical log blocks, expanding flora gameplay, and running build under CPU gate.
+Static verification: Ledger and flora architecture docs now show the FunctionPointer route; `git diff --check` reports no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=0, csc=0.
+
+## Polish Pass 38 Decisions
+Problem: The new FunctionPointer invocation helpers take stack addresses. The containing `FloraAmbientSwayRuntime` class is already unsafe, but ambient class-level unsafe context makes the pointer boundary less explicit to static reviewers.
+Solution: Marked `RunMockAmbientFlowKernel` and `RunCalculateFloraSwayParametersKernel` as `unsafe` directly.
+Rejected Alternatives: Relying on the class-level unsafe context was rejected because the pointer-taking methods are the only new native-call boundary in P36. Reintroducing scheduled jobs was rejected for the same one-row stall reason.
+Scalability potential: No quality behavior change. Low/Middle/High/Ultra use the same CBuffer and shader quality curves.
+Hardware Impact: Source clarity only, 0 runtime us.
+First 20 Minutes moment: World load and swim readability on the selected Copper Wire route biome.
+Route impact: Keeps the Burst-backed scalar fake auditable for early-route flora presentation.
+Proof required: Static scan now; Unity import, route run, profiler/GC, Burst/import evidence, Frame Debugger, screenshot/clip, and save/load diff remain pending.
+Parked work rejected: Broad job scheduling, flora gameplay expansion, and build launch under CPU gate.
+Static verification: FunctionPointer helpers are explicitly unsafe; no `.Run()`, `.Complete()`, same-frame `Schedule().Complete()`, `mockFlowJob.Execute()`, or `parametersJob.Execute()` tokens remain in runtime owner path; runtime/editor/shader brace and preprocessor balances are zero; `git diff --check` reports no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=0, csc=0.
+
+## Polish Pass 39 Decisions
+Problem: P36/P38 proved FunctionPointer compile/invoke and explicit unsafe callsites, but the runnable self-audit did not yet require the IL2CPP/AOT callback ABI metadata.
+Solution: Extended `FloraAmbientSwaySelfAudit` to require `[UnmanagedFunctionPointer(CallingConvention.Cdecl)]` and both `MonoPInvokeCallback` attributes for the mock-flow and parameter kernel entrypoints.
+Rejected Alternatives: Checking only `BurstCompiler.CompileFunctionPointer` and `.Invoke` tokens was rejected because IL2CPP callback metadata is part of the native-call route. Adding runtime validation was rejected because this is import/AOT metadata proof, not player-frame logic.
+Scalability potential: No quality behavior change. Low/Middle/High/Ultra use the same CBuffer and shader quality curves.
+Hardware Impact: Editor audit only, 0 runtime us.
+First 20 Minutes moment: World load and swim readability on the selected Copper Wire route biome.
+Route impact: Keeps the early-route flora presentation fake compatible with IL2CPP native callback requirements.
+Proof required: Static self-audit now; Unity import, route run, Burst/import evidence, profiler/GC, Frame Debugger, screenshot/clip, and save/load diff remain pending.
+Parked work rejected: Runtime AOT probing, build launch under CPU gate, and flora gameplay expansion.
+Static verification: Runtime contains Cdecl delegate and both MonoPInvokeCallback attributes; editor self-audit contains `aotFunctionPointerAbi`; runtime/editor/shader brace and preprocessor balances are zero; `git diff --check` reports no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 66%, dotnet=0, csc=0.

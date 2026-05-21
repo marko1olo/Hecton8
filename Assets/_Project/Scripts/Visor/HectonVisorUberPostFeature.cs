@@ -29,7 +29,6 @@ namespace Hecton8.Visor
         private const string ReconstructionShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_BilateralUpsample.shader";
 #endif
 
-        private const float MaterialFloatEpsilon = 0.0001f;
         private const float ReconstructionConstantsEpsilon = 0.0001f;
         private const float DefaultHypoxiaSafeOxygen01 = 0.22f;
         private const float TemperatureActivityThreshold = 0.001f;
@@ -255,6 +254,7 @@ namespace Hecton8.Visor
                 internal Material Material;
                 internal BufferHandle ConstantsBuffer;
                 internal float AbSplit;
+                internal float VisualTimeSeconds;
                 internal bool HasDepth;
                 internal bool HasMotion;
                 internal bool HasHistory;
@@ -265,6 +265,30 @@ namespace Hecton8.Visor
                 internal TextureHandle Source;
                 internal TextureHandle Depth;
                 internal Material Material;
+                internal Texture CrackTexture;
+                internal Texture LensDirtTexture;
+                internal Texture BlueNoiseTexture;
+                internal Texture VrComfortMaskTexture;
+                internal Vector4 Strengths0;
+                internal Vector4 Strengths1;
+                internal Vector4 WaveParams;
+                internal Vector4 TextureFlags;
+                internal Vector4 VrComfortJerkState;
+                internal Vector4 InternalWaterlineParams;
+                internal Vector4 InternalWaterlineDistortion;
+                internal float VisualTimeSeconds;
+                internal float HealthFraction;
+                internal float LocalTemperature;
+                internal float AmbientPressure;
+                internal float PlayerStress01;
+                internal float Hypoxia01;
+                internal float Bleeding01;
+                internal float WetLens01;
+                internal float HullStress01;
+                internal float AupShiftFrame;
+                internal float VrComfortVignette01;
+                internal float DepthlessTBDR;
+                internal float LowTierWeight01;
                 internal bool HasDepth;
             }
 
@@ -276,31 +300,7 @@ namespace Hecton8.Visor
             private GraphicsBuffer _reconstructionConstantsBuffer;
             private RuntimeState _runtimeState;
             private bool _requestRawColorHistory;
-            private Material _lastParameterMaterial;
-            private Texture _lastCrackTexture;
-            private Texture _lastLensDirtTexture;
-            private Texture _lastBlueNoiseTexture;
-            private Texture _lastVrComfortMaskTexture;
-            private Vector4 _lastStrengths0 = Vector4.positiveInfinity;
-            private Vector4 _lastStrengths1 = Vector4.positiveInfinity;
-            private Vector4 _lastWaveParams = Vector4.positiveInfinity;
-            private Vector4 _lastTextureFlags = Vector4.positiveInfinity;
-            private float _lastHealthFraction = float.PositiveInfinity;
-            private float _lastLocalTemperature = float.PositiveInfinity;
-            private float _lastAmbientPressure = float.PositiveInfinity;
-            private float _lastPlayerStress01 = float.PositiveInfinity;
-            private float _lastHypoxia01 = float.PositiveInfinity;
-            private float _lastBleeding01 = float.PositiveInfinity;
-            private float _lastWetLens01 = float.PositiveInfinity;
-            private float _lastHullStress01 = float.PositiveInfinity;
-            private float _lastAupShiftFrame = float.PositiveInfinity;
-            private float _lastVrComfortVignette01 = float.PositiveInfinity;
-            private float _lastDepthlessTBDR = float.PositiveInfinity;
-            private Vector4 _lastVrComfortJerkState = Vector4.positiveInfinity;
-            private Vector4 _lastInternalWaterlineParams = Vector4.positiveInfinity;
-            private Vector4 _lastInternalWaterlineDistortion = Vector4.positiveInfinity;
-            private float _lastLowTier = float.PositiveInfinity;
-            private bool _materialDirty = true;
+            private float _visualTimeSeconds;
 
             public VisorUberPostPass()
             {
@@ -315,7 +315,8 @@ namespace Hecton8.Visor
                 GraphicsBuffer reconstructionConstantsBuffer,
                 RuntimeState runtimeState,
                 bool temporalHookActive,
-                bool requestRawColorHistory)
+                bool requestRawColorHistory,
+                float visualTimeSeconds)
             {
                 _settings = settings;
                 _material = material;
@@ -323,6 +324,7 @@ namespace Hecton8.Visor
                 _reconstructionConstantsBuffer = reconstructionConstantsBuffer;
                 _runtimeState = runtimeState;
                 _requestRawColorHistory = requestRawColorHistory;
+                _visualTimeSeconds = SanitizeFinite(visualTimeSeconds, 0f);
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ScriptableRenderPassInput input = runtimeState.DepthlessTBDR != 0
                     ? ScriptableRenderPassInput.Color
@@ -405,6 +407,7 @@ namespace Hecton8.Visor
                         passData.Material = _reconstructionMaterial;
                         passData.ConstantsBuffer = constantsBuffer;
                         passData.AbSplit = _settings != null ? ResolveAbSplit01(_settings) : 0f;
+                        passData.VisualTimeSeconds = _visualTimeSeconds;
                         passData.HasDepth = activeDepthTexture.IsValid();
                         passData.HasMotion = bindTemporalInputs && activeMotionTexture.IsValid();
                         passData.HasHistory = bindTemporalInputs && activeHistoryTexture.IsValid();
@@ -434,6 +437,7 @@ namespace Hecton8.Visor
                                 return;
 
                             context.cmd.SetGlobalFloat(ShaderConstants.ReconstructionAbSplitId, data.AbSplit);
+                            context.cmd.SetGlobalFloat(ShaderConstants.ReconstructionVisualTimeId, data.VisualTimeSeconds);
                             context.cmd.SetGlobalConstantBuffer(
                                 constants,
                                 ShaderConstants.ReconstructionConstantsBufferId,
@@ -462,8 +466,6 @@ namespace Hecton8.Visor
                 destinationDesc.autoGenerateMips = false;
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
 
-                UpdateMaterialParameters(_material, _settings, _runtimeState);
-
                 using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<PostPassData>(
                            "Hecton Visor Uber Post",
                            out PostPassData passData,
@@ -473,6 +475,7 @@ namespace Hecton8.Visor
                     passData.Depth = depthTexture;
                     passData.Material = _material;
                     passData.HasDepth = hasDepth;
+                    PopulatePostPassData(passData, _settings, _runtimeState, _visualTimeSeconds);
 
                     builder.UseTexture(postSourceTexture, AccessFlags.Read);
                     builder.SetRenderAttachment(destinationTexture, 0, AccessFlags.Write);
@@ -480,11 +483,12 @@ namespace Hecton8.Visor
                         builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.AllowGlobalStateModification(true);
 
-                    builder.SetRenderFunc((PostPassData data, RasterGraphContext context) =>
+                    builder.SetRenderFunc(static (PostPassData data, RasterGraphContext context) =>
                     {
                         context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.Source);
                         if (data.HasDepth)
                             context.cmd.SetGlobalTexture(ShaderConstants.CameraDepthTextureId, data.Depth);
+                        BindPostShaderParameters(context.cmd, data);
                         CoreUtils.DrawFullScreen(context.cmd, data.Material, null, 0);
                     });
                 }
@@ -523,121 +527,81 @@ namespace Hecton8.Visor
 #endif
             }
 
-            private void UpdateMaterialParameters(Material material, FeatureSettings settings, RuntimeState runtimeState)
+            private static void PopulatePostPassData(
+                PostPassData passData,
+                FeatureSettings settings,
+                RuntimeState runtimeState,
+                float visualTimeSeconds)
             {
-                if (!ReferenceEquals(_lastParameterMaterial, material))
-                {
-                    ResetMaterialParameterCache();
-                    _lastParameterMaterial = material;
-                }
-
                 float lowTierWeight01 = Sanitize01(runtimeState.LowTierWeight01);
-                SetMaterialFloatIfChanged(material, ShaderConstants.HealthFractionId, Sanitize01(runtimeState.HealthFraction), ref _lastHealthFraction);
-                SetMaterialFloatIfChanged(material, ShaderConstants.LocalTemperatureId, SanitizeFinite(runtimeState.LocalTemperature, 0f), ref _lastLocalTemperature);
-                SetMaterialFloatIfChanged(material, ShaderConstants.AmbientPressureId, math.max(1f, SanitizeFinite(runtimeState.AmbientPressure, 1f)), ref _lastAmbientPressure);
-                SetMaterialFloatIfChanged(material, ShaderConstants.PlayerStressId, Sanitize01(runtimeState.PlayerStress01), ref _lastPlayerStress01);
-                SetMaterialFloatIfChanged(material, ShaderConstants.HypoxiaId, Sanitize01(runtimeState.Hypoxia01), ref _lastHypoxia01);
-                SetMaterialFloatIfChanged(material, ShaderConstants.BleedingId, runtimeState.Bleeding01, ref _lastBleeding01);
-                SetMaterialFloatIfChanged(material, ShaderConstants.WetLensId, Sanitize01(runtimeState.WetLens01), ref _lastWetLens01);
-                SetMaterialFloatIfChanged(material, ShaderConstants.HullStressId, Sanitize01(runtimeState.HullStress01), ref _lastHullStress01);
-                SetMaterialFloatIfChanged(material, ShaderConstants.AupShiftFrameId, runtimeState.AupShiftFrame, ref _lastAupShiftFrame);
-                SetMaterialFloatIfChanged(material, ShaderConstants.VrComfortVignette01Id, Sanitize01(runtimeState.VrComfortVignette01), ref _lastVrComfortVignette01);
-                SetMaterialFloatIfChanged(material, ShaderConstants.DepthlessTBDRId, runtimeState.DepthlessTBDR != 0 ? 1f : 0f, ref _lastDepthlessTBDR);
-                SetMaterialVectorIfChanged(material, ShaderConstants.VrComfortJerkStateId, SanitizeVrComfortJerkState(runtimeState.VrComfortJerkState), ref _lastVrComfortJerkState);
-                SetMaterialVectorIfChanged(material, ShaderConstants.InternalWaterlineParamsId, SanitizeInternalWaterlineParams(runtimeState.InternalWaterlineParams), ref _lastInternalWaterlineParams);
-                SetMaterialVectorIfChanged(material, ShaderConstants.InternalWaterlineDistortionId, SanitizeInternalWaterlineDistortion(runtimeState.InternalWaterlineDistortion), ref _lastInternalWaterlineDistortion);
-                SetMaterialFloatIfChanged(material, ShaderConstants.LowTierId, lowTierWeight01, ref _lastLowTier);
-
-                Vector4 strengths0 = new Vector4(
+                passData.VisualTimeSeconds = SanitizeFinite(visualTimeSeconds, 0f);
+                passData.HealthFraction = Sanitize01(runtimeState.HealthFraction);
+                passData.LocalTemperature = SanitizeFinite(runtimeState.LocalTemperature, 0f);
+                passData.AmbientPressure = math.max(1f, SanitizeFinite(runtimeState.AmbientPressure, 1f));
+                passData.PlayerStress01 = Sanitize01(runtimeState.PlayerStress01);
+                passData.Hypoxia01 = Sanitize01(runtimeState.Hypoxia01);
+                passData.Bleeding01 = Sanitize01(runtimeState.Bleeding01);
+                passData.WetLens01 = Sanitize01(runtimeState.WetLens01);
+                passData.HullStress01 = Sanitize01(runtimeState.HullStress01);
+                passData.AupShiftFrame = runtimeState.AupShiftFrame;
+                passData.VrComfortVignette01 = Sanitize01(runtimeState.VrComfortVignette01);
+                passData.DepthlessTBDR = runtimeState.DepthlessTBDR != 0 ? 1f : 0f;
+                passData.VrComfortJerkState = SanitizeVrComfortJerkState(runtimeState.VrComfortJerkState);
+                passData.InternalWaterlineParams = SanitizeInternalWaterlineParams(runtimeState.InternalWaterlineParams);
+                passData.InternalWaterlineDistortion = SanitizeInternalWaterlineDistortion(runtimeState.InternalWaterlineDistortion);
+                passData.LowTierWeight01 = lowTierWeight01;
+                passData.Strengths0 = new Vector4(
                     math.saturate(settings.chromaticStrength),
                     math.saturate(settings.hypoxiaDesaturationStrength),
                     math.clamp(settings.pressureWarpStrength, 0f, 0.18f),
                     math.saturate(settings.crackStrength));
-                Vector4 strengths1 = new Vector4(
+                passData.Strengths1 = new Vector4(
                     math.max(0f, settings.pressureInvRange),
                     math.max(0f, settings.temperatureScale),
                     math.clamp(settings.crackUvStrength, 0f, 0.01f),
                     math.saturate(settings.lensDirtAndBloodStrength));
-                Vector4 waveParams = new Vector4(
+                passData.WaveParams = new Vector4(
                     math.max(1f, settings.heatHazeFrequency),
                     math.max(0f, settings.heatHazeSpeed),
                     math.clamp(settings.heatHazeAmplitude, 0f, 0.006f) * (1f - lowTierWeight01),
                     math.saturate(settings.damageVignetteStrength));
-                Vector4 textureFlags = new Vector4(
+                passData.TextureFlags = new Vector4(
                     settings.crackTexture != null ? 1f : 0f,
                     settings.lensDirtTexture != null ? 1f : 0f,
                     settings.blueNoiseTexture != null ? 1f : 0f,
                     settings.vrComfortMaskTexture != null ? 1f : 0f);
-                SetMaterialVectorIfChanged(material, ShaderConstants.Strengths0Id, strengths0, ref _lastStrengths0);
-                SetMaterialVectorIfChanged(material, ShaderConstants.Strengths1Id, strengths1, ref _lastStrengths1);
-                SetMaterialVectorIfChanged(material, ShaderConstants.WaveParamsId, waveParams, ref _lastWaveParams);
-                SetMaterialVectorIfChanged(material, ShaderConstants.TextureFlagsId, textureFlags, ref _lastTextureFlags);
-                SetMaterialTextureIfChanged(material, ShaderConstants.CrackTextureId, settings.crackTexture != null ? settings.crackTexture : Texture2D.blackTexture, ref _lastCrackTexture);
-                SetMaterialTextureIfChanged(material, ShaderConstants.LensDirtTextureId, settings.lensDirtTexture != null ? settings.lensDirtTexture : Texture2D.whiteTexture, ref _lastLensDirtTexture);
-                SetMaterialTextureIfChanged(material, ShaderConstants.BlueNoiseTextureId, settings.blueNoiseTexture != null ? settings.blueNoiseTexture : Texture2D.grayTexture, ref _lastBlueNoiseTexture);
-                SetMaterialTextureIfChanged(material, ShaderConstants.VrComfortMaskTextureId, settings.vrComfortMaskTexture != null ? settings.vrComfortMaskTexture : Texture2D.grayTexture, ref _lastVrComfortMaskTexture);
-                _materialDirty = false;
+                passData.CrackTexture = settings.crackTexture != null ? settings.crackTexture : Texture2D.blackTexture;
+                passData.LensDirtTexture = settings.lensDirtTexture != null ? settings.lensDirtTexture : Texture2D.whiteTexture;
+                passData.BlueNoiseTexture = settings.blueNoiseTexture != null ? settings.blueNoiseTexture : Texture2D.grayTexture;
+                passData.VrComfortMaskTexture = settings.vrComfortMaskTexture != null ? settings.vrComfortMaskTexture : Texture2D.grayTexture;
             }
 
-            private void ResetMaterialParameterCache()
+            private static void BindPostShaderParameters(RasterCommandBuffer cmd, PostPassData data)
             {
-                _lastCrackTexture = null;
-                _lastLensDirtTexture = null;
-                _lastBlueNoiseTexture = null;
-                _lastVrComfortMaskTexture = null;
-                _lastStrengths0 = Vector4.positiveInfinity;
-                _lastStrengths1 = Vector4.positiveInfinity;
-                _lastWaveParams = Vector4.positiveInfinity;
-                _lastTextureFlags = Vector4.positiveInfinity;
-                _lastHealthFraction = float.PositiveInfinity;
-                _lastLocalTemperature = float.PositiveInfinity;
-                _lastAmbientPressure = float.PositiveInfinity;
-                _lastPlayerStress01 = float.PositiveInfinity;
-                _lastHypoxia01 = float.PositiveInfinity;
-                _lastBleeding01 = float.PositiveInfinity;
-                _lastWetLens01 = float.PositiveInfinity;
-                _lastHullStress01 = float.PositiveInfinity;
-                _lastAupShiftFrame = float.PositiveInfinity;
-                _lastVrComfortVignette01 = float.PositiveInfinity;
-                _lastDepthlessTBDR = float.PositiveInfinity;
-                _lastVrComfortJerkState = Vector4.positiveInfinity;
-                _lastInternalWaterlineParams = Vector4.positiveInfinity;
-                _lastInternalWaterlineDistortion = Vector4.positiveInfinity;
-                _lastLowTier = float.PositiveInfinity;
-                _materialDirty = true;
-            }
-
-            private void SetMaterialFloatIfChanged(Material material, int shaderId, float value, ref float cachedValue)
-            {
-                if (!_materialDirty && math.abs(cachedValue - value) <= MaterialFloatEpsilon)
-                    return;
-
-                material.SetFloat(shaderId, value);
-                cachedValue = value;
-            }
-
-            private void SetMaterialVectorIfChanged(Material material, int shaderId, Vector4 value, ref Vector4 cachedValue)
-            {
-                if (!_materialDirty &&
-                    math.abs(cachedValue.x - value.x) <= MaterialFloatEpsilon &&
-                    math.abs(cachedValue.y - value.y) <= MaterialFloatEpsilon &&
-                    math.abs(cachedValue.z - value.z) <= MaterialFloatEpsilon &&
-                    math.abs(cachedValue.w - value.w) <= MaterialFloatEpsilon)
-                {
-                    return;
-                }
-
-                material.SetVector(shaderId, value);
-                cachedValue = value;
-            }
-
-            private void SetMaterialTextureIfChanged(Material material, int shaderId, Texture texture, ref Texture cachedTexture)
-            {
-                if (!_materialDirty && ReferenceEquals(cachedTexture, texture))
-                    return;
-
-                material.SetTexture(shaderId, texture);
-                cachedTexture = texture;
+                cmd.SetGlobalFloat(ShaderConstants.HealthFractionId, data.HealthFraction);
+                cmd.SetGlobalFloat(ShaderConstants.LocalTemperatureId, data.LocalTemperature);
+                cmd.SetGlobalFloat(ShaderConstants.AmbientPressureId, data.AmbientPressure);
+                cmd.SetGlobalFloat(ShaderConstants.PlayerStressId, data.PlayerStress01);
+                cmd.SetGlobalFloat(ShaderConstants.HypoxiaId, data.Hypoxia01);
+                cmd.SetGlobalFloat(ShaderConstants.BleedingId, data.Bleeding01);
+                cmd.SetGlobalFloat(ShaderConstants.WetLensId, data.WetLens01);
+                cmd.SetGlobalFloat(ShaderConstants.HullStressId, data.HullStress01);
+                cmd.SetGlobalFloat(ShaderConstants.AupShiftFrameId, data.AupShiftFrame);
+                cmd.SetGlobalFloat(ShaderConstants.VrComfortVignette01Id, data.VrComfortVignette01);
+                cmd.SetGlobalFloat(ShaderConstants.DepthlessTBDRId, data.DepthlessTBDR);
+                cmd.SetGlobalFloat(ShaderConstants.LowTierId, data.LowTierWeight01);
+                cmd.SetGlobalFloat(ShaderConstants.UberVisualTimeId, data.VisualTimeSeconds);
+                cmd.SetGlobalVector(ShaderConstants.VrComfortJerkStateId, data.VrComfortJerkState);
+                cmd.SetGlobalVector(ShaderConstants.InternalWaterlineParamsId, data.InternalWaterlineParams);
+                cmd.SetGlobalVector(ShaderConstants.InternalWaterlineDistortionId, data.InternalWaterlineDistortion);
+                cmd.SetGlobalVector(ShaderConstants.Strengths0Id, data.Strengths0);
+                cmd.SetGlobalVector(ShaderConstants.Strengths1Id, data.Strengths1);
+                cmd.SetGlobalVector(ShaderConstants.WaveParamsId, data.WaveParams);
+                cmd.SetGlobalVector(ShaderConstants.TextureFlagsId, data.TextureFlags);
+                cmd.SetGlobalTexture(ShaderConstants.CrackTextureId, data.CrackTexture);
+                cmd.SetGlobalTexture(ShaderConstants.LensDirtTextureId, data.LensDirtTexture);
+                cmd.SetGlobalTexture(ShaderConstants.BlueNoiseTextureId, data.BlueNoiseTexture);
+                cmd.SetGlobalTexture(ShaderConstants.VrComfortMaskTextureId, data.VrComfortMaskTexture);
             }
         }
 
@@ -661,6 +625,7 @@ namespace Hecton8.Visor
             internal static readonly int InternalWaterlineParamsId = Shader.PropertyToID("_InternalWaterlineParams");
             internal static readonly int InternalWaterlineDistortionId = Shader.PropertyToID("_InternalWaterlineDistortion");
             internal static readonly int LowTierId = Shader.PropertyToID("_HectonUberLowTier");
+            internal static readonly int UberVisualTimeId = Shader.PropertyToID("_HectonUberVisualTime");
             internal static readonly int Strengths0Id = Shader.PropertyToID("_HectonUberStrengths0");
             internal static readonly int Strengths1Id = Shader.PropertyToID("_HectonUberStrengths1");
             internal static readonly int WaveParamsId = Shader.PropertyToID("_HectonUberWaveParams");
@@ -681,6 +646,7 @@ namespace Hecton8.Visor
             internal static readonly int ReconstructionHistoryTextureId = Shader.PropertyToID("_H8ReconstructionHistoryTex");
             internal static readonly int ReconstructionConstantsBufferId = Shader.PropertyToID("UberNoirReconstructionConstants");
             internal static readonly int ReconstructionAbSplitId = Shader.PropertyToID("_H8UberNoirABSplit");
+            internal static readonly int ReconstructionVisualTimeId = Shader.PropertyToID("_H8UberNoirVisualTime");
         }
 
 #if UNITY_EDITOR
@@ -822,6 +788,10 @@ namespace Hecton8.Visor
         private ICameraHistoryReadAccess _rawColorHistoryReadAccess;
         private Camera _rawColorHistoryCamera;
         private bool _rawColorHistoryRequestRegistered;
+        private Camera _pendingReconstructionCamera;
+        private RuntimeState _pendingReconstructionRuntimeState;
+        private bool _pendingReconstructionStateValid;
+        private bool _pendingReconstructionRawHistoryAvailable;
 
         /// <inheritdoc />
         public override void Create()
@@ -860,17 +830,17 @@ namespace Hecton8.Visor
                 _noirColorCsvLoadAttempted = false;
                 if (settings.loadNoirColorCsv)
                     TryLoadNoirColorCsvCold();
-                TryRegisterNoirLateFrameTickable();
+                TryRegisterLateFrameTickable();
                 return;
             }
 
-            TryUnregisterNoirLateFrameTickable();
             EnsureReconstructionConstantsBufferCold();
             EnsureReconstructionVaultHandles();
             _aestheticCsvLoadAttempted = false;
             _aestheticProfileCacheCount = 0;
             if (settings != null && settings.loadAestheticCsv)
                 TryLoadAestheticCsvCold();
+            TryRegisterLateFrameTickable();
         }
 
         /// <inheritdoc />
@@ -879,12 +849,14 @@ namespace Hecton8.Visor
             if (settings == null || _pass == null || (_material == null && _reconstructionMaterial == null))
             {
                 ClearRawColorHistoryRequest();
+                ClearPendingReconstructionInput();
                 return;
             }
 
             if (settings.deepSeaNoirUnifiedPass)
             {
                 ClearRawColorHistoryRequest();
+                ClearPendingReconstructionInput();
                 if (_material == null ||
                     !NoirConstantsBuffersReady() ||
                     !NoirVaultHandlesReady() ||
@@ -904,6 +876,7 @@ namespace Hecton8.Visor
             if (!TryBuildRuntimeState(renderCamera, settings, lowTierFloor01, out RuntimeState runtimeState))
             {
                 ClearRawColorHistoryRequest();
+                ClearPendingReconstructionInput();
                 return;
             }
 
@@ -911,6 +884,7 @@ namespace Hecton8.Visor
             if (!ReconstructionVaultHandlesReady())
             {
                 ClearRawColorHistoryRequest();
+                ClearPendingReconstructionInput();
                 return;
             }
 
@@ -919,16 +893,15 @@ namespace Hecton8.Visor
             UpdateRawColorHistoryRequest(renderCamera, requestRawColorHistory);
             bool rawColorHistoryAvailable = requestRawColorHistory &&
                                             TryHasReadableRawColorHistory(renderCamera, renderingData.cameraData.xr);
-            UberNoirReconstructionConstantsDTO reconstructionConstants = BuildReconstructionConstants(
-                settings,
-                runtimeState,
-                renderCamera,
-                rawColorHistoryAvailable);
-            bool reconstructionConstantsReady = UpdateReconstructionConstants(in reconstructionConstants);
-            RecordReconstructionTelemetry(in reconstructionConstants, runtimeState, reconstructionConstantsReady);
+            StageReconstructionInput(renderCamera, in runtimeState, rawColorHistoryAvailable);
+            bool reconstructionConstantsReady =
+                settings.reconstructionEnabled &&
+                _hasReconstructionConstants &&
+                _activeReconstructionConstantsBuffer != null &&
+                _activeReconstructionConstantsBuffer.IsValid();
 
             bool temporalHookActive = reconstructionConstantsReady &&
-                                      reconstructionConstants.TemporalParams.z > 0.001f;
+                                      _lastReconstructionConstants.TemporalParams.z > 0.001f;
             _pass.Setup(
                 settings,
                 _material,
@@ -936,8 +909,54 @@ namespace Hecton8.Visor
                 reconstructionConstantsReady ? _activeReconstructionConstantsBuffer : null,
                 runtimeState,
                 temporalHookActive,
-                requestRawColorHistory);
+                reconstructionConstantsReady && requestRawColorHistory,
+                _noirWrappedVisualTimeSeconds);
             renderer.EnqueuePass(_pass);
+        }
+
+        private void StageReconstructionInput(
+            Camera renderCamera,
+            in RuntimeState runtimeState,
+            bool rawColorHistoryAvailable)
+        {
+            _pendingReconstructionCamera = renderCamera;
+            _pendingReconstructionRuntimeState = runtimeState;
+            _pendingReconstructionRawHistoryAvailable = rawColorHistoryAvailable;
+            _pendingReconstructionStateValid = renderCamera != null;
+        }
+
+        private void ClearPendingReconstructionInput()
+        {
+            _pendingReconstructionCamera = null;
+            _pendingReconstructionRuntimeState = default;
+            _pendingReconstructionRawHistoryAvailable = false;
+            _pendingReconstructionStateValid = false;
+        }
+
+        private void TryUpdateReconstructionConstantsLate()
+        {
+            if (settings == null ||
+                settings.deepSeaNoirUnifiedPass ||
+                !settings.reconstructionEnabled ||
+                _reconstructionMaterial == null ||
+                !_pendingReconstructionStateValid ||
+                _pendingReconstructionCamera == null ||
+                !IsReconstructionConstantsBufferReady() ||
+                !ReconstructionVaultHandlesReady())
+            {
+                return;
+            }
+
+            uint frame = ResolveNoirFrameId();
+            ResolveWrappedNoirTimeSeconds(frame);
+            RuntimeState runtimeState = _pendingReconstructionRuntimeState;
+            UberNoirReconstructionConstantsDTO reconstructionConstants = BuildReconstructionConstants(
+                settings,
+                runtimeState,
+                _pendingReconstructionCamera,
+                _pendingReconstructionRawHistoryAvailable);
+            bool reconstructionConstantsReady = UpdateReconstructionConstants(in reconstructionConstants);
+            RecordReconstructionTelemetry(in reconstructionConstants, runtimeState, reconstructionConstantsReady);
         }
 
         private bool ShouldRequestRawColorHistory(
@@ -960,16 +979,17 @@ namespace Hecton8.Visor
             return temporalWarmup01 > 0.001f;
         }
 
-        private static bool TryHasReadableRawColorHistory(Camera renderCamera, XRPass xr)
+        private bool TryHasReadableRawColorHistory(Camera renderCamera, XRPass xr)
         {
             if (renderCamera == null ||
-                !renderCamera.TryGetComponent(out UniversalAdditionalCameraData additionalCameraData) ||
-                additionalCameraData.history == null)
+                !_rawColorHistoryRequestRegistered ||
+                !ReferenceEquals(_rawColorHistoryCamera, renderCamera) ||
+                _rawColorHistoryReadAccess == null)
             {
                 return false;
             }
 
-            RawColorHistory rawColorHistory = additionalCameraData.history.GetHistoryForRead<RawColorHistory>();
+            RawColorHistory rawColorHistory = _rawColorHistoryReadAccess.GetHistoryForRead<RawColorHistory>();
             if (rawColorHistory == null)
                 return false;
 
@@ -989,9 +1009,10 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
-            TryUnregisterNoirLateFrameTickable();
+            TryUnregisterLateFrameTickable();
             TryUnregisterHotSwapListener();
             ClearRawColorHistoryRequest();
+            ClearPendingReconstructionInput();
             ReleaseNoirVaultHandles(_dataVault);
             CoreUtils.Destroy(_material);
             _material = null;
@@ -1017,6 +1038,7 @@ namespace Hecton8.Visor
             _aestheticCsvLoaded = false;
             _aestheticCsvLoadAttempted = false;
             _aestheticProfileCacheCount = 0;
+            _noirColorProfileCacheCount = 0;
         }
 
         private void UpdateRawColorHistoryRequest(Camera renderCamera, bool requestRawColorHistory)

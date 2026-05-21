@@ -31,6 +31,22 @@ CREST_ASSEMBLIES = {
     "WaveHarmonic.Crest.Scripting",
     "WaveHarmonic.Crest.Samples",
 }
+CREST_ASMDEF_GUID_REFERENCES = {
+    "GUID:5b35af79ebbe89647a157055d52c59d3",  # Assets/Crest/Crest/Scripts/Crest.asmdef
+    "GUID:59cd48da98d9e4a80917b613abe9416e",  # Assets/Crest/Crest/Scripts/Editor/Crest.Editor.asmdef.meta
+}
+CREST_ASSEMBLY_REFERENCES = CREST_ASSEMBLIES | CREST_ASMDEF_GUID_REFERENCES
+QUARANTINED_ASSET_GUIDS = {
+    "ed12880d16f3f2f4e80ceee64594101d",  # archived Crest5_WaveSpectrum.asset
+    "149ebcba5c729ad49911b1ea4b8456fd",  # archived Crest5_FoamSettings.asset
+    "0ef7bde4d259c9d4abcc93f41b0903a0",  # archived 03_HECTON_WORLD_CREST5.unity
+    "a73ab923bdc811242bdca5f288eb3877",  # archived Assets/_Recovery folder
+}
+QUARANTINED_ASSET_GUID_RE = "|".join(sorted(QUARANTINED_ASSET_GUIDS))
+CREST_DONOR_ASMDEF_PATHS = (
+    Path("Assets/Crest/Crest/Scripts/Crest.asmdef"),
+    Path("Assets/Crest/Crest/Scripts/Editor/Crest.Editor.asmdef"),
+)
 
 USING_RE = re.compile(r"^\s*using\s+(?:[A-Za-z_][A-Za-z0-9_]*\s*=\s*)?(Crest|WaveHarmonic\.Crest)(?:\s*;|\.)")
 DIRECT_RE = re.compile(
@@ -41,13 +57,15 @@ REFLECTION_STRING_RE = re.compile(r'"[^"\n]*(?:Crest\.OceanRenderer|Crest\.Under
 ACTIVE_ASSET_BREACH_RE = re.compile(
     r"(WaveHarmonic\.Crest::|WaveHarmonic\.Crest|"
     r"382a5d8b1147b4e78a31353c022b8e15|03aa24b56404b45a190a2cfc0c7cc100|"
+    + QUARANTINED_ASSET_GUID_RE
+    + r"|"
     r"Crest5KinematicsAdapter|com\.waveharmonic\.crest|Crest::Crest\.UnderwaterRenderer|"
     r"^\s*-\s+Crest\s*$)"
 )
 CREST_SHADER_INCLUDE_RE = re.compile(r'#include\s+"[^"\n]*Crest/Crest/Shaders/')
 CREST_SHADER_NAME_RE = re.compile(r'Shader\s+"Crest/')
 RG_ACTIVE_PATTERNS = (
-    r"WaveHarmonic\.Crest::|WaveHarmonic\.Crest|382a5d8b1147b4e78a31353c022b8e15|03aa24b56404b45a190a2cfc0c7cc100|Crest5KinematicsAdapter|com\.waveharmonic\.crest|Crest::Crest\.UnderwaterRenderer|^\s*-\s+Crest\s*$",
+    rf"WaveHarmonic\.Crest::|WaveHarmonic\.Crest|382a5d8b1147b4e78a31353c022b8e15|03aa24b56404b45a190a2cfc0c7cc100|{QUARANTINED_ASSET_GUID_RE}|Crest5KinematicsAdapter|com\.waveharmonic\.crest|Crest::Crest\.UnderwaterRenderer|^\s*-\s+Crest\s*$",
     r'#include\s+"[^"\n]*Crest/Crest/Shaders/',
     r'Shader\s+"Crest/',
 )
@@ -93,14 +111,29 @@ def strip_strings(line: str) -> str:
     return "".join(result)
 
 
-def scan_asmdefs() -> tuple[list[dict], list[dict]]:
-    breaches: list[dict] = []
-    allowed_hits: list[dict] = []
+def collect_assembly_definition_paths() -> tuple[list[Path], list[Path]]:
     asmdef_paths: list[Path] = []
+    asmref_paths: list[Path] = []
     for root_name in ("Assets", "Packages"):
         root = PROJECT_ROOT / root_name
-        if root.exists():
-            asmdef_paths.extend(root.rglob("*.asmdef"))
+        if not root.exists():
+            continue
+        asmdef_paths.extend(root.rglob("*.asmdef"))
+        asmref_paths.extend(root.rglob("*.asmref"))
+    return asmdef_paths, asmref_paths
+
+
+def classify_assembly_reference_record(path: Path, record: dict, breaches: list[dict], allowed_hits: list[dict]) -> None:
+    if is_prefixed(path, ALLOWED_RELATIVE_PREFIXES):
+        allowed_hits.append(record)
+    else:
+        breaches.append(record)
+
+
+def scan_assembly_definitions() -> tuple[list[dict], list[dict]]:
+    breaches: list[dict] = []
+    allowed_hits: list[dict] = []
+    asmdef_paths, asmref_paths = collect_assembly_definition_paths()
 
     for path in sorted(asmdef_paths):
         if is_prefixed(path, THIRD_PARTY_PREFIXES):
@@ -114,15 +147,60 @@ def scan_asmdefs() -> tuple[list[dict], list[dict]]:
         references = data.get("references", [])
         if not isinstance(references, list):
             continue
-        crest_refs = [reference for reference in references if isinstance(reference, str) and reference in CREST_ASSEMBLIES]
+        crest_refs = [reference for reference in references if isinstance(reference, str) and reference in CREST_ASSEMBLY_REFERENCES]
         if not crest_refs:
             continue
         record = {"kind": "asmdef_reference", "path": str(rel(path)), "references": crest_refs}
-        if is_prefixed(path, ALLOWED_RELATIVE_PREFIXES):
-            allowed_hits.append(record)
-        else:
-            breaches.append(record)
+        if is_prefixed(path, ALLOWED_RELATIVE_PREFIXES) and data.get("autoReferenced") is not False:
+            breaches.append(
+                {
+                    "kind": "bridge_crest_asmdef_auto_referenced",
+                    "path": str(rel(path)),
+                    "references": crest_refs,
+                    "detail": "Crest bridge assemblies must be opt-in; autoReferenced must stay false.",
+                }
+            )
+            continue
+        classify_assembly_reference_record(path, record, breaches, allowed_hits)
+
+    for path in sorted(asmref_paths):
+        if is_prefixed(path, THIRD_PARTY_PREFIXES):
+            continue
+        try:
+            data = json.loads(path.read_text(encoding="utf-8-sig"))
+        except Exception as exc:  # noqa: BLE001
+            breaches.append({"kind": "asmref_parse_error", "path": str(rel(path)), "detail": str(exc)})
+            continue
+
+        reference = data.get("reference")
+        if not isinstance(reference, str) or reference not in CREST_ASSEMBLY_REFERENCES:
+            continue
+        record = {"kind": "asmref_reference", "path": str(rel(path)), "references": [reference]}
+        classify_assembly_reference_record(path, record, breaches, allowed_hits)
     return breaches, allowed_hits
+
+
+def scan_crest_donor_autoreference() -> list[dict]:
+    breaches: list[dict] = []
+    for relative_path in CREST_DONOR_ASMDEF_PATHS:
+        path = PROJECT_ROOT / relative_path
+        if not path.exists():
+            continue
+        try:
+            data = json.loads(path.read_text(encoding="utf-8-sig"))
+        except Exception as exc:  # noqa: BLE001
+            breaches.append({"kind": "crest_donor_asmdef_parse_error", "path": relative_path.as_posix(), "detail": str(exc)})
+            continue
+        if data.get("autoReferenced") is False:
+            continue
+        breaches.append(
+            {
+                "kind": "crest_donor_asmdef_auto_referenced",
+                "path": relative_path.as_posix(),
+                "detail": "Active Crest donor assemblies must remain autoReferenced=false to preserve the compile wall.",
+            }
+        )
+    return breaches
 
 
 def scan_csharp() -> tuple[list[dict], list[dict]]:
@@ -390,13 +468,14 @@ def main() -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-    asmdef_breaches, asmdef_allowed = scan_asmdefs()
+    asmdef_breaches, asmdef_allowed = scan_assembly_definitions()
     csharp_breaches, csharp_allowed = scan_csharp()
     reflection_hits = scan_reflection_strings()
     active_asset_breaches = scan_active_assets()
     active_package_breaches = scan_active_package_visibility()
+    donor_autoreference_breaches = scan_crest_donor_autoreference()
     vocabulary_debt_hits = scan_vocabulary_debt()
-    breaches = asmdef_breaches + csharp_breaches + active_asset_breaches + active_package_breaches
+    breaches = asmdef_breaches + csharp_breaches + active_asset_breaches + active_package_breaches + donor_autoreference_breaches
     allowed_hits = asmdef_allowed + csharp_allowed
 
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)

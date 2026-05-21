@@ -44,6 +44,9 @@ GlobalQualityWeight behavior:
 - Active Noir CBuffer publication is owned by `HectonVisorUberPostFeature.LateFrameTick`; `AddRenderPasses()` only consumes the last valid buffer and enqueues the RenderGraph pass. One-record mock/parameter math is direct scalar code, not synchronous `IJob.Run()`.
 - The shared host player-context path consumes cached `IPlayerRuntimeContext` snapshots instead of calling `PlayerRuntimeContextService.TryGetActiveRuntimeContext()` from render enqueue. The touched host file no longer imports `Hecton8.Gameplay`; survival status and hull stress come from owner-published snapshot DTOs, with wet-lens kept as a presentation-only read from the cached movement owner.
 - The shared host no longer imports concrete `Hecton8.Physics`, caches `HectonFluidEngine`, or handles `GlobalRegistryServiceSlot.FluidRuntime`. Maelstrom pressure is not sampled from the fluid owner in this presentation route; current pressure/stress trauma uses an owner-local screen-space surge scalar from cached presentation inputs until a contracts-only fluid read model is approved.
+- Reconstruction constants use A/B mapped constant buffers and publish one active buffer for RenderGraph. AB split is bound in the reconstruction raster function; the enqueue path does not mutate the reconstruction material.
+- Reconstruction aesthetic CSV/profile data is cold-loaded into a fixed 32-row snapshot cache. `AddRenderPasses()` selects profiles without Vault locks or file IO retries.
+- Legacy shader low-tier behavior is continuous for heat haze, VR comfort edge detail, light shaft budget/intensity, water refraction, and droplet refraction; quality may scale ALU and intensity, not snap feature ownership or DTO layout.
 
 Accessor purity:
 - Public read accessors now fail closed unless cold initialization already created handles.

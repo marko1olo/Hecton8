@@ -552,6 +552,17 @@ namespace Hecton8.Editor.FloraAmbientSway
                 !runtime.Contains(forbiddenTuningIndexerWrite) &&
                 !runtime.Contains(forbiddenRingIndexerWrite) &&
                 !runtime.Contains(forbiddenCursorIndexerWrite);
+            bool burstFunctionPointers =
+                runtime.Contains("BurstCompiler.CompileFunctionPointer<GenerateMockAmbientFlowKernelDelegate>") &&
+                runtime.Contains("BurstCompiler.CompileFunctionPointer<CalculateFloraSwayParametersKernelDelegate>") &&
+                runtime.Contains("s_generateMockKernel.Invoke(&job)") &&
+                runtime.Contains("s_calculateKernel.Invoke(&job)") &&
+                !runtime.Contains("mockFlowJob." + "Execute()") &&
+                !runtime.Contains("parametersJob." + "Execute()");
+            bool aotFunctionPointerAbi =
+                runtime.Contains("[UnmanagedFunctionPointer(CallingConvention.Cdecl)]") &&
+                runtime.Contains("MonoPInvokeCallback(typeof(GenerateMockAmbientFlowKernelDelegate))") &&
+                runtime.Contains("MonoPInvokeCallback(typeof(CalculateFloraSwayParametersKernelDelegate))");
             bool asmdefBoundary =
                 runtimeAsmdef.Contains("\"allowUnsafeCode\": true") &&
                 runtimeAsmdef.Contains("\"Unity.Mathematics\"") &&
@@ -568,7 +579,7 @@ namespace Hecton8.Editor.FloraAmbientSway
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway.meta") &&
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway/FloraAmbientSwayEditorTools.cs.meta") &&
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway/Hecton8.World.FloraAmbientSway.Editor.asmdef.meta");
-            bool pass = layout && dispatcher && fmod && upload && shaderQuality && telemetry && readAccessorPurity && runtimeQualityFailClosed && unsafeDtoMutation && hotOwnerMutationAndMath && asmdefBoundary && metaIdentity;
+            bool pass = layout && dispatcher && fmod && upload && shaderQuality && telemetry && readAccessorPurity && runtimeQualityFailClosed && unsafeDtoMutation && hotOwnerMutationAndMath && burstFunctionPointers && aotFunctionPointerAbi && asmdefBoundary && metaIdentity;
             if (!pass)
             {
                 Debug.LogError(
@@ -585,6 +596,8 @@ namespace Hecton8.Editor.FloraAmbientSway
                     " runtimeQualityFailClosed=" + runtimeQualityFailClosed +
                     " unsafeDtoMutation=" + unsafeDtoMutation +
                     " hotOwnerMutationAndMath=" + hotOwnerMutationAndMath +
+                    " burstFunctionPointers=" + burstFunctionPointers +
+                    " aotFunctionPointerAbi=" + aotFunctionPointerAbi +
                     " asmdefBoundary=" + asmdefBoundary +
                     " metaIdentity=" + metaIdentity);
                 return;

@@ -271,3 +271,11 @@ Solution: Removed the scene-search fallback and resolved only `DestructibleOrgan
 Rejected Alternatives: Keeping an editor-only scene search for convenience or adding a polling cache. Both hide authority discovery inside a diagnostic accessor.
 Scalability potential: Runtime route unchanged. Editor diagnostics now reflect the real owner publication path.
 Hardware Impact: 0 us player runtime. Editor refresh avoids a scene-search fallback.
+
+## Polish Loop 21 - Active Job Lane Mutation Fence
+
+Problem: `ProcessDearLieDestructionSignals` can schedule surface/underwater Burst resolve jobs that hold raw pointers into matrix, health, metadata, claim, result, counter, bucket, regen, and telemetry lanes. The owner frame previously continued into regeneration/decomposition/drop work, `SlowTick` could still run persistence/corpse/allelopathy/overgrowth mutation, and a later `Tick` could refresh active caches before testing a still-pending job.
+Solution: Added an owner-lane fence: `Tick` now returns before active-cache refresh if a Dear Lie job is already pending and returns again after scheduling new Dear Lie work; `SlowTick` now fails closed while a Dear Lie job is scheduled; lane-facing public/internal APIs already return false/zero while the same flag is set. `LateFrameTick` remains the only normal dispatcher completion and result-drain window.
+Rejected Alternatives: Forcing `.Complete()` inside `Tick` or `SlowTick`; cloning matrix/metadata lanes for slow work; allowing concurrent owner writes because most frames finish quickly. Forced completion violates phase discipline, clone lanes add memory and ownership drift, and optimistic overlap is a raw-pointer race under Burst.
+Scalability potential: Low devices may spill the visual vanish by one frame instead of blocking the main thread. Middle/High/Ultra keep the same continuous GPU debris quality curve and spend no extra CPU truth work; visual density still scales through `GlobalQualityWeight`, not through lane ownership changes.
+Hardware Impact: One boolean branch in `SlowTick` and existing fail-closed branches in owner APIs. No per-event Burst cost change. The gain is deterministic memory safety under worker-thread delay, preventing cache-line/native-lane races rather than claiming measured microsecond savings.

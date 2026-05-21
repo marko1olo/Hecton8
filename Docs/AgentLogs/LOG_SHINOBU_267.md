@@ -755,3 +755,123 @@ Exact Microseconds saved:
   <TASK id="20" status="PASS">Runnable audit hook covers P33 direct-memory and rsqrt regressions.</TASK>
   <STATIC_VERIFICATION>Owned P34 forbidden scan clean; runtime/editor/shader brace and preprocessor balances are zero; asmdef/report JSON parse passed; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=0, csc=0.</STATIC_VERIFICATION>
 </SELF_AUDIT_DELTA>
+
+## 2026-05-21 - Polish Pass 35
+
+What was wrong:
+- SHINOBU_267 status/rationale/log/architecture docs did not explicitly answer the `FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md` route-binding question.
+
+What was done:
+- Added the route binding to `Docs/ARCHITECTURE/FLORA_PROCEDURAL_SWAY_FIELD.md`.
+- Recorded the same route moment, impact, proof requirement, and parked work in status and rationale.
+
+Cinematic Cheats used:
+- No runtime route changed. The existing cheat remains shader-side flora motion from one 32B CBuffer instead of CPU bones, Animators, or per-flora Updates.
+
+Exact Microseconds saved:
+- 0 runtime us in this documentation pass. The existing route still avoids estimated 3-12 us per 1k invalid CPU-animated flora transforms, pending profiler proof.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-21-P35_FIRST_20_MINUTES_ROUTE_BINDING">
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Removes the CPU-bone/per-flora-sway blocker for early underwater traversal while keeping flora ambient motion visual-only and outside save/rollback truth.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Unity import and Console; Play Mode or player run through selected route; 60-second profiler/GC capture; Frame Debugger or equivalent proof for `_GlobalFloraSway`; route screenshot/clip; save/load diff proving no visual-only state persisted.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Net-new flora ecology, harvesting gameplay, CPU vegetation colliders, extra biome spread, and uncaptured visual-overkill breadth.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>Route-binding fields present in status, rationale, log, and architecture doc; SHINOBU_267 XML extraction remains 15929 chars with 20 task labels; owned forbidden scan is clean; runtime/editor/shader preprocessor balance is zero; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=0, csc=0.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-21 - Polish Pass 36
+
+What was wrong:
+- Direct managed `Execute()` calls removed job-runner stalls but did not prove Burst execution for the two one-row mathematical kernels.
+
+What was done:
+- Added Burst `FunctionPointer` delegates and `[MonoPInvokeCallback]` entrypoints for mock-flow and parameter kernels.
+- Compiled the pointers in cold bootstrap and invoked them from PRE_SIMULATION without `Schedule().Complete()` or `.Run()`.
+- Extended editor self-audit to require the function-pointer route and reject direct `mockFlowJob.Execute()` / `parametersJob.Execute()`.
+
+Cinematic Cheats used:
+- No visual algorithm changed. The Dear Lie remains shader-side current sway from one CBuffer, not CPU flora physics.
+
+Exact Microseconds saved:
+- No measured frame claim. Static model keeps one-row scalar math sub-us while avoiding Job System runner overhead and removing Burst-proof ambiguity.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-21-P36_BURST_FUNCTION_POINTERS">
+  <TASK id="06" status="PASS">The mock-flow and parameter kernels now enter cold-compiled Burst function pointers instead of direct managed job `Execute()` calls.</TASK>
+  <TASK id="20" status="PASS">Self-audit checks `BurstCompiler.CompileFunctionPointer` for both kernels and rejects direct managed call regressions.</TASK>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Keeps early-route flora motion as Burst-backed scalar presentation math without scheduling fences, CPU bones, Animators, or per-flora Updates.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Unity import/Console, selected route run, profiler/GC, Burst/import evidence if available, Frame Debugger shader-route proof, screenshot/clip, and save/load diff.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Broad flora simulation, CPU vegetation physics, gameplay ecology, and unmeasured visual-overkill breadth.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>Function-pointer compile/invoke/self-audit checks all returned true; direct managed scalar-kernel calls are absent; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; `git diff --check` found no whitespace errors. Build not launched because CPU preflight reported 65%, dotnet=0, csc=0.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-21 - Polish Pass 37
+
+What was wrong:
+- `BINARY_PAYLOAD_INTEGRATION_LEDGER.md` still described SHINOBU_267 as using direct one-row `Execute()` after P36 moved runtime entry to Burst function pointers.
+
+What was done:
+- Updated the SHINOBU_267 binary payload row to describe cold FunctionPointer compilation and PRE_SIMULATION pointer invocation.
+
+Cinematic Cheats used:
+- No runtime visual route changed.
+
+Exact Microseconds saved:
+- 0 runtime us. This is central ledger synchronization only.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-21-P37_BINARY_LEDGER_FUNCTION_POINTER_REFRESH">
+  <TASK id="06" status="PASS">Central payload ledger now matches the cold Burst FunctionPointer kernel entry route.</TASK>
+  <TASK id="20" status="PASS">Stale central documentation is reconciled at the physical tail of SHINOBU_267 logs.</TASK>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Payload ledger no longer misleads integrators into expecting direct managed Execute for the early-route flora visual fake.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static source/ledger scan now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, and save/load diff remain pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Historical log rewriting, flora gameplay expansion, and CPU-gated build launch.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>Ledger and flora architecture docs now show the FunctionPointer route; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=0, csc=0.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-21 - Polish Pass 38
+
+What was wrong:
+- The two new FunctionPointer invocation helpers relied on the containing unsafe class for pointer-taking context.
+
+What was done:
+- Marked `RunMockAmbientFlowKernel` and `RunCalculateFloraSwayParametersKernel` as explicit `unsafe` methods.
+
+Cinematic Cheats used:
+- No runtime visual route changed.
+
+Exact Microseconds saved:
+- 0 runtime us. This is pointer-boundary readability only.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-21-P38_EXPLICIT_UNSAFE_FUNCTION_POINTER_CALLSITES">
+  <TASK id="06" status="PASS">FunctionPointer invocation helpers are explicit unsafe callsites; no `.Run()`/`.Complete()`/direct managed kernel call returned.</TASK>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Pointer boundary for early-route flora visual fake is now visible at the method declaration.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static scan now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, and save/load diff remain pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Broad job scheduling, flora gameplay expansion, and build launch under CPU gate.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>FunctionPointer helpers are explicitly unsafe; no `.Run()`, `.Complete()`, same-frame `Schedule().Complete()`, `mockFlowJob.Execute()`, or `parametersJob.Execute()` tokens remain in runtime owner path; runtime/editor/shader brace and preprocessor balances are zero; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=0, csc=0.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-21 - Polish Pass 39
+
+What was wrong:
+- Self-audit checked FunctionPointer compile/invoke but not the IL2CPP/AOT delegate metadata required for native callbacks.
+
+What was done:
+- Added `aotFunctionPointerAbi` to self-audit, requiring `UnmanagedFunctionPointer(Cdecl)` and both `MonoPInvokeCallback` attributes.
+
+Cinematic Cheats used:
+- No runtime visual route changed.
+
+Exact Microseconds saved:
+- 0 runtime us. This is import/AOT proof-surface hardening.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-21-P39_AOT_FUNCTION_POINTER_ABI">
+  <TASK id="06" status="PASS">Self-audit now verifies the AOT callback metadata around both Burst FunctionPointer entrypoints.</TASK>
+  <TASK id="20" status="PASS">Runnable audit hook rejects missing Cdecl delegate or MonoPInvokeCallback metadata.</TASK>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Early-route flora visual fake keeps IL2CPP native callback metadata explicit.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static self-audit now; Unity import/Console, selected route run, Burst/import proof, profiler/GC, Frame Debugger, screenshot/clip, and save/load diff remain pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Runtime AOT probing, build launch under CPU gate, and flora gameplay expansion.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>Runtime contains Cdecl delegate and both MonoPInvokeCallback attributes; editor self-audit contains `aotFunctionPointerAbi`; runtime/editor/shader brace and preprocessor balances are zero; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 66%, dotnet=0, csc=0.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>

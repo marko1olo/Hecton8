@@ -168,3 +168,15 @@ Cinematic Cheats used: None directly. This is boot scalability policy. The pract
 Exact Microseconds saved: 0 us measured. Static debt reduction: `binaryHardwareSwitch` is now `0 files=0`.
 
 Evidence: `python Tools\test_polish_mandate_static_audit.py` ran 5 tests OK. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_boot_quality_after.json --report-path Docs\Reports\PROJECT_AUDIT_polish_boot_quality_after.md` returned `PASS_WITH_WARNINGS` with `binaryHardwareSwitch=0 files=0`. Focused `rg` finds no `switch (hardwareProfile.QualityTier)` in `GameBootstrapper`. `git diff --check` for `GameBootstrapper.cs` returned clean. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-21 - Private Native Collection Risk Buckets
+
+What was wrong: `privateNativeCollectionField=1316` was a blunt pressure map. It mixed real owner-local runtime native state, static signal/event bridge queues, static global native fields, Vault aliases/resolvers, editor/proof fields, and method-return signatures such as `private NativeArray<T> Resolve...`. Treating the raw number as one defect class would either hide real memory ownership debt or trigger destructive Vault churn.
+
+What was done: Extended `Tools/PolishMandateStaticAudit.py` with additive private-native dimensions while preserving raw count. The tool now emits declaration kind, build surface, and primary risk bucket categories. Added unit tests for raw-total preservation, method returns, job-struct native views, editor-only surfaces, static queues, and Vault aliases. Wrote `Docs/Reports/PROJECT_AUDIT_private_native_collection_triage.md`.
+
+Cinematic Cheats used: None. This is evidence/tooling work. The engineering cheat is rejecting a fake blanket migration: owner-local scratch can remain local when lifetime/fences are self-contained, while cross-domain/save/replay/blackbox/shared ownership must be route-carded.
+
+Exact Microseconds saved: 0 us measured. Static outcome: raw `privateNativeCollectionField` remains `1316 files=229`. Primary risk buckets are `776` owner-local runtime native fields, `218` static signal/event bridge fields, `117` static global native fields, `131` method-returning native collection signatures, `29` Vault alias/resolver rows, and `45` editor/proof rows. Declaration, build-surface, and primary-risk sums each equal `1316`.
+
+Evidence: `python Tools\test_polish_mandate_static_audit.py` ran 9 tests OK. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_private_native_risk_buckets.json --report-path Docs\Reports\PROJECT_AUDIT_polish_private_native_risk_buckets.md` returned `PASS_WITH_WARNINGS`. Top owner-local runtime native offenders are `DestructibleOrganicManager`, `PlayerInventory`, `LogisticsNetworkGraph`, `HectonFluidEngine`, `GasDynamicsSolver`, `SubmarineAtmosphereSystem`, `TetherInstance`, and `WorldChunkResidencyManager`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

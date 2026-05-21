@@ -264,7 +264,7 @@ namespace Hecton8.EditorTools
             json.Append("  \"candidate_file_count\": ").Append(candidateFileCount).AppendLine(",");
             json.Append("  \"finding_count\": ").Append(reportedFindingCount).AppendLine(",");
             json.Append("  \"broad_static_finding_count\": ").Append(findingCount).AppendLine(",");
-            json.AppendLine("  \"finding_list_policy\": \"checked-in SHINOBU_274 artifact keeps the top legacy generic trigger findings; editor scanner emits the same capped proof list and broad static count\",");
+            json.AppendLine("  \"finding_list_policy\": \"deterministic alphabetical scan, editor folder ignored, comments and string literals masked, first three generic trigger/physics findings emitted\",");
             json.AppendLine("  \"accepted_runtime_route\": \"RadiationHazardGrid -> DataVault RadiationStateDTO -> CalculateRadiationExposureJob -> HectonPlayerHealth/CombatDamageSignal\",");
             json.AppendLine("  \"finding_scope_note\": \"Broad static scanner includes generic hazard/toxicity/reactor files; SHINOBU_274 runtime authority is the DataVault/Burst route, not these legacy generic collider users.\",");
             json.AppendLine("  \"dispatcher_route\": \"SystemDispatcher Simulation schedules CalculateRadiationExposureJob; PostSimulation consumes completed Vault state; VisualSync uploads shader globals.\",");

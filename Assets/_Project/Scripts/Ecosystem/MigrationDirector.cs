@@ -47,6 +47,7 @@ namespace Hecton8.Ecosystem
         private const ushort MigrationCellFlagNoPopulation = unchecked((ushort)~MigrationCellFlagPopulation);
         private const ushort MigrationCellFlagNoPopulationSaturated = unchecked((ushort)~MigrationCellFlagPopulationSaturated);
         private const SystemID NativeMemorySystemId = SystemID.AIEcology;
+        private const float AuthoritativeQualityWeight = 1f;
 
         private bool _registeredToTick;
         private bool _registeredLateFrameTick;
@@ -723,7 +724,7 @@ namespace Hecton8.Ecosystem
                 SeasonalPhase = seasonalPhase,
                 VerticalFlowWeight = Mathf.Clamp01(migrationVerticalFlowWeight),
                 CurrentGameTimeSeconds = timelineSeconds,
-                GlobalQualityWeight = ResolveGlobalQualityWeight01()
+                GlobalQualityWeight = AuthoritativeQualityWeight
             };
 
             _migrationFieldHandle = job.Schedule(_migrationGridCellCount, 64);
@@ -787,7 +788,7 @@ namespace Hecton8.Ecosystem
             int iy1 = math.clamp(y0 + 1, 0, _migrationGridResolution.y - 1);
             int iz0 = WrapIndex(z0, _migrationGridResolution.z);
             int iz1 = WrapIndex(z0 + 1, _migrationGridResolution.z);
-            float interpolationWeight = Smooth01(math.saturate((ResolveGlobalQualityWeight01() - 0.22f) * 1.2820513f));
+            float interpolationWeight = 1f;
             int nearestX = WrapIndex(x0 + (int)math.step(0.5f, tx), _migrationGridResolution.x);
             int nearestY = math.clamp(y0 + (int)math.step(0.5f, ty), 0, _migrationGridResolution.y - 1);
             int nearestZ = WrapIndex(z0 + (int)math.step(0.5f, tz), _migrationGridResolution.z);
@@ -1739,14 +1740,8 @@ namespace Hecton8.Ecosystem
 
         private float ResolveMigrationFieldColdTickIntervalSeconds()
         {
-            float quality = Smooth01(ResolveGlobalQualityWeight01());
+            float quality = Smooth01(AuthoritativeQualityWeight);
             return migrationFieldColdTickIntervalSeconds * math.lerp(2.4f, 0.2f, quality);
-        }
-
-        private static float ResolveGlobalQualityWeight01()
-        {
-            float weight = HomeostasisBrain.GlobalQualityWeight;
-            return math.saturate(math.isfinite(weight) ? weight : 1f);
         }
 
         private static float Smooth01(float value)

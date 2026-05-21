@@ -3917,3 +3917,39 @@ Mandates read before coding:
 - `git diff --check` passed for `DiegeticVisorLensRuntime.cs`; CRLF warning only.
 - Build not relaunched under the explicit no-rebuild command discipline.
 - Note: `DiegeticVisorLensRuntime.cs` already contained pre-loop diffs in this dirty worktree; this loop claims only the retained Vault descriptor route, VFX-owned release/tombstone policy, pure preview read route, and legacy `.Resolve` removal.
+
+## Loop 219 - Dynamic Decal VFX Descriptor Route
+- [x] Replaced Dynamic Decal retained Vault handles with generation descriptors.
+  DOD practice: decal instances, upload scratch, runtime state, telemetry ring, tuning, material profile table, and CSV scratch now retain `VaultGenerationHandle<T>` descriptors and open through exact BufferID, `SystemID.Vfx`, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated` proof.
+  Rejected: keeping `VaultBufferHandle<T>`, `GetBufferHandle`, `.Resolve(vault)`, retained handle `.IsCreated`, retained handle `.Length`, and `GetElementAsRef` because decal jobs, editor readback, material CSV import, telemetry dumps, and static rebind can outlive a pointer-era view.
+  Estimate: descriptor proof runs at cold ensure, runtime visual sync, pending finalization, tuning writes, editor reads, material CSV load, material profile resolve, state fault mark, GPU upload telemetry patch, and dump boundaries; decal DTO strides, request queue ABI, shader upload ABI, and Burst job math are unchanged.
+- [x] Added VFX-owned release and compaction-fence refusal.
+  DOD practice: subsystem reset and cold-storage rebind release seven nonzero VFX descriptors through `ReleaseBuffer(in handle)` before tombstoning route state. `EnsureInitialized` refuses to reacquire or release during an active compaction fence and reacquires owned descriptors with `GetGenerationHandle` only.
+  Rejected: borrowing existing descriptors with `TryGetGenerationHandle` for owned lanes because release accounting would be ambiguous. Rewriting the persistent NativeQueue request lane, decal generation math, CSV parser, indirect upload contract, or blackbox schema was rejected as outside this stale pointer route loop.
+  Estimate: cold lifecycle and phase-boundary only; no BufferID, DTO layout, graphics upload ABI, signal route, telemetry stride, or gameplay authority change.
+
+## Compile State Update 213
+- Focused scan on `DynamicDecalVaultRuntime.cs` found no executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `GetBuffer<T>`, direct `TryGetBuffer(...)`, `TryGetLatestCreated`, word-boundary `ResolveBuffer`, `ResolvePointer`, `.Resolve(...)`, `TryGetBufferGeneration`, `VaultGenerationID`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, retained handle `.IsCreated`, or retained handle `.Length` hits.
+- Descriptor route scan confirmed expected `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `TryResolveDynamicDecalVaultBuffer`, `HasDynamicDecalVaultBuffer`, `ReleaseDynamicDecalVaultHandle`, and `ReleaseBuffer(in handle)`.
+- Brace count is balanced: `DynamicDecalVaultRuntime.cs` `223/223`.
+- `git diff --check` passed for `DynamicDecalVaultRuntime.cs`; CRLF warning only.
+- Build not relaunched under the explicit no-rebuild command discipline.
+- Note: `DynamicDecalVaultRuntime.cs` already contained pre-loop diffs in this dirty worktree (`13/18` numstat before this loop); this loop claims only the retained Vault descriptor route, VFX-owned release/tombstone policy, compaction-fence guard, and legacy `.Resolve` removal.
+
+## Loop 220 - Marine Snow VFX Descriptor Route
+- [x] Replaced Marine Snow retained Vault handles with generation descriptors.
+  DOD practice: wake job result, marine-snow telemetry, silt tuning, dynamic wake DTOs, mock flow field, propwash events, propwash cursor, propwash telemetry, propwash tuning, propwash wake profiles, and borrowed procedural wake sources now retain `VaultGenerationHandle<T>` descriptors and open through exact BufferID, `SystemID.Vfx`, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated` proof.
+  Rejected: keeping `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, retained handle `.IsCreated`, retained handle `.Length`, and `.Resolve(vault)` because the renderer spans compute/graphics buffers, immediate Burst jobs, CSV profile reloads, propwash telemetry dumps, and DataVault hot-swap.
+  Estimate: descriptor proof runs at native-state ensure, silt/propwash tuning reads, mock-flow writes, dynamic-wake upload, propwash event commit, procedural wake-source harvest, telemetry write, blackbox dump, and CSV reload boundaries; marine snow DTO strides, shader property IDs, compute kernels, indirect draw ABI, and job math are unchanged.
+- [x] Split owned VFX descriptors from borrowed WakeSources alias.
+  DOD practice: disable, destroy, and DataVault replacement release ten owned VFX descriptors through `ReleaseBuffer(in handle)` and tombstone local route state. `WakeSources` is acquired via `TryGetGenerationHandle`, verified as an existing VFX descriptor, and locally tombstoned without release because `FloraInteractionManager` owns that bridge lane.
+  Rejected: releasing `WakeSources` from Marine Snow because that would violate one fact -> one owner. Clearing owned descriptors during a compaction fence was rejected because it loses release provenance; compaction now only marks native state not-ready and drops the borrowed alias.
+  Estimate: cold lifecycle and phase-boundary only; no BufferID, DTO layout, graphics buffer ABI, SignalBus route, telemetry stride, shader variant, or gameplay authority change.
+
+## Compile State Update 214
+- Focused scan on `HectonMarineSnowRenderer.cs` found no executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `GetBuffer<T>`, direct `TryGetBuffer(...)`, `TryGetLatestCreated`, word-boundary `ResolveBuffer`, `ResolvePointer`, `.Resolve(...)`, `TryGetBufferGeneration`, `VaultGenerationID`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, retained handle `.IsCreated`, or retained handle `.Length` hits.
+- Descriptor route scan confirmed expected `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryGetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `AreOwnedVaultBuffersReady`, `EnsureOwnedVaultBuffer`, `TryResolveVaultBuffer`, `HasVaultBuffer`, `ReleaseOwnedVaultHandle`, and `ReleaseBuffer(in handle)`.
+- Brace count is balanced: `HectonMarineSnowRenderer.cs` `383/383`; EOF has no trailing blank line.
+- `git diff --check --no-index -- NUL HectonMarineSnowRenderer.cs` emitted only the expected LF/CRLF warning; no whitespace errors were reported.
+- Build not relaunched under the explicit no-rebuild command discipline.
+- Note: `git status --short` reports `HectonMarineSnowRenderer.cs` as untracked in this workspace. This loop still updates the on-disk runtime file and claims only the retained Vault descriptor route, VFX-owned release/tombstone policy, borrowed wake-source proof, compaction-fence guard, and legacy `.Resolve` removal.

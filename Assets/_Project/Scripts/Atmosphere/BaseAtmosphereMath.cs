@@ -97,30 +97,25 @@ namespace Hecton8.Atmosphere
         private const uint LcgIncrement = 1013904223u;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float ResolveColdTickIntervalSeconds(float qualityWeight01)
+        public static float ResolveColdTickIntervalSeconds()
         {
-            float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 0f);
-            float curve = Smooth01(math.saturate((quality - 0.1f) * 1.1111112f));
-            return math.lerp(LowColdTickSeconds, HighTickSeconds, curve);
+            return HighTickSeconds;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int ResolveCompartmentSolveBudget(int compartmentCount, float qualityWeight01)
+        public static int ResolveCompartmentSolveBudget(int compartmentCount)
         {
             int count = math.max(0, compartmentCount);
             if (count <= 1)
                 return count;
 
-            float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 0f);
-            float curve = Smooth01(math.saturate((quality - 0.18f) * 1.2195122f));
-            return math.clamp(1 + (int)math.floor((count - 1) * curve + 0.0001f), 1, count);
+            return count;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static BaseAtmosphereSolveMode ResolveSolveMode(float qualityWeight01, int solveBudget, int compartmentCount)
+        public static BaseAtmosphereSolveMode ResolveSolveMode(int solveBudget, int compartmentCount)
         {
-            float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 0f);
-            return solveBudget >= math.max(1, compartmentCount) && quality > 0.92f
+            return solveBudget >= math.max(1, compartmentCount)
                 ? BaseAtmosphereSolveMode.High5Hz
                 : BaseAtmosphereSolveMode.ActiveCompartment1Hz;
         }

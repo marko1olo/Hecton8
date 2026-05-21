@@ -835,3 +835,118 @@ Verification:
   <TASK id="19" result="PASS">Dependency scanner covers the widened active surface without multi-minute Python asset reads.</TASK>
   <TASK id="20" result="PASS_WITH_BUILD_GATE">Static proof updated; Unity compile remains gated by explicit no-rebuild instruction and build policy.</TASK>
 </SELF_AUDIT_UPDATE>
+
+## 2026-05-21 Assembly Sidecar And GUID Reference Wall
+
+What was wrong:
+
+- The dependency scanner proved named `.asmdef` references to Crest, but did not explicitly prove Unity `GUID:<asmdef-guid>` references.
+- The scanner did not parse `.asmref` files, so a future folder-level assembly route could bypass the named asmdef reference gate.
+
+What was done:
+
+- Added active Crest 4 asmdef GUID references to `Tools/Crest_Dependency_Scanner.py`: `GUID:5b35af79ebbe89647a157055d52c59d3` for `Crest` and `GUID:59cd48da98d9e4a80917b613abe9416e` for `Crest.Helpers.Editor`.
+- Replaced the asmdef-only collector with `collect_assembly_definition_paths()` so the scanner reads both `.asmdef` and `.asmref` files.
+- Added `.asmref` JSON parsing and `asmref_reference` reporting; non-bridge Crest asmref routes are hard breaches.
+- Added `dependency_scanner_covers_asmref_and_crest_guid_references` to `Tools/Crest_Quarantine_Polish_Audit.py`.
+
+Cinematic Cheats used:
+
+- No runtime ocean simulation changed. This is compile-wall proof hardening: remove hidden Unity assembly route risk instead of adding runtime defensive checks.
+
+Exact Microseconds saved:
+
+- Runtime saving: 0 us.
+- Editor/build saving: prevents future hidden Crest assembly sidecar routes from widening recompile fanout; no steady-state frame claim.
+
+Verification:
+
+- `python -m py_compile Tools\Crest_Dependency_Scanner.py Tools\Crest_Quarantine_Polish_Audit.py`: PASS.
+- Exact `rg` scan: no non-bridge `GUID:5b35af79ebbe89647a157055d52c59d3` or `GUID:59cd48da98d9e4a80917b613abe9416e` hits in active `.asmdef` / `.asmref` files.
+- Exact `rg` scan: no non-bridge Crest / Crest.Helpers.Editor / WaveHarmonic Crest `.asmref` references.
+- `python Tools\Crest_Dependency_Scanner.py`: PASS, `breach_count=0`, `allowed_hit_count=40`, `reflection_string_hit_count=0`, `vocabulary_debt_hit_count=111`.
+- `python Tools\Crest_Quarantine_Polish_Audit.py`: PASS, `failed_count=0`.
+- No Unity/dotnet rebuild launched; this loop touched Python proof tooling and docs only.
+
+<SELF_AUDIT_UPDATE agent_id="SHINOBU_260" scope="ASSEMBLY_SIDECAR_GUID_REFERENCE_WALL">
+  <TASK id="03" result="PASS">Asmdef wall now treats Crest assembly names, Crest asmdef GUID references, and Crest asmref sidecars as hard dependencies outside the bridge.</TASK>
+  <TASK id="19" result="PASS">Dependency scanner report remains breach_count=0 after adding asmref and GUID-reference coverage.</TASK>
+  <TASK id="20" result="PASS_WITH_BUILD_GATE">Static proof and disk logs updated; Unity compile remains gated by explicit no-rebuild instruction and build policy.</TASK>
+</SELF_AUDIT_UPDATE>
+
+## 2026-05-21 Archived Asset GUID Backreference Wall
+
+What was wrong:
+
+- Quarantined Crest5 assets and recovery payloads were outside active Unity visibility, but active YAML could still retain pure GUID references to those archived objects.
+- The scanner was checking type names, package names, script GUIDs, and direct component identifiers, but not the asset GUIDs of the archived Crest5/recovery objects.
+
+What was done:
+
+- Extracted archived GUIDs:
+  - `ed12880d16f3f2f4e80ceee64594101d` = `Crest5_WaveSpectrum.asset`
+  - `149ebcba5c729ad49911b1ea4b8456fd` = `Crest5_FoamSettings.asset`
+  - `0ef7bde4d259c9d4abcc93f41b0903a0` = `03_HECTON_WORLD_CREST5.unity`
+  - `a73ab923bdc811242bdca5f288eb3877` = archived `_Recovery` folder
+- Added those GUIDs to `Tools/Crest_Dependency_Scanner.py` as hard active serialized breach patterns.
+- Added `dependency_scanner_blocks_archived_asset_guid_references` to `Tools/Crest_Quarantine_Polish_Audit.py`.
+
+Cinematic Cheats used:
+
+- No runtime ocean logic changed. This is an asset-lifecycle containment cheat: avoid runtime recovery code by making dead Unity links impossible to miss in static proof.
+
+Exact Microseconds saved:
+
+- Runtime saving: 0 us.
+- Editor/import saving: prevents future missing-reference/import churn if an active scene or asset points back to quarantined Crest5/recovery objects.
+
+Verification:
+
+- Exact active GUID scan: no active references to `ed12880d16f3f2f4e80ceee64594101d`, `149ebcba5c729ad49911b1ea4b8456fd`, `0ef7bde4d259c9d4abcc93f41b0903a0`, or `a73ab923bdc811242bdca5f288eb3877` under `Assets`, `ProjectSettings`, or `Packages`.
+- `python -m py_compile Tools\Crest_Dependency_Scanner.py Tools\Crest_Quarantine_Polish_Audit.py`: PASS.
+- `python Tools\Crest_Dependency_Scanner.py`: PASS, `breach_count=0`, `allowed_hit_count=40`.
+- `python Tools\Crest_Quarantine_Polish_Audit.py`: PASS, `failed_count=0`.
+- No Unity/dotnet rebuild launched; this loop touched Python proof tooling and docs only.
+
+<SELF_AUDIT_UPDATE agent_id="SHINOBU_260" scope="ARCHIVED_ASSET_GUID_BACKREFERENCE_WALL">
+  <TASK id="02" result="PASS">Archived Crest5/recovery objects are outside Unity visibility and active YAML has no GUID backreferences to them.</TASK>
+  <TASK id="19" result="PASS">Dependency scanner now hard-fails active references to archived Crest5/recovery GUIDs.</TASK>
+  <TASK id="20" result="PASS_WITH_BUILD_GATE">Static proof and disk logs updated; Unity compile remains gated by explicit no-rebuild instruction and build policy.</TASK>
+</SELF_AUDIT_UPDATE>
+
+## 2026-05-21 AutoReferenced Donor And Bridge Fence
+
+What was wrong:
+
+- The wall scanner caught direct references, but an `autoReferenced=true` toggle on active Crest donor or bridge asmdefs could widen compile scope without adding a new reference line.
+- The current files were already guarded, but that fact lived in documentation/audit rather than the hard dependency scanner.
+
+What was done:
+
+- Added `scan_crest_donor_autoreference()` to `Tools/Crest_Dependency_Scanner.py`.
+- Added `bridge_crest_asmdef_auto_referenced` failure logic for allowed bridge asmdefs that reference Crest while auto-referenced.
+- Added polish audit checks for active Crest donor runtime/editor asmdefs and bridge runtime/editor asmdefs staying `autoReferenced=false`.
+- Added `dependency_scanner_blocks_auto_referenced_crest_assemblies` to prove scanner coverage.
+
+Cinematic Cheats used:
+
+- No runtime simulation changed. This is compile-wall containment: prevent editor/build fanout instead of adding runtime checks.
+
+Exact Microseconds saved:
+
+- Runtime saving: 0 us.
+- Editor/build saving: prevents seconds-scale Unity recompilation fanout if the donor or bridge is accidentally made auto-referenced.
+
+Verification:
+
+- Exact asmdef check: `Assets/Crest/Crest/Scripts/Crest.asmdef`, `Assets/Crest/Crest/Scripts/Editor/Crest.Editor.asmdef`, `Hecton8.Crest.Bridge.asmdef`, and `Hecton8.Crest.Bridge.Editor.asmdef` all contain `autoReferenced=false`.
+- `python -m py_compile Tools\Crest_Dependency_Scanner.py Tools\Crest_Quarantine_Polish_Audit.py`: PASS.
+- `python Tools\Crest_Dependency_Scanner.py`: PASS, `breach_count=0`, `allowed_hit_count=40`.
+- `python Tools\Crest_Quarantine_Polish_Audit.py`: PASS, `failed_count=0`.
+- No Unity/dotnet rebuild launched; this loop touched Python proof tooling and docs only.
+
+<SELF_AUDIT_UPDATE agent_id="SHINOBU_260" scope="AUTOREFERENCED_DONOR_BRIDGE_FENCE">
+  <TASK id="03" result="PASS">Crest donor and bridge assemblies are opt-in only, and scanner now fails autoReferenced regressions.</TASK>
+  <TASK id="19" result="PASS">Dependency scanner remains breach_count=0 after adding autoReferenced checks.</TASK>
+  <TASK id="20" result="PASS_WITH_BUILD_GATE">Static proof and disk logs updated; Unity compile remains gated by explicit no-rebuild instruction and build policy.</TASK>
+</SELF_AUDIT_UPDATE>
