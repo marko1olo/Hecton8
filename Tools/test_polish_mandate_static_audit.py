@@ -312,6 +312,12 @@ public sealed class NativeApi
             payload = audit.build_payload(root)
             cats = payload["categories"]
             self.assertEqual(cats["nativeCollectionPublicMutableApiExposure"]["matches"], 2)
+            self.assertEqual(cats["nativeApiExposureMutableReturn"]["matches"], 1)
+            self.assertEqual(cats["nativeApiExposureOutRefMutable"]["matches"], 1)
+            self.assertEqual(cats["nativeApiExposureAmbiguousMutable"]["matches"], 0)
+            self.assertEqual(cats["nativeApiExposureBuildPlayerRuntime"]["matches"], 2)
+            self.assertEqual(cats["nativeApiRiskRuntimeReturnMutableView"]["matches"], 1)
+            self.assertEqual(cats["nativeApiRiskRuntimeOutRefMutableView"]["matches"], 1)
 
 
 if __name__ == "__main__":

@@ -6804,8 +6804,8 @@ namespace Hecton8.Audio
             MapHabitatNode(sourceNode, ref nodeCount, ref queueWrite);
             MapHabitatNode(listenerNode, ref nodeCount, ref queueWrite);
 
-            NativeArray<int> edgeOffsets = graph.EdgeOffsets;
-            NativeArray<int> edgeDestinations = graph.EdgeDestinations;
+            NativeArray<int>.ReadOnly edgeOffsets = graph.EdgeOffsets;
+            NativeArray<int>.ReadOnly edgeDestinations = graph.EdgeDestinations;
             while (queueRead < queueWrite && nodeCount < AcousticPortalMaxNodes)
             {
                 int globalNode = _acousticHabitatQueue[queueRead++];
@@ -6835,7 +6835,7 @@ namespace Hecton8.Audio
                     return false;
 
                 float roomVolume = 0f;
-                NativeArray<float> roomVolumes = graph.RoomVolumes;
+                NativeArray<float>.ReadOnly roomVolumes = graph.RoomVolumes;
                 if (roomVolumes.IsCreated && (uint)globalIndex < (uint)roomVolumes.Length)
                     roomVolume = math.max(0f, roomVolumes[globalIndex]);
 
@@ -6849,8 +6849,8 @@ namespace Hecton8.Audio
                 };
             }
 
-            NativeArray<byte> edgeFlags = graph.EdgeFlags;
-            NativeArray<float> edgeResistance = graph.EdgeResistance;
+            NativeArray<byte>.ReadOnly edgeFlags = graph.EdgeFlags;
+            NativeArray<float>.ReadOnly edgeResistance = graph.EdgeResistance;
             for (int localIndex = 0; localIndex < nodeCount && edgeCount < AcousticPortalMaxEdges; localIndex++)
             {
                 int globalNode = _acousticHabitatNodeMap[localIndex];

@@ -364,14 +364,14 @@ namespace Hecton8.Construction
 
         internal int NodeCount => _nodeCount;
         internal int EdgeCount => _edgeCount;
-        internal NativeArray<LogisticsNetworkGraph.LogisticsNode> Nodes => _nodes;
-        internal NativeArray<int> EdgeOffsets => _edgeOffsets;
-        internal NativeArray<int> EdgeDestinations => _edgeDestinations;
-        internal NativeArray<float> EdgeResistance => _edgeResistance;
-        internal NativeArray<float> RoomWaterLevels => _roomWaterLevels;
-        internal NativeArray<float> RoomVolumes => _roomVolumes;
-        internal NativeArray<byte> RoomFlags => _roomFlags;
-        internal NativeArray<byte> EdgeFlags => _edgeFlags;
+        internal NativeArray<LogisticsNetworkGraph.LogisticsNode>.ReadOnly Nodes => _nodes.IsCreated ? _nodes.AsReadOnly() : default;
+        internal NativeArray<int>.ReadOnly EdgeOffsets => _edgeOffsets.IsCreated ? _edgeOffsets.AsReadOnly() : default;
+        internal NativeArray<int>.ReadOnly EdgeDestinations => _edgeDestinations.IsCreated ? _edgeDestinations.AsReadOnly() : default;
+        internal NativeArray<float>.ReadOnly EdgeResistance => _edgeResistance.IsCreated ? _edgeResistance.AsReadOnly() : default;
+        internal NativeArray<float>.ReadOnly RoomWaterLevels => _roomWaterLevels.IsCreated ? _roomWaterLevels.AsReadOnly() : default;
+        internal NativeArray<float>.ReadOnly RoomVolumes => _roomVolumes.IsCreated ? _roomVolumes.AsReadOnly() : default;
+        internal NativeArray<byte>.ReadOnly RoomFlags => _roomFlags.IsCreated ? _roomFlags.AsReadOnly() : default;
+        internal NativeArray<byte>.ReadOnly EdgeFlags => _edgeFlags.IsCreated ? _edgeFlags.AsReadOnly() : default;
         internal NativeParallelMultiHashMap<int, HabitatFloodConnection> RoomConnections => _roomConnections;
         internal int FloodedRoomCount => _floodedRoomCount;
         internal float BaseTotalStress => _baseTotalStress;

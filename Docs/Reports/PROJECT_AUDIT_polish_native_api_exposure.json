@@ -275,8 +275,8 @@
           "text": "writer.Write(entry.GlobalQualityWeight);"
         }
       ],
-      "files": 421,
-      "matches": 1901,
+      "files": 420,
+      "matches": 1897,
       "topFiles": [
         {
           "count": 27,
@@ -473,6 +473,1090 @@
       "files": 0,
       "matches": 0,
       "topFiles": []
+    },
+    "nativeApiExposureAmbiguousMutable": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "nativeApiExposureBuildEditorOnly": {
+      "examples": [
+        {
+          "line": 477,
+          "path": "Assets/_Project/Scripts/Editor/ConstructionSocketEditorTools.cs",
+          "text": "internal static bool TryRead<T>(IDataVault vault, BufferID bufferId, out NativeArray<T> buffer)"
+        },
+        {
+          "line": 15,
+          "path": "Assets/_Project/Scripts/Editor/GeographySanity/GeographySanityProfileCsv.cs",
+          "text": "public static NativeList<SanityProfileDTO> LoadProfiles(Allocator allocator, out int rows, out int errors)"
+        },
+        {
+          "line": 25,
+          "path": "Assets/_Project/Scripts/Editor/GeologyForge/TopographyForgeCsv.cs",
+          "text": "public static void LoadRecipes(ref NativeList<TopographyBiomeRecipeDTO> recipes)"
+        },
+        {
+          "line": 88,
+          "path": "Assets/_Project/Scripts/Editor/GeologyForge/TopographyForgeCsv.cs",
+          "text": "public static void AppendDefaultRecipes(ref NativeList<TopographyBiomeRecipeDTO> recipes)"
+        },
+        {
+          "line": 350,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchForgeWindow.cs",
+          "text": "public static bool TryReadPreview( out NativeArray<FaultLineParamsDTO> faults, out NativeArray<ThermalVentSpawnDTO> vents, out int faultCount, out int ventCount, out double3 previewOriginAUP)"
+        }
+      ],
+      "files": 4,
+      "matches": 5,
+      "topFiles": [
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/Editor/GeologyForge/TopographyForgeCsv.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Editor/ConstructionSocketEditorTools.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Editor/GeographySanity/GeographySanityProfileCsv.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchForgeWindow.cs"
+        }
+      ]
+    },
+    "nativeApiExposureBuildPlayerRuntime": {
+      "examples": [
+        {
+          "line": 111,
+          "path": "Assets/_Project/Scripts/Animation/FaunaProcedural/ProceduralBoneBlenderRuntime.cs",
+          "text": "public bool TryResolveTuningForEditor(out NativeArray<ProceduralBoneRigTuningDTO> tuning)"
+        },
+        {
+          "line": 128,
+          "path": "Assets/_Project/Scripts/Animation/FaunaProcedural/ProceduralBoneBlenderRuntime.cs",
+          "text": "public bool TryResolveMatricesForEditor( out NativeArray<float4x4> matrices, out NativeArray<int> parentIndices, out int matrixCount)"
+        },
+        {
+          "line": 283,
+          "path": "Assets/_Project/Scripts/Animation/IK/LeviathanTerrainIkJobs.cs",
+          "text": "public static bool TryResolveBuffers( IDataVault vault, int requestedSegmentCapacity, int requestedSdfVoxelCount, int requestedTerrainSampleCount, out NativeArray<float3> segmentPositions, out NativeArray<float3> previousSegmentPositions, out NativeArray<LeviathanBoneDTO> leviathanBones, out NativeArray<LeviathanBoneConstraintsDTO> boneConstraints, out NativeArray<LeviathanCapsuleColliderDTO> colliderProxies, out NativeArray<LeviathanTerrainIkTelemetryEntry> telemetryRing, out NativeArray<int> telemetryCursor,"
+        },
+        {
+          "line": 234,
+          "path": "Assets/_Project/Scripts/Animation/IK/VRPhysicalHandPresenceIkJobs.cs",
+          "text": "public static bool TryResolveBuffers( IDataVault vault, out NativeArray<VRHandPresenceInput> inputs, out NativeArray<VRHandPresenceOutput> outputs, out NativeArray<VRHandAupPose> handTargetAup, out NativeArray<VRHandAupPose> handActualAup, out NativeArray<VRHandGrabState> grabStates, out NativeArray<VRHandIkTelemetryEntry> telemetryRing, out NativeArray<int> telemetryCursor)"
+        },
+        {
+          "line": 129,
+          "path": "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorRuntime.cs",
+          "text": "public bool TryResolveTuningForEditor(out NativeArray<KineticCharacterTuningDTO> tuning)"
+        },
+        {
+          "line": 146,
+          "path": "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorRuntime.cs",
+          "text": "public bool TryResolveMatricesForEditor(out NativeArray<float4x4> matrices, out NativeArray<int> parents, out int matrixCount)"
+        },
+        {
+          "line": 536,
+          "path": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+          "text": "public static bool TryGetVaultSnapshot( out NativeArray<WaveParametersDTO> waves, out NativeArray<WeatherStateDTO> weather, out NativeArray<AtmosphereDTO> atmosphere)"
+        },
+        {
+          "line": 553,
+          "path": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+          "text": "public static bool TryGetReadbackDebugSnapshot( out NativeArray<float4> completedQueries, out NativeArray<float4> completedResults, out NativeArray<OceanSurfaceTelemetryEntry> telemetry)"
+        },
+        {
+          "line": 452,
+          "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+          "text": "public bool TryGetGridReadback(out NativeArray<float> density, out int resolution, out double3 originAup, out float cellSize, out int version)"
+        },
+        {
+          "line": 490,
+          "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+          "text": "public bool TryGetCellStates(out NativeArray<ToxicityStateDTO> states)"
+        },
+        {
+          "line": 5339,
+          "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+          "text": "public bool TryGetAcousticRadarPayload(out NativeArray<float> radialIntensityBins, out int radialResolution)"
+        },
+        {
+          "line": 5347,
+          "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+          "text": "public bool TryGetAcousticRadarGridPayload( out NativeArray<float> energyGrid, out int azimuthBins, out int elevationBins, out ComputeBuffer gridBuffer)"
+        },
+        {
+          "line": 112,
+          "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+          "text": "public static void Generate( uint seed, CavePreset preset, float3 worldCenter, float terrainHeightAtCenter, float volumeHalfExtent, out NativeArray<CaveNode> nodes, out NativeArray<CaveTunnel> tunnels, out NativeArray<CaveEntrance> entrances, out NativeArray<CaveStructure> structures, Allocator allocator)"
+        },
+        {
+          "line": 363,
+          "path": "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs",
+          "text": "public static bool TryLoadCatalogBytes(IDataVault vault, string path, out NativeArray<byte> bytes, out int byteLength)"
+        },
+        {
+          "line": 389,
+          "path": "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs",
+          "text": "public static bool TryStartCatalogByteLoad( IDataVault vault, string path, out NativeArray<byte> bytes, out Task<int> loadTask)"
+        },
+        {
+          "line": 568,
+          "path": "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs",
+          "text": "public static bool TryGetModuleSocketRangeFromVault( IDataVault vault, uint prefabHashId, out NativeArray<SocketDefinitionDTO> sockets, out int start, out int count, out ModuleDefinitionDTO definition)"
+        },
+        {
+          "line": 1581,
+          "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+          "text": "internal static NativeArray<T> ResolveDroneVaultBuffer<T>( BufferID bufferId, int length, NativeArrayOptions allocationNativeArrayOptions, ref VaultGenerationHandle<T> handle, out bool vaultBacked) where T : struct"
+        },
+        {
+          "line": 1643,
+          "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+          "text": "internal static void ReleaseDroneVaultBuffer<T>( ref NativeArray<T> array, ref VaultGenerationHandle<T> handle, ref bool vaultBacked, string label) where T : struct"
+        },
+        {
+          "line": 367,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "internal NativeArray<LogisticsNetworkGraph.LogisticsNode> Nodes => _nodes;"
+        },
+        {
+          "line": 368,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "internal NativeArray<int> EdgeOffsets => _edgeOffsets;"
+        }
+      ],
+      "files": 91,
+      "matches": 260,
+      "topFiles": [
+        {
+          "count": 48,
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs"
+        },
+        {
+          "count": 8,
+          "path": "Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs"
+        },
+        {
+          "count": 7,
+          "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/Core/HectonArenaAllocator.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs"
+        },
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs"
+        },
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs"
+        }
+      ]
+    },
+    "nativeApiExposureBuildQaDevProof": {
+      "examples": [
+        {
+          "line": 554,
+          "path": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+          "text": "public static bool TryReadTelemetryRing( IDataVault vault, out NativeArray<ConstructionTelemetryEntry> telemetryRing)"
+        },
+        {
+          "line": 566,
+          "path": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+          "text": "public static bool EnsureTelemetryRing( IDataVault vault, out NativeArray<ConstructionTelemetryEntry> telemetryRing)"
+        },
+        {
+          "line": 586,
+          "path": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+          "text": "public static bool EnsureBoundsOverrideBuffer( IDataVault vault, out NativeArray<StructuralBoundsDTO> boundsBuffer)"
+        },
+        {
+          "line": 606,
+          "path": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+          "text": "public static bool TryReadOccupancyHashTable( IDataVault vault, out NativeArray<BaseModuleOccupancyDTO> occupancyTable)"
+        },
+        {
+          "line": 618,
+          "path": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+          "text": "public static bool EnsureOccupancyHashTable( IDataVault vault, out NativeArray<BaseModuleOccupancyDTO> occupancyTable)"
+        },
+        {
+          "line": 417,
+          "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+          "text": "public static MockModQueue Wrap(ref NativeQueue<FutureCommandEnvelope> externalQueue)"
+        },
+        {
+          "line": 429,
+          "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+          "text": "public bool Attach(ref NativeQueue<FutureCommandEnvelope> externalQueue)"
+        },
+        {
+          "line": 443,
+          "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+          "text": "public NativeQueue<FutureCommandEnvelope>.ParallelWriter AsParallelWriter()"
+        },
+        {
+          "line": 630,
+          "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+          "text": "public static int RequestFromExternalQueue(ref NativeQueue<FutureCommandEnvelope> sourceQueue, int maxEnvelopeCount)"
+        }
+      ],
+      "files": 2,
+      "matches": 9,
+      "topFiles": [
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs"
+        }
+      ]
+    },
+    "nativeApiExposureMutableReturn": {
+      "examples": [
+        {
+          "line": 1581,
+          "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+          "text": "internal static NativeArray<T> ResolveDroneVaultBuffer<T>( BufferID bufferId, int length, NativeArrayOptions allocationNativeArrayOptions, ref VaultGenerationHandle<T> handle, out bool vaultBacked) where T : struct"
+        },
+        {
+          "line": 367,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "internal NativeArray<LogisticsNetworkGraph.LogisticsNode> Nodes => _nodes;"
+        },
+        {
+          "line": 368,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "internal NativeArray<int> EdgeOffsets => _edgeOffsets;"
+        },
+        {
+          "line": 369,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "internal NativeArray<int> EdgeDestinations => _edgeDestinations;"
+        },
+        {
+          "line": 370,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "internal NativeArray<float> EdgeResistance => _edgeResistance;"
+        },
+        {
+          "line": 371,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "internal NativeArray<float> RoomWaterLevels => _roomWaterLevels;"
+        },
+        {
+          "line": 372,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "internal NativeArray<float> RoomVolumes => _roomVolumes;"
+        },
+        {
+          "line": 373,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "internal NativeArray<byte> RoomFlags => _roomFlags;"
+        },
+        {
+          "line": 374,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "internal NativeArray<byte> EdgeFlags => _edgeFlags;"
+        },
+        {
+          "line": 1936,
+          "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+          "text": "public static NativeQueue<T>.ParallelWriter OpenLegacyMpscWriter()"
+        },
+        {
+          "line": 1947,
+          "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+          "text": "public static NativeQueue<T>.ParallelWriter OpenParallelWriter()"
+        },
+        {
+          "line": 2189,
+          "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+          "text": "internal static NativeQueue<T> OpenQueueForLegacyGlobalSignals()"
+        },
+        {
+          "line": 5822,
+          "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+          "text": "public static NativeQueue<TSignal>.ParallelWriter OpenSignalWriterForProducerPhase<TSignal>()"
+        },
+        {
+          "line": 206,
+          "path": "Assets/_Project/Scripts/Core/HectonArenaAllocator.cs",
+          "text": "public static NativeArray<T> Allocate<T>(int count, bool clearMemory = true) where T : unmanaged"
+        },
+        {
+          "line": 214,
+          "path": "Assets/_Project/Scripts/Core/HectonArenaAllocator.cs",
+          "text": "public static NativeArray<T> Allocate<T>(int count, NativeArrayOptions options) where T : unmanaged"
+        },
+        {
+          "line": 316,
+          "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+          "text": "public NativeArray<T> Resolve(IDataVault vault)"
+        },
+        {
+          "line": 983,
+          "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+          "text": "public NativeArray<T> GetBuffer<T>( BufferID bufferId, int requiredLength, SystemID requester, NativeArrayOptions options = NativeArrayOptions.ClearMemory) where T : struct"
+        },
+        {
+          "line": 2010,
+          "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+          "text": "public static NativeArray<T> Allocate<T>( int length, SystemID owner, Allocator allocator, NativeArrayOptions options = NativeArrayOptions.ClearMemory) where T : struct"
+        },
+        {
+          "line": 2382,
+          "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+          "text": "internal static NativeArray<T> CreateNativeArrayView<T>(void* pointer, int length) where T : struct"
+        },
+        {
+          "line": 23,
+          "path": "Assets/_Project/Scripts/Core/NativeArenaAllocator.cs",
+          "text": "public static NativeArray<T> Allocate<T>(int count) where T : unmanaged"
+        }
+      ],
+      "files": 35,
+      "matches": 87,
+      "topFiles": [
+        {
+          "count": 27,
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs"
+        },
+        {
+          "count": 8,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/Core/HectonArenaAllocator.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/Core/ThreadSafeCommandQueue.cs"
+        }
+      ]
+    },
+    "nativeApiExposureOutRefMutable": {
+      "examples": [
+        {
+          "line": 111,
+          "path": "Assets/_Project/Scripts/Animation/FaunaProcedural/ProceduralBoneBlenderRuntime.cs",
+          "text": "public bool TryResolveTuningForEditor(out NativeArray<ProceduralBoneRigTuningDTO> tuning)"
+        },
+        {
+          "line": 128,
+          "path": "Assets/_Project/Scripts/Animation/FaunaProcedural/ProceduralBoneBlenderRuntime.cs",
+          "text": "public bool TryResolveMatricesForEditor( out NativeArray<float4x4> matrices, out NativeArray<int> parentIndices, out int matrixCount)"
+        },
+        {
+          "line": 283,
+          "path": "Assets/_Project/Scripts/Animation/IK/LeviathanTerrainIkJobs.cs",
+          "text": "public static bool TryResolveBuffers( IDataVault vault, int requestedSegmentCapacity, int requestedSdfVoxelCount, int requestedTerrainSampleCount, out NativeArray<float3> segmentPositions, out NativeArray<float3> previousSegmentPositions, out NativeArray<LeviathanBoneDTO> leviathanBones, out NativeArray<LeviathanBoneConstraintsDTO> boneConstraints, out NativeArray<LeviathanCapsuleColliderDTO> colliderProxies, out NativeArray<LeviathanTerrainIkTelemetryEntry> telemetryRing, out NativeArray<int> telemetryCursor,"
+        },
+        {
+          "line": 234,
+          "path": "Assets/_Project/Scripts/Animation/IK/VRPhysicalHandPresenceIkJobs.cs",
+          "text": "public static bool TryResolveBuffers( IDataVault vault, out NativeArray<VRHandPresenceInput> inputs, out NativeArray<VRHandPresenceOutput> outputs, out NativeArray<VRHandAupPose> handTargetAup, out NativeArray<VRHandAupPose> handActualAup, out NativeArray<VRHandGrabState> grabStates, out NativeArray<VRHandIkTelemetryEntry> telemetryRing, out NativeArray<int> telemetryCursor)"
+        },
+        {
+          "line": 129,
+          "path": "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorRuntime.cs",
+          "text": "public bool TryResolveTuningForEditor(out NativeArray<KineticCharacterTuningDTO> tuning)"
+        },
+        {
+          "line": 146,
+          "path": "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorRuntime.cs",
+          "text": "public bool TryResolveMatricesForEditor(out NativeArray<float4x4> matrices, out NativeArray<int> parents, out int matrixCount)"
+        },
+        {
+          "line": 536,
+          "path": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+          "text": "public static bool TryGetVaultSnapshot( out NativeArray<WaveParametersDTO> waves, out NativeArray<WeatherStateDTO> weather, out NativeArray<AtmosphereDTO> atmosphere)"
+        },
+        {
+          "line": 553,
+          "path": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+          "text": "public static bool TryGetReadbackDebugSnapshot( out NativeArray<float4> completedQueries, out NativeArray<float4> completedResults, out NativeArray<OceanSurfaceTelemetryEntry> telemetry)"
+        },
+        {
+          "line": 452,
+          "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+          "text": "public bool TryGetGridReadback(out NativeArray<float> density, out int resolution, out double3 originAup, out float cellSize, out int version)"
+        },
+        {
+          "line": 490,
+          "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+          "text": "public bool TryGetCellStates(out NativeArray<ToxicityStateDTO> states)"
+        },
+        {
+          "line": 5339,
+          "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+          "text": "public bool TryGetAcousticRadarPayload(out NativeArray<float> radialIntensityBins, out int radialResolution)"
+        },
+        {
+          "line": 5347,
+          "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+          "text": "public bool TryGetAcousticRadarGridPayload( out NativeArray<float> energyGrid, out int azimuthBins, out int elevationBins, out ComputeBuffer gridBuffer)"
+        },
+        {
+          "line": 112,
+          "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+          "text": "public static void Generate( uint seed, CavePreset preset, float3 worldCenter, float terrainHeightAtCenter, float volumeHalfExtent, out NativeArray<CaveNode> nodes, out NativeArray<CaveTunnel> tunnels, out NativeArray<CaveEntrance> entrances, out NativeArray<CaveStructure> structures, Allocator allocator)"
+        },
+        {
+          "line": 363,
+          "path": "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs",
+          "text": "public static bool TryLoadCatalogBytes(IDataVault vault, string path, out NativeArray<byte> bytes, out int byteLength)"
+        },
+        {
+          "line": 389,
+          "path": "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs",
+          "text": "public static bool TryStartCatalogByteLoad( IDataVault vault, string path, out NativeArray<byte> bytes, out Task<int> loadTask)"
+        },
+        {
+          "line": 568,
+          "path": "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs",
+          "text": "public static bool TryGetModuleSocketRangeFromVault( IDataVault vault, uint prefabHashId, out NativeArray<SocketDefinitionDTO> sockets, out int start, out int count, out ModuleDefinitionDTO definition)"
+        },
+        {
+          "line": 1643,
+          "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+          "text": "internal static void ReleaseDroneVaultBuffer<T>( ref NativeArray<T> array, ref VaultGenerationHandle<T> handle, ref bool vaultBacked, string label) where T : struct"
+        },
+        {
+          "line": 453,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "internal static bool TryGetLatestSiegeTargets(out NativeArray<HabitatSiegeTargetSnapshot> targets, out int count)"
+        },
+        {
+          "line": 554,
+          "path": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+          "text": "public static bool TryReadTelemetryRing( IDataVault vault, out NativeArray<ConstructionTelemetryEntry> telemetryRing)"
+        },
+        {
+          "line": 566,
+          "path": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+          "text": "public static bool EnsureTelemetryRing( IDataVault vault, out NativeArray<ConstructionTelemetryEntry> telemetryRing)"
+        }
+      ],
+      "files": 77,
+      "matches": 187,
+      "topFiles": [
+        {
+          "count": 21,
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs"
+        },
+        {
+          "count": 8,
+          "path": "Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs"
+        },
+        {
+          "count": 7,
+          "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs"
+        },
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs"
+        },
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/Core/HectonArenaAllocator.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs"
+        }
+      ]
+    },
+    "nativeApiRiskCoreVaultOrAllocatorSurface": {
+      "examples": [
+        {
+          "line": 206,
+          "path": "Assets/_Project/Scripts/Core/HectonArenaAllocator.cs",
+          "text": "public static NativeArray<T> Allocate<T>(int count, bool clearMemory = true) where T : unmanaged"
+        },
+        {
+          "line": 214,
+          "path": "Assets/_Project/Scripts/Core/HectonArenaAllocator.cs",
+          "text": "public static NativeArray<T> Allocate<T>(int count, NativeArrayOptions options) where T : unmanaged"
+        },
+        {
+          "line": 222,
+          "path": "Assets/_Project/Scripts/Core/HectonArenaAllocator.cs",
+          "text": "public static bool TryAllocateNativeArray<T>(int count, bool clearMemory, out NativeArray<T> array) where T : unmanaged"
+        },
+        {
+          "line": 227,
+          "path": "Assets/_Project/Scripts/Core/HectonArenaAllocator.cs",
+          "text": "public static bool TryAllocateNativeArray<T>(int count, NativeArrayOptions options, out NativeArray<T> array) where T : unmanaged"
+        },
+        {
+          "line": 232,
+          "path": "Assets/_Project/Scripts/Core/HectonArenaAllocator.cs",
+          "text": "public static bool TryAllocateNativeArray<T>(int count, NativeArrayOptions options, uint ownerHash, out NativeArray<T> array) where T : unmanaged"
+        },
+        {
+          "line": 237,
+          "path": "Assets/_Project/Scripts/Core/HectonArenaAllocator.cs",
+          "text": "public static bool TryAllocateNativeArray<T>(int count, bool clearMemory, uint ownerHash, out NativeArray<T> array) where T : unmanaged"
+        },
+        {
+          "line": 316,
+          "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+          "text": "public NativeArray<T> Resolve(IDataVault vault)"
+        },
+        {
+          "line": 983,
+          "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+          "text": "public NativeArray<T> GetBuffer<T>( BufferID bufferId, int requiredLength, SystemID requester, NativeArrayOptions options = NativeArrayOptions.ClearMemory) where T : struct"
+        },
+        {
+          "line": 1271,
+          "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+          "text": "public bool TryGetBuffer<T>(BufferID bufferId, out NativeArray<T> buffer) where T : struct"
+        },
+        {
+          "line": 1355,
+          "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+          "text": "public bool TryResolveHandle<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct"
+        },
+        {
+          "line": 1412,
+          "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+          "text": "public bool TryReadHandle<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct"
+        },
+        {
+          "line": 1449,
+          "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+          "text": "public bool TryResolveHandle<T>(in VaultBufferHandle<T> handle, out NativeArray<T> buffer) where T : struct"
+        },
+        {
+          "line": 1466,
+          "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+          "text": "public bool TryResolveSlice<T>(in VaultSliceHandle<T> handle, out NativeArray<T> slice) where T : struct"
+        },
+        {
+          "line": 1533,
+          "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+          "text": "public bool TryAcquireWriteLock<T>(in VaultGenerationHandle<T> handle, SystemID systemID, out NativeArray<T> buffer) where T : struct"
+        },
+        {
+          "line": 1588,
+          "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+          "text": "public bool TryAcquireWriteLock<T>(in VaultBufferHandle<T> handle, SystemID systemID, out NativeArray<T> buffer) where T : struct"
+        },
+        {
+          "line": 2010,
+          "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+          "text": "public static NativeArray<T> Allocate<T>( int length, SystemID owner, Allocator allocator, NativeArrayOptions options = NativeArrayOptions.ClearMemory) where T : struct"
+        },
+        {
+          "line": 2045,
+          "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+          "text": "public static void Release<T>(ref NativeArray<T> array) where T : struct"
+        },
+        {
+          "line": 2053,
+          "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+          "text": "public static void Release<T>(ref NativeArray<T> array, SystemID owner) where T : struct"
+        },
+        {
+          "line": 2072,
+          "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+          "text": "public static JobHandle Release<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct"
+        },
+        {
+          "line": 2080,
+          "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+          "text": "public static JobHandle Release<T>(ref NativeArray<T> array, JobHandle dependency, SystemID owner) where T : struct"
+        }
+      ],
+      "files": 3,
+      "matches": 21,
+      "topFiles": [
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/Core/HectonArenaAllocator.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs"
+        }
+      ]
+    },
+    "nativeApiRiskEditorOrProofSurface": {
+      "examples": [
+        {
+          "line": 554,
+          "path": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+          "text": "public static bool TryReadTelemetryRing( IDataVault vault, out NativeArray<ConstructionTelemetryEntry> telemetryRing)"
+        },
+        {
+          "line": 566,
+          "path": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+          "text": "public static bool EnsureTelemetryRing( IDataVault vault, out NativeArray<ConstructionTelemetryEntry> telemetryRing)"
+        },
+        {
+          "line": 586,
+          "path": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+          "text": "public static bool EnsureBoundsOverrideBuffer( IDataVault vault, out NativeArray<StructuralBoundsDTO> boundsBuffer)"
+        },
+        {
+          "line": 606,
+          "path": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+          "text": "public static bool TryReadOccupancyHashTable( IDataVault vault, out NativeArray<BaseModuleOccupancyDTO> occupancyTable)"
+        },
+        {
+          "line": 618,
+          "path": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+          "text": "public static bool EnsureOccupancyHashTable( IDataVault vault, out NativeArray<BaseModuleOccupancyDTO> occupancyTable)"
+        },
+        {
+          "line": 477,
+          "path": "Assets/_Project/Scripts/Editor/ConstructionSocketEditorTools.cs",
+          "text": "internal static bool TryRead<T>(IDataVault vault, BufferID bufferId, out NativeArray<T> buffer)"
+        },
+        {
+          "line": 15,
+          "path": "Assets/_Project/Scripts/Editor/GeographySanity/GeographySanityProfileCsv.cs",
+          "text": "public static NativeList<SanityProfileDTO> LoadProfiles(Allocator allocator, out int rows, out int errors)"
+        },
+        {
+          "line": 25,
+          "path": "Assets/_Project/Scripts/Editor/GeologyForge/TopographyForgeCsv.cs",
+          "text": "public static void LoadRecipes(ref NativeList<TopographyBiomeRecipeDTO> recipes)"
+        },
+        {
+          "line": 88,
+          "path": "Assets/_Project/Scripts/Editor/GeologyForge/TopographyForgeCsv.cs",
+          "text": "public static void AppendDefaultRecipes(ref NativeList<TopographyBiomeRecipeDTO> recipes)"
+        },
+        {
+          "line": 417,
+          "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+          "text": "public static MockModQueue Wrap(ref NativeQueue<FutureCommandEnvelope> externalQueue)"
+        },
+        {
+          "line": 429,
+          "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+          "text": "public bool Attach(ref NativeQueue<FutureCommandEnvelope> externalQueue)"
+        },
+        {
+          "line": 443,
+          "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+          "text": "public NativeQueue<FutureCommandEnvelope>.ParallelWriter AsParallelWriter()"
+        },
+        {
+          "line": 630,
+          "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+          "text": "public static int RequestFromExternalQueue(ref NativeQueue<FutureCommandEnvelope> sourceQueue, int maxEnvelopeCount)"
+        },
+        {
+          "line": 350,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchForgeWindow.cs",
+          "text": "public static bool TryReadPreview( out NativeArray<FaultLineParamsDTO> faults, out NativeArray<ThermalVentSpawnDTO> vents, out int faultCount, out int ventCount, out double3 previewOriginAUP)"
+        }
+      ],
+      "files": 6,
+      "matches": 14,
+      "topFiles": [
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/Editor/GeologyForge/TopographyForgeCsv.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Editor/ConstructionSocketEditorTools.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Editor/GeographySanity/GeographySanityProfileCsv.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchForgeWindow.cs"
+        }
+      ]
+    },
+    "nativeApiRiskRuntimeAmbiguousMutableView": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "nativeApiRiskRuntimeOutRefMutableView": {
+      "examples": [
+        {
+          "line": 111,
+          "path": "Assets/_Project/Scripts/Animation/FaunaProcedural/ProceduralBoneBlenderRuntime.cs",
+          "text": "public bool TryResolveTuningForEditor(out NativeArray<ProceduralBoneRigTuningDTO> tuning)"
+        },
+        {
+          "line": 128,
+          "path": "Assets/_Project/Scripts/Animation/FaunaProcedural/ProceduralBoneBlenderRuntime.cs",
+          "text": "public bool TryResolveMatricesForEditor( out NativeArray<float4x4> matrices, out NativeArray<int> parentIndices, out int matrixCount)"
+        },
+        {
+          "line": 283,
+          "path": "Assets/_Project/Scripts/Animation/IK/LeviathanTerrainIkJobs.cs",
+          "text": "public static bool TryResolveBuffers( IDataVault vault, int requestedSegmentCapacity, int requestedSdfVoxelCount, int requestedTerrainSampleCount, out NativeArray<float3> segmentPositions, out NativeArray<float3> previousSegmentPositions, out NativeArray<LeviathanBoneDTO> leviathanBones, out NativeArray<LeviathanBoneConstraintsDTO> boneConstraints, out NativeArray<LeviathanCapsuleColliderDTO> colliderProxies, out NativeArray<LeviathanTerrainIkTelemetryEntry> telemetryRing, out NativeArray<int> telemetryCursor,"
+        },
+        {
+          "line": 234,
+          "path": "Assets/_Project/Scripts/Animation/IK/VRPhysicalHandPresenceIkJobs.cs",
+          "text": "public static bool TryResolveBuffers( IDataVault vault, out NativeArray<VRHandPresenceInput> inputs, out NativeArray<VRHandPresenceOutput> outputs, out NativeArray<VRHandAupPose> handTargetAup, out NativeArray<VRHandAupPose> handActualAup, out NativeArray<VRHandGrabState> grabStates, out NativeArray<VRHandIkTelemetryEntry> telemetryRing, out NativeArray<int> telemetryCursor)"
+        },
+        {
+          "line": 129,
+          "path": "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorRuntime.cs",
+          "text": "public bool TryResolveTuningForEditor(out NativeArray<KineticCharacterTuningDTO> tuning)"
+        },
+        {
+          "line": 146,
+          "path": "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorRuntime.cs",
+          "text": "public bool TryResolveMatricesForEditor(out NativeArray<float4x4> matrices, out NativeArray<int> parents, out int matrixCount)"
+        },
+        {
+          "line": 536,
+          "path": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+          "text": "public static bool TryGetVaultSnapshot( out NativeArray<WaveParametersDTO> waves, out NativeArray<WeatherStateDTO> weather, out NativeArray<AtmosphereDTO> atmosphere)"
+        },
+        {
+          "line": 553,
+          "path": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+          "text": "public static bool TryGetReadbackDebugSnapshot( out NativeArray<float4> completedQueries, out NativeArray<float4> completedResults, out NativeArray<OceanSurfaceTelemetryEntry> telemetry)"
+        },
+        {
+          "line": 452,
+          "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+          "text": "public bool TryGetGridReadback(out NativeArray<float> density, out int resolution, out double3 originAup, out float cellSize, out int version)"
+        },
+        {
+          "line": 490,
+          "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+          "text": "public bool TryGetCellStates(out NativeArray<ToxicityStateDTO> states)"
+        },
+        {
+          "line": 5339,
+          "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+          "text": "public bool TryGetAcousticRadarPayload(out NativeArray<float> radialIntensityBins, out int radialResolution)"
+        },
+        {
+          "line": 5347,
+          "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+          "text": "public bool TryGetAcousticRadarGridPayload( out NativeArray<float> energyGrid, out int azimuthBins, out int elevationBins, out ComputeBuffer gridBuffer)"
+        },
+        {
+          "line": 112,
+          "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+          "text": "public static void Generate( uint seed, CavePreset preset, float3 worldCenter, float terrainHeightAtCenter, float volumeHalfExtent, out NativeArray<CaveNode> nodes, out NativeArray<CaveTunnel> tunnels, out NativeArray<CaveEntrance> entrances, out NativeArray<CaveStructure> structures, Allocator allocator)"
+        },
+        {
+          "line": 363,
+          "path": "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs",
+          "text": "public static bool TryLoadCatalogBytes(IDataVault vault, string path, out NativeArray<byte> bytes, out int byteLength)"
+        },
+        {
+          "line": 389,
+          "path": "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs",
+          "text": "public static bool TryStartCatalogByteLoad( IDataVault vault, string path, out NativeArray<byte> bytes, out Task<int> loadTask)"
+        },
+        {
+          "line": 568,
+          "path": "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs",
+          "text": "public static bool TryGetModuleSocketRangeFromVault( IDataVault vault, uint prefabHashId, out NativeArray<SocketDefinitionDTO> sockets, out int start, out int count, out ModuleDefinitionDTO definition)"
+        },
+        {
+          "line": 1643,
+          "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+          "text": "internal static void ReleaseDroneVaultBuffer<T>( ref NativeArray<T> array, ref VaultGenerationHandle<T> handle, ref bool vaultBacked, string label) where T : struct"
+        },
+        {
+          "line": 453,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "internal static bool TryGetLatestSiegeTargets(out NativeArray<HabitatSiegeTargetSnapshot> targets, out int count)"
+        },
+        {
+          "line": 694,
+          "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
+          "text": "public static bool EnsureTelemetryVaultBuffersCold( IDataVault vault, out NativeArray<BTreeTelemetryEntry> ring, out NativeArray<int> cursor, out NativeArray<BTreeTelemetryAccumulatorDTO> accumulator)"
+        },
+        {
+          "line": 736,
+          "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
+          "text": "public static bool TryResolveTelemetryVaultBuffers( IDataVault vault, out NativeArray<BTreeTelemetryEntry> ring, out NativeArray<int> cursor, out NativeArray<BTreeTelemetryAccumulatorDTO> accumulator)"
+        }
+      ],
+      "files": 69,
+      "matches": 160,
+      "topFiles": [
+        {
+          "count": 21,
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs"
+        },
+        {
+          "count": 8,
+          "path": "Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs"
+        },
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs"
+        }
+      ]
+    },
+    "nativeApiRiskRuntimeReturnMutableView": {
+      "examples": [
+        {
+          "line": 1581,
+          "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+          "text": "internal static NativeArray<T> ResolveDroneVaultBuffer<T>( BufferID bufferId, int length, NativeArrayOptions allocationNativeArrayOptions, ref VaultGenerationHandle<T> handle, out bool vaultBacked) where T : struct"
+        },
+        {
+          "line": 367,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "internal NativeArray<LogisticsNetworkGraph.LogisticsNode> Nodes => _nodes;"
+        },
+        {
+          "line": 368,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "internal NativeArray<int> EdgeOffsets => _edgeOffsets;"
+        },
+        {
+          "line": 369,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "internal NativeArray<int> EdgeDestinations => _edgeDestinations;"
+        },
+        {
+          "line": 370,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "internal NativeArray<float> EdgeResistance => _edgeResistance;"
+        },
+        {
+          "line": 371,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "internal NativeArray<float> RoomWaterLevels => _roomWaterLevels;"
+        },
+        {
+          "line": 372,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "internal NativeArray<float> RoomVolumes => _roomVolumes;"
+        },
+        {
+          "line": 373,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "internal NativeArray<byte> RoomFlags => _roomFlags;"
+        },
+        {
+          "line": 374,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "internal NativeArray<byte> EdgeFlags => _edgeFlags;"
+        },
+        {
+          "line": 1936,
+          "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+          "text": "public static NativeQueue<T>.ParallelWriter OpenLegacyMpscWriter()"
+        },
+        {
+          "line": 1947,
+          "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+          "text": "public static NativeQueue<T>.ParallelWriter OpenParallelWriter()"
+        },
+        {
+          "line": 2189,
+          "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+          "text": "internal static NativeQueue<T> OpenQueueForLegacyGlobalSignals()"
+        },
+        {
+          "line": 5822,
+          "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+          "text": "public static NativeQueue<TSignal>.ParallelWriter OpenSignalWriterForProducerPhase<TSignal>()"
+        },
+        {
+          "line": 23,
+          "path": "Assets/_Project/Scripts/Core/NativeArenaAllocator.cs",
+          "text": "public static NativeArray<T> Allocate<T>(int count) where T : unmanaged"
+        },
+        {
+          "line": 92,
+          "path": "Assets/_Project/Scripts/Core/NativeArenaArray.cs",
+          "text": "public NativeArray<T> AsNativeArray()"
+        },
+        {
+          "line": 74,
+          "path": "Assets/_Project/Scripts/Core/NativeRingBuffer.cs",
+          "text": "public NativeArray<T> RawArray => _buffer;"
+        },
+        {
+          "line": 296,
+          "path": "Assets/_Project/Scripts/Core/ThreadSafeCommandQueue.cs",
+          "text": "public static NativeQueue<EntityCommand>.ParallelWriter OpenLegacyMpscWriter()"
+        },
+        {
+          "line": 303,
+          "path": "Assets/_Project/Scripts/Core/ThreadSafeCommandQueue.cs",
+          "text": "public static NativeQueue<EntityCommand>.ParallelWriter AsParallelWriter()"
+        },
+        {
+          "line": 416,
+          "path": "Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs",
+          "text": "public NativeArray<PoolSlotData> PoolSlots =>"
+        },
+        {
+          "line": 421,
+          "path": "Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs",
+          "text": "public NativeArray<float3> LinearVelocities =>"
+        }
+      ],
+      "files": 30,
+      "matches": 79,
+      "topFiles": [
+        {
+          "count": 27,
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs"
+        },
+        {
+          "count": 8,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/Core/ThreadSafeCommandQueue.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/Fauna/ProceduralCrabLegIKRuntime.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/HectonFluidEngine.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs"
+        }
+      ]
     },
     "nativeCollectionPublicMutableApiExposure": {
       "examples": [

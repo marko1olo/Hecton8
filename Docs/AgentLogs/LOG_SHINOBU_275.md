@@ -117,6 +117,69 @@ Verification:
   <DEAR_LIE_CONFIRMATION>Before: object decals would be O(N) GameObject/renderer submissions plus material/transform churn per wound. After: O(1) fullscreen pass plus O(min(N, qualityCap)) shader record checks; CPU ingestion is bounded by fixed queue/capacity. Physical fracture meshes, particles, Canvas overlays, and DecalProjector components are rejected.</DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>
 
+## 2026-05-21T23:35+04:00 - Polish Loop 20 / RenderGraph Dispatcher Ownership Closure
+
+What was wrong:
+- Read-only subagents found a real owned compile-surface fault: `DeferredDecalPass` called `DynamicDecalVaultRuntime.CopyDecalsToMappedUploadBuffer()`, while the helper was scoped under `GenerateVisorDecalMatricesJob`.
+- Reconstruction constant build/upload, Vault mirror writes, telemetry ring writes, and possible dump file creation still ran from `AddRenderPasses()`.
+- Visor post scalar/vector/texture data and wound atlas texture were still applied through material mutation outside the RenderGraph render function.
+- `HectonVisorUberPost.shader` and `Hecton_BilateralUpsample.shader` still read shader `_Time`.
+- Noir color profile cache misses resolved the Vault profile array from the LateFrame hot path.
+
+What was done:
+- Moved `CopyDecalsToMappedUploadBuffer()` onto `DynamicDecalVaultRuntime`.
+- Changed reconstruction flow so `AddRenderPasses()` stages camera/runtime inputs and consumes the last active CBuffer; `LateFrameTick()` owns reconstruction constant build/upload, Vault mirror write, telemetry write, and black-box dump.
+- Moved visor post bindings to `PostPassData` plus `RasterCommandBuffer.SetGlobal*` inside the raster function.
+- Moved the legacy shader trauma scalars out of `UnityPerMaterial` so command-buffer globals are the single route.
+- Moved wound atlas binding into the wound RenderGraph raster function.
+- Replaced shader `_Time` reads with `_HectonUberVisualTime` and `_H8UberNoirVisualTime`, both fed from the dispatcher-wrapped visual clock.
+- Added a fixed cold 32-row Noir color profile snapshot for LateFrame profile selection.
+
+Cinematic Cheats used:
+- No new physical simulation was added. The system remains a bounded screen-space projection and reconstruction/noir shader fake. Visual time is a dispatcher-owned scalar, not gameplay truth.
+
+Exact Microseconds saved:
+- No profiler claim. Expected low-end risk reduction is from removing render-enqueue CBuffer mapping, Vault telemetry locks, material property writes, shader `_Time` dependency, and hot profile Vault resolves. Estimated risk reduction: 5-25 us on weak devices, pending Unity Profiler.
+
+Verification:
+- `python Tools\Decal_Projector_Inquisition.py`: PASS at `2026-05-21T19:34:06Z`; 5825 scanned assets, 336 candidates, 0 active GameObject decal violations, 0 active URP decal renderer feature violations.
+- Focused scans found no `UpdateMaterialParameters`, `Material.SetFloat/SetVector/SetTexture`, `UnityPerMaterial`, shader `_Time`, direct Unity `Time.*`, `VisorWoundMappedUploadJob`, hot `TryResolveHandle(in _noirColorProfileHandle)`, direct sibling `Hecton8.World/Gameplay/Physics` imports, `UnityEngine.Random`, `UsePass`, `AddBlitPass`, `RenderGraphUtils`, `NativeList`, `NativeHashMap`, or `new NativeArray` in the touched owned route.
+- Reconstruction build/upload/telemetry calls now occur from `TryUpdateReconstructionConstantsLate()`, not `AddRenderPasses()`.
+- `python -m json.tool Docs\Reports\RENDERING_OPTIMIZATION_REPORT.json` validates.
+- `git diff --check` reports only LF-to-CRLF warnings in edited files.
+- Compile not launched: CPU sampled at 78.57%; no `dotnet`/`csc`/`VBCSCompiler` processes were active, but AGENTS policy blocks build above 50% CPU.
+
+<SELF_AUDIT agent_id="SHINOBU_275" loop="20_rendergraph_dispatcher_ownership">
+  <TASK_RECONCILIATION>
+    <TASK id="01" result="PASS_STATIC">Subagent findings reconciled against the owned visor wound/reconstruction route.</TASK>
+    <TASK id="02" result="PASS_STATIC">Decal inquisition scanner reports 0 active GameObject/URP decal violations.</TASK>
+    <TASK id="03" result="PASS_STATIC">No hot DTO properties added; mapped helper compile target corrected.</TASK>
+    <TASK id="04" result="PASS_STATIC">Primary `VisorDecalDTO` remains explicit 80B; no DTO expansion for visual time.</TASK>
+    <TASK id="05" result="PASS_STATIC">Mock lanes unchanged; public/cold routes remain fail-closed.</TASK>
+    <TASK id="06" result="PASS_STATIC">Batched Burst wound jobs remain; one-row fake job stays deleted.</TASK>
+    <TASK id="07" result="PASS_STATIC">Dear Lie route preserved: shader fakes and bounded fullscreen passes, no object decals or fluid physics.</TASK>
+    <TASK id="08" result="PASS_STATIC">Circular overwrite unchanged.</TASK>
+    <TASK id="09" result="PASS_STATIC">Decay route unchanged; profile reads use cold snapshots.</TASK>
+    <TASK id="10" result="PASS_STATIC">Mapped GPU upload and reconstruction constants are double-buffered; reconstruction publish is dispatcher-owned.</TASK>
+    <TASK id="11" result="PASS_STATIC">Continuous quality gates remain; no binary low/high quality switch introduced.</TASK>
+    <TASK id="12" result="PASS_STATIC">Normal/refraction perturbation remains shader-side with dispatcher visual time.</TASK>
+    <TASK id="13" result="PASS_STATIC">AUP localization unchanged.</TASK>
+    <TASK id="14" result="PASS_STATIC">No gameplay truth, rollback, save, or authority route changed.</TASK>
+    <TASK id="15" result="PASS_STATIC">Telemetry ring remains; writes moved out of render enqueue.</TASK>
+    <TASK id="16" result="PASS_STATIC">Editor facade unchanged.</TASK>
+    <TASK id="17" result="PASS_STATIC">CSV parsing remains cold; Noir/reconstruction profile selection reads fixed snapshots.</TASK>
+    <TASK id="18" result="PASS_STATIC">Debug gizmo route unchanged.</TASK>
+    <TASK id="19" result="PASS_STATIC">Metric validator rerun and report timestamp updated.</TASK>
+    <TASK id="20" result="PASS_STATIC_COMPILE_BLOCKED">Docs/logs synchronized; compile probe blocked by CPU policy.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>`VisorDecalDTO`: `float4x4 LocalToWorld` offset 0 size 64; `uint DecalTypeHash` offset 64 size 4; `float Opacity01` offset 68 size 4; `float BirthTime` offset 72 size 4; `uint Flags` offset 76 size 4. Total 80B; 80 % 16 = 0. Loop 20 changed no primary DTO bytes.</STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>Below quality 0.3, visor haze, comfort mask weight, light shafts, water/droplet refraction, wound count, profile cadence, and reconstruction detail continue to collapse through continuous weights and dispatcher-owned scalar state. High/ultra retain reconstruction grain/chroma/vignette and wound refraction without a DTO or authority-route change.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>No new persistent private native collection was introduced. Vault ownership remains for wound DTOs, tuning, telemetry, reconstruction constants, reconstruction telemetry, CSV scratch, and profile import buffers. The new profile arrays are fixed cold managed snapshots used only to avoid hot Vault reads.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_DEPENDENCY_GRAPH>Wound visual sync jobs remain dispatcher-owned. Reconstruction constants now publish from `LateFrameTick()` and are consumed as imported `BufferHandle` resources with `UseBuffer(Read)`. No same-frame `.Complete()` was added.</POINTER_ALIASING_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU sampled 78.57%, above the 50% AGENTS gate.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>Before: object/material/render-enqueue state work could scale with presentation complexity and hide mutation outside RG. After: one bounded screen-space pass plus command-buffer globals and dispatcher-published CBuffers; CPU remains ignorant of physical fracture/fluid behavior.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>
+
 
 ## 2026-05-21T15:46Z - Polish Loop 9 / NativeQueue Pending Fence And Route Proof
 

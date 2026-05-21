@@ -198,8 +198,8 @@ namespace Hecton8.Construction
 
         /// <inheritdoc />
         NativeArray<float>.ReadOnly IHabitatGraphService.RoomWaterLevels =>
-            _habitatGraphManager != null && _habitatGraphManager.RoomWaterLevels.IsCreated
-                ? _habitatGraphManager.RoomWaterLevels.AsReadOnly()
+            _habitatGraphManager != null
+                ? _habitatGraphManager.RoomWaterLevels
                 : default;
 
         /// <inheritdoc />
@@ -1833,8 +1833,8 @@ namespace Hecton8.Construction
             if (_habitatGraphManager == null || savedNodeCount <= 0 || _habitatGraphManager.NodeCount != savedNodeCount)
                 return;
 
-            NativeArray<int> edgeOffsets = _habitatGraphManager.EdgeOffsets;
-            NativeArray<int> edgeDestinations = _habitatGraphManager.EdgeDestinations;
+            NativeArray<int>.ReadOnly edgeOffsets = _habitatGraphManager.EdgeOffsets;
+            NativeArray<int>.ReadOnly edgeDestinations = _habitatGraphManager.EdgeDestinations;
             int edgeWriteIndex = 0;
 
             for (int sourceIndex = 0; sourceIndex < savedNodeCount; sourceIndex++)

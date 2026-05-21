@@ -77,6 +77,13 @@ Profiler marker:
 - `H8.VisorWounds.Enqueue`
 - `Hecton Visor Wound Composite`
 
+Loop 20 render ownership addendum:
+- `DeferredDecalPass` binds wound atlas state inside the RenderGraph raster function; no material atlas mutation remains in setup.
+- `HectonVisorUberPostFeature.AddRenderPasses()` stages reconstruction camera/runtime input and consumes the last active reconstruction CBuffer only. `LateFrameTick()` owns reconstruction constant upload, Vault mirror write, telemetry write, and dump emission.
+- Visor post trauma scalars/textures are carried through pass data and bound with command-buffer globals inside the raster function. The legacy visor post shader no longer uses `UnityPerMaterial` for those fields.
+- Owned visor post/reconstruction shaders consume dispatcher-published visual time globals, not shader `_Time`.
+- Noir/reconstruction CSV profile selection reads fixed cold snapshots after parse; hot paths do not resolve profile Vault NativeArrays.
+
 GC proof required:
 - Unity Profiler / GCMonitor capture in Play Mode. Static source proof only exists now.
 

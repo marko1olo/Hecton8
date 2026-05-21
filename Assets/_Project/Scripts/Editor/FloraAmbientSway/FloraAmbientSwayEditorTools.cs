@@ -560,7 +560,7 @@ namespace Hecton8.Editor.FloraAmbientSway
                 !runtime.Contains("mockFlowJob." + "Execute()") &&
                 !runtime.Contains("parametersJob." + "Execute()");
             bool aotFunctionPointerAbi =
-                runtime.Contains("[UnmanagedFunctionPointer(CallingConvention.Cdecl)]") &&
+                CountOccurrences(runtime, "[UnmanagedFunctionPointer(CallingConvention.Cdecl)]") >= 2 &&
                 runtime.Contains("MonoPInvokeCallback(typeof(GenerateMockAmbientFlowKernelDelegate))") &&
                 runtime.Contains("MonoPInvokeCallback(typeof(CalculateFloraSwayParametersKernelDelegate))");
             bool asmdefBoundary =
@@ -610,6 +610,26 @@ namespace Hecton8.Editor.FloraAmbientSway
         {
             string absolutePath = Path.Combine(Directory.GetCurrentDirectory(), path);
             return File.Exists(absolutePath) ? File.ReadAllText(absolutePath) : string.Empty;
+        }
+
+        private static int CountOccurrences(string value, string token)
+        {
+            if (string.IsNullOrEmpty(value) || string.IsNullOrEmpty(token))
+                return 0;
+
+            int count = 0;
+            int offset = 0;
+            while (offset < value.Length)
+            {
+                int index = value.IndexOf(token, offset, StringComparison.Ordinal);
+                if (index < 0)
+                    break;
+
+                count++;
+                offset = index + token.Length;
+            }
+
+            return count;
         }
 
         private static bool HasProjectFile(string path)

@@ -444,3 +444,4 @@ First 20 Minutes moment: World load and swim readability on the selected Copper 
 Route impact: Keeps direct-managed-kernel regression scans meaningful for early-route flora presentation.
 Proof required: Static scan now; Unity import, route run, Burst/import evidence, profiler/GC, Frame Debugger, screenshot/clip, and save/load diff remain pending.
 Parked work rejected: Removing self-audit coverage, runtime behavior changes, and build launch under CPU gate.
+Static verification: Owned P40 forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; `git diff --check` reports no whitespace errors. Build not launched because CPU preflight reported 65%, dotnet=0, csc=0.

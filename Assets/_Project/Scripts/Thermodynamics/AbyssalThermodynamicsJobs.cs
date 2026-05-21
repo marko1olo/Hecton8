@@ -29,6 +29,11 @@ namespace Hecton8.Thermodynamics
         public const int MaxSafeResolution = 32;
         public const int MaxSafeCellCount = MaxSafeResolution * MaxSafeResolution * MaxSafeResolution;
         public const uint ResidualSlotFaultNonFinite = 1u;
+        public const float AuthoritativeQualityWeight = 1f;
+        public const int AuthoritativeJacobiIterations = 6;
+        public const float AuthoritativeSolverOmega = 1f;
+        public const float AuthoritativeSolverTargetTolerance = 0.001f;
+        public const int AuthoritativeResidualSampleMask = 0;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float FiniteOr(float value, float fallback)
@@ -99,42 +104,31 @@ namespace Hecton8.Thermodynamics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolveJacobiIterations(float globalQualityWeight)
         {
-            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
-            return math.clamp((int)math.lerp(1f, 6f, q), 1, 6);
+            return AuthoritativeJacobiIterations;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveSolverOmega(float globalQualityWeight)
         {
-            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
-            float curve = q * q * (3f - (2f * q));
-            return math.clamp(math.lerp(0.68f, 1f, curve), 0.55f, 1f);
+            return AuthoritativeSolverOmega;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveSolverTargetTolerance(float globalQualityWeight)
         {
-            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
-            float curve = q * q * (3f - (2f * q));
-            return math.lerp(0.5f, 0.001f, curve);
+            return AuthoritativeSolverTargetTolerance;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolveResidualSampleMask(float globalQualityWeight)
         {
-            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
-            float curve = q * q * (3f - (2f * q));
-            int exponent = math.clamp((int)math.round(math.lerp(3f, 0f, curve)), 0, 3);
-            return (1 << exponent) - 1;
+            return AuthoritativeResidualSampleMask;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolveActiveResolution(float globalQualityWeight, int minResolution, int maxResolution)
         {
-            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
-            float curved = q * q * (3f - (2f * q));
-            int resolution = (int)math.round(math.lerp(minResolution, maxResolution, curved));
-            return math.clamp(resolution, minResolution, maxResolution);
+            return math.clamp(maxResolution, minResolution, maxResolution);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -452,7 +446,7 @@ namespace Hecton8.Thermodynamics
             float convectionSpeed = math.max(0f, AbyssalThermalMath.FiniteOr(Tuning.ConvectionSpeed, 0f));
             float current = AbyssalThermalMath.FiniteOr(currentCell.TemperatureCelsius, ambient) + AbyssalThermalMath.FiniteOr(injected.TemperatureCelsius, 0f);
             float conductivity = math.max(0.0001f, AbyssalThermalMath.FiniteOr(currentCell.ThermalConductivity, waterConductivity));
-            float omega = math.clamp(AbyssalThermalMath.FiniteOr(state.Omega, AbyssalThermalMath.ResolveSolverOmega(Tuning.GlobalQualityWeight)), 0.55f, 1f);
+            float omega = math.clamp(AbyssalThermalMath.FiniteOr(state.Omega, AbyssalThermalMath.AuthoritativeSolverOmega), 0.55f, 1f);
             bool divergent = false;
             bool nonFinite = false;
             float maxResidual = 0f;
@@ -639,14 +633,10 @@ namespace Hecton8.Thermodynamics
             float convection = nearest.ConvectionVelocityY;
             float conductivity = nearest.ThermalConductivity;
             uint flags = nearest.Flags;
-            float interpolationWeight = ResolveInterpolationWeight(Tuning.GlobalQualityWeight);
-            if (interpolationWeight > 0f)
-            {
-                SampleTrilinear(baseCell, fraction, resolution, out float triTemperature, out float triConvection, out float triConductivity);
-                temperature = math.lerp(temperature, triTemperature, interpolationWeight);
-                convection = math.lerp(convection, triConvection, interpolationWeight);
-                conductivity = math.lerp(conductivity, triConductivity, interpolationWeight);
-            }
+            SampleTrilinear(baseCell, fraction, resolution, out float triTemperature, out float triConvection, out float triConductivity);
+            temperature = triTemperature;
+            convection = triConvection;
+            conductivity = triConductivity;
 
             if (!math.isfinite(temperature))
             {
@@ -668,15 +658,6 @@ namespace Hecton8.Thermodynamics
             result.LocalGridPosition = local;
             result.Conductivity = conductivity;
             Results[index] = result;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float ResolveInterpolationWeight(float globalQualityWeight)
-        {
-            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
-            float t = math.saturate(q * math.rcp(0.8f));
-            float smooth = t * t * (3f - (2f * t));
-            return smooth;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

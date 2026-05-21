@@ -15,9 +15,20 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `burstMissingCompileSynchronously` | 0 | 0 |
 | `burstMissingFloatMode` | 0 | 0 |
 | `burstMissingFloatPrecision` | 0 | 0 |
-| `globalQualityWeight` | 1901 | 421 |
+| `globalQualityWeight` | 1897 | 420 |
 | `jobHandleComplete` | 112 | 31 |
 | `linqSurface` | 0 | 0 |
+| `nativeApiExposureAmbiguousMutable` | 0 | 0 |
+| `nativeApiExposureBuildEditorOnly` | 5 | 4 |
+| `nativeApiExposureBuildPlayerRuntime` | 260 | 91 |
+| `nativeApiExposureBuildQaDevProof` | 9 | 2 |
+| `nativeApiExposureMutableReturn` | 87 | 35 |
+| `nativeApiExposureOutRefMutable` | 187 | 77 |
+| `nativeApiRiskCoreVaultOrAllocatorSurface` | 21 | 3 |
+| `nativeApiRiskEditorOrProofSurface` | 14 | 6 |
+| `nativeApiRiskRuntimeAmbiguousMutableView` | 0 | 0 |
+| `nativeApiRiskRuntimeOutRefMutableView` | 160 | 69 |
+| `nativeApiRiskRuntimeReturnMutableView` | 79 | 30 |
 | `nativeCollectionPublicMutableApiExposure` | 274 | 97 |
 | `noAlias` | 2130 | 214 |
 | `packOne` | 0 | 0 |
@@ -77,6 +88,90 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs` | 9 |
 | `Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeGenerator.cs` | 7 |
 | `Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs` | 7 |
+
+### nativeApiExposureBuildEditorOnly
+
+| Path | Count |
+|---|---:|
+| `Assets/_Project/Scripts/Editor/GeologyForge/TopographyForgeCsv.cs` | 2 |
+| `Assets/_Project/Scripts/Editor/ConstructionSocketEditorTools.cs` | 1 |
+| `Assets/_Project/Scripts/Editor/GeographySanity/GeographySanityProfileCsv.cs` | 1 |
+| `Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchForgeWindow.cs` | 1 |
+
+### nativeApiExposureBuildPlayerRuntime
+
+| Path | Count |
+|---|---:|
+| `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` | 48 |
+| `Assets/_Project/Scripts/Construction/HabitatGraphManager.cs` | 9 |
+| `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs` | 9 |
+| `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs` | 8 |
+| `Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs` | 7 |
+
+### nativeApiExposureBuildQaDevProof
+
+| Path | Count |
+|---|---:|
+| `Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs` | 5 |
+| `Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs` | 4 |
+
+### nativeApiExposureMutableReturn
+
+| Path | Count |
+|---|---:|
+| `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` | 27 |
+| `Assets/_Project/Scripts/Construction/HabitatGraphManager.cs` | 8 |
+| `Assets/_Project/Scripts/Core/GlobalSignals.cs` | 4 |
+| `Assets/_Project/Scripts/World/EcosystemDirector.cs` | 4 |
+| `Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs` | 3 |
+
+### nativeApiExposureOutRefMutable
+
+| Path | Count |
+|---|---:|
+| `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` | 21 |
+| `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs` | 8 |
+| `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs` | 7 |
+| `Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs` | 6 |
+| `Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs` | 5 |
+
+### nativeApiRiskCoreVaultOrAllocatorSurface
+
+| Path | Count |
+|---|---:|
+| `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs` | 9 |
+| `Assets/_Project/Scripts/Core/HectonArenaAllocator.cs` | 6 |
+| `Assets/_Project/Scripts/Core/Memory/H8Memory.cs` | 6 |
+
+### nativeApiRiskEditorOrProofSurface
+
+| Path | Count |
+|---|---:|
+| `Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs` | 5 |
+| `Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs` | 4 |
+| `Assets/_Project/Scripts/Editor/GeologyForge/TopographyForgeCsv.cs` | 2 |
+| `Assets/_Project/Scripts/Editor/ConstructionSocketEditorTools.cs` | 1 |
+| `Assets/_Project/Scripts/Editor/GeographySanity/GeographySanityProfileCsv.cs` | 1 |
+
+### nativeApiRiskRuntimeOutRefMutableView
+
+| Path | Count |
+|---|---:|
+| `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` | 21 |
+| `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs` | 8 |
+| `Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs` | 6 |
+| `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs` | 5 |
+| `Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs` | 4 |
+
+### nativeApiRiskRuntimeReturnMutableView
+
+| Path | Count |
+|---|---:|
+| `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` | 27 |
+| `Assets/_Project/Scripts/Construction/HabitatGraphManager.cs` | 8 |
+| `Assets/_Project/Scripts/Core/GlobalSignals.cs` | 4 |
+| `Assets/_Project/Scripts/World/EcosystemDirector.cs` | 4 |
+| `Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs` | 3 |
 
 ### nativeCollectionPublicMutableApiExposure
 

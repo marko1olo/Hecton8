@@ -896,5 +896,5 @@ Exact Microseconds saved:
   <ROUTE_IMPACT>Static scans can now distinguish actual direct managed kernel regressions from validator text.</ROUTE_IMPACT>
   <PROOF_REQUIRED>Static scan now; Unity import/Console, selected route run, Burst/import proof, profiler/GC, Frame Debugger, screenshot/clip, and save/load diff remain pending.</PROOF_REQUIRED>
   <PARKED_WORK_REJECTED>Removing self-audit coverage, runtime behavior changes, and build launch under CPU gate.</PARKED_WORK_REJECTED>
-  <STATIC_VERIFICATION>Pending after self-audit literal split.</STATIC_VERIFICATION>
+  <STATIC_VERIFICATION>Owned P40 forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; `git diff --check` found no whitespace errors. Build not launched because CPU preflight reported 65%, dotnet=0, csc=0.</STATIC_VERIFICATION>
 </SELF_AUDIT_DELTA>

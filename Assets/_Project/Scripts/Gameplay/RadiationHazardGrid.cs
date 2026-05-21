@@ -180,11 +180,16 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || sourceId == 0 || !AbsoluteUniversePosition.IsFinite(in sourceAup))
                 return;
 
+            float safeIntensity = NormalizeSourceIntensity(intensity);
+            float safeRadius = math.isfinite(radiusMeters) ? math.max(0.5f, radiusMeters) : 0.5f;
+            if (safeIntensity <= 0f)
+                return;
+
             RadiationSourceSignal signal = new RadiationSourceSignal
             {
                 PositionAup = sourceAup,
-                Intensity = math.max(0f, intensity),
-                RadiusMeters = math.max(0.5f, radiusMeters),
+                Intensity = safeIntensity,
+                RadiusMeters = safeRadius,
                 SourceId = sourceId,
                 Operation = RadiationSourceSignal.OperationUpsert,
                 Flags = 0
@@ -226,11 +231,12 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            float safeIntensity = Sanitize01(intensity01);
             RadiationDoseSignal signal = new RadiationDoseSignal
             {
                 PositionAup = positionAup,
                 Dose = dose,
-                Intensity01 = math.saturate(intensity01),
+                Intensity01 = safeIntensity,
                 SourceId = 0u,
                 DoseKind = RadiationDoseAtmosphereKind,
                 Flags = 0
@@ -404,6 +410,13 @@ namespace Hecton8.Gameplay
                     _radiationStates[0] = state;
             }
 
+            state.CumulativeDoseRad = SanitizeNonNegative(state.CumulativeDoseRad);
+            state.CurrentExposureRate = SanitizeNonNegative(state.CurrentExposureRate);
+            state.ShieldingFactor01 = Sanitize01(state.ShieldingFactor01);
+            state.CellularDegradation01 = Sanitize01(state.CellularDegradation01);
+            if (_radiationStates.IsCreated && _radiationStates.Length > 0)
+                _radiationStates[0] = state;
+
             _lastRadiationState = state;
             _lastGridIntensity01 = state.CurrentExposureRate;
             _accumulatedRadiationDose = state.CumulativeDoseRad;
@@ -416,8 +429,9 @@ namespace Hecton8.Gameplay
             AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.IsFinite(in _lastSimulationPlayerAup)
                 ? _lastSimulationPlayerAup
                 : ResolvePlayerAup(playerContext);
+            float safeCompletedDelta = SanitizeNonNegative(_lastCompletedIntegrationDeltaSeconds);
             float doseAdd = _radiationEvaluatedThisFrame
-                ? math.max(0f, _lastGridIntensity01 * math.max(0f, _lastCompletedIntegrationDeltaSeconds))
+                ? SanitizeNonNegative(_lastGridIntensity01 * safeCompletedDelta)
                 : 0f;
             ApplyDoseToPlayerContext(playerContext, _accumulatedRadiationDose, _lastGridIntensity01);
             PublishPendingRadiationDamageSignal();
@@ -489,7 +503,7 @@ namespace Hecton8.Gameplay
             {
                 RadiationStateDTO state = _radiationStates[0];
                 state.CumulativeDoseRad = _accumulatedRadiationDose;
-                state.CurrentExposureRate = _lastGridIntensity01;
+                state.CurrentExposureRate = SanitizeNonNegative(_lastGridIntensity01);
                 _radiationStates[0] = state;
             }
             cellSizeMeters = SanitizeRange(data.radiationGridCellSizeMeters, DefaultCellSizeMeters, 0.5f, 1000f);
@@ -1587,8 +1601,8 @@ namespace Hecton8.Gameplay
                 BulkheadCount = maxBulkheadSamples,
                 PlayerAup = playerAbsolute,
                 PlayerRuntime = playerRuntime,
-                SimulationTickDelta = math.max(0f, simulationTickDelta),
-                ExternalExposureRate = math.saturate(externalExposureRate),
+                SimulationTickDelta = SanitizeNonNegative(simulationTickDelta),
+                ExternalExposureRate = Sanitize01(externalExposureRate),
                 ExternalDoseDelta = math.max(0f, math.isfinite(externalDoseDelta) ? externalDoseDelta : 0f),
                 DoseDecayPerTick = SanitizeRange(tuning.DecayPerTick, DoseDecayPerSimulationStep, 0f, 1f),
                 DoseToDegradationScale = SanitizeRange(tuning.DoseToDegradationScale, 0.01f, 0.0001f, 1f),
@@ -1599,7 +1613,7 @@ namespace Hecton8.Gameplay
                 SdfDimensions = sdfDimensions,
                 SdfVolumeOrigin = sdfVolumeOrigin,
                 SdfCellSize = SanitizeCellSize(sdfCellSize),
-                SdfRange = math.max(0.001f, sdfRange),
+                SdfRange = SanitizeRange(sdfRange, 0.001f, 0.001f, 100000f),
                 SdfSampleCount = sdfSampleCount
             };
             return job.Schedule(dependsOn);
@@ -1637,8 +1651,13 @@ namespace Hecton8.Gameplay
                 return;
 
             CombatDamageSignal signal = _damageSignalLane[0];
-            if (signal.Magnitude <= 0f || signal.TargetHash == 0u && signal.TargetId == 0)
+            if (!math.isfinite(signal.Magnitude) ||
+                signal.Magnitude <= 0f ||
+                signal.TargetHash == 0u && signal.TargetId == 0)
+            {
+                _damageSignalLane[0] = default;
                 return;
+            }
 
             SignalBus<CombatDamageSignal>.Push(in signal);
             _damageSignalLane[0] = default;
@@ -1682,6 +1701,21 @@ namespace Hecton8.Gameplay
         private static float SanitizeRange(float value, float fallback, float min, float max)
         {
             return math.clamp(math.isfinite(value) ? value : fallback, min, max);
+        }
+
+        private static float SanitizeNonNegative(float value)
+        {
+            return math.isfinite(value) && value > 0f ? value : 0f;
+        }
+
+        private static float Sanitize01(float value)
+        {
+            return math.saturate(math.isfinite(value) ? value : 0f);
+        }
+
+        private static float SanitizeSignalQuantity(float value)
+        {
+            return math.isfinite(value) && value > 0f ? math.min(value, 1000000f) : 1f;
         }
 
         private static float ResolveGlobalQualityWeight()
@@ -1734,9 +1768,18 @@ namespace Hecton8.Gameplay
 
         private bool TryResolveGridCell(in AbsoluteUniversePosition sampleAup, out int x, out int y, out int z)
         {
+            x = 0;
+            y = 0;
+            z = 0;
+            if (!AbsoluteUniversePosition.IsFinite(in sampleAup) || !AbsoluteUniversePosition.IsFinite(in _gridOriginAup))
+                return false;
+
             double3 origin = _gridOriginAup.ToAbsoluteDouble3();
             double3 sample = sampleAup.ToAbsoluteDouble3();
             double3 offset = sample - origin;
+            if (!math.all(math.isfinite(offset)))
+                return false;
+
             float safeCellSize = SanitizeRange(cellSizeMeters, DefaultCellSizeMeters, 0.5f, 1000f);
             int half = GridResolution >> 1;
             x = (int)math.floor(offset.x / safeCellSize) + half;
@@ -1764,7 +1807,7 @@ namespace Hecton8.Gameplay
                 if (signal.ItemHash != _iodineItemHash && signal.ItemHash != _iodineCapsItemHash)
                     continue;
 
-                float quantity = signal.Quantity > 0 ? signal.Quantity : 1f;
+                float quantity = SanitizeSignalQuantity(signal.Quantity);
                 ApplyIodineDoseReduction(playerContext, IodineDoseReduction * quantity, in signal.PositionAup);
             }
         }
@@ -1787,8 +1830,11 @@ namespace Hecton8.Gameplay
                 if (signal.ItemHash != _iodineItemHash && signal.ItemHash != _iodineCapsItemHash)
                     continue;
 
-                float quantity = signal.Quantity > 0 ? signal.Quantity : 1f;
-                _pendingIodineDoseReductionRad = math.max(0f, _pendingIodineDoseReductionRad + IodineDoseReduction * quantity);
+                float quantity = SanitizeSignalQuantity(signal.Quantity);
+                float pending = SanitizeNonNegative(_pendingIodineDoseReductionRad);
+                float addition = SanitizeNonNegative(IodineDoseReduction * quantity);
+                float nextPending = pending + addition;
+                _pendingIodineDoseReductionRad = math.isfinite(nextPending) ? nextPending : pending;
             }
         }
 
@@ -1900,8 +1946,11 @@ namespace Hecton8.Gameplay
                     continue;
                 }
 
-                _pendingExternalDoseRad = math.max(0f, _pendingExternalDoseRad + math.max(0f, signal.Dose));
-                _lastExternalIntensity01 = math.max(_lastExternalIntensity01, math.saturate(signal.Intensity01));
+                float pendingDose = SanitizeNonNegative(_pendingExternalDoseRad);
+                float signalDose = SanitizeNonNegative(signal.Dose);
+                float nextDose = pendingDose + signalDose;
+                _pendingExternalDoseRad = math.isfinite(nextDose) ? nextDose : pendingDose;
+                _lastExternalIntensity01 = math.max(Sanitize01(_lastExternalIntensity01), Sanitize01(signal.Intensity01));
             }
         }
 
@@ -1963,9 +2012,10 @@ namespace Hecton8.Gameplay
                 return;
 
             float safeDose = math.max(0f, math.isfinite(dose) ? dose : 0f);
+            float safeIntensity = Sanitize01(intensity01);
             float penalty01 = math.saturate(1f - HectonPlayerHealth.ResolveRadiationFatigueScale(safeDose));
             playerContext.RadiationDose = safeDose;
-            playerContext.RadiationIntensity01 = math.saturate(intensity01);
+            playerContext.RadiationIntensity01 = safeIntensity;
             playerContext.RadiationMaxHealthPenalty01 = penalty01;
             if (penalty01 > 0.0001f)
                 playerContext.SurvivalState.StatusMask |= SurvivalStatusMasks.RadiationPenalty;
@@ -1982,11 +2032,13 @@ namespace Hecton8.Gameplay
 
         private void PublishDoseSignal(in AbsoluteUniversePosition positionAup, float dose, float intensity01, byte doseKind)
         {
+            float safeDose = math.isfinite(dose) ? dose : 0f;
+            float safeIntensity = Sanitize01(intensity01);
             RadiationDoseSignal signal = new RadiationDoseSignal
             {
                 PositionAup = positionAup,
-                Dose = dose,
-                Intensity01 = math.saturate(intensity01),
+                Dose = safeDose,
+                Intensity01 = safeIntensity,
                 SourceId = GeigerSourceId,
                 DoseKind = doseKind,
                 Flags = UsesSparseRadiationCadence(ResolveGlobalQualityWeight(), _currentSimulationFrame) ? (byte)1 : (byte)0
@@ -1996,7 +2048,7 @@ namespace Hecton8.Gameplay
 
         private void EmitGeigerIfNeeded(in AbsoluteUniversePosition playerAup, float intensity01)
         {
-            float safeIntensity = math.saturate(intensity01);
+            float safeIntensity = Sanitize01(intensity01);
             if (safeIntensity <= 0.001f)
             {
                 _geigerPhase = 0f;
@@ -2030,7 +2082,8 @@ namespace Hecton8.Gameplay
             float safeDose = math.max(0f, math.isfinite(dose) ? dose : 0f);
             float exposureRate = math.max(0f, math.isfinite(intensity01) ? intensity01 : 0f);
             float safeIntensity = math.saturate(exposureRate);
-            float mutation01 = math.saturate(math.max(_lastCellularDegradation01, safeDose * 0.01f));
+            float safeDegradation = Sanitize01(_lastCellularDegradation01);
+            float mutation01 = math.saturate(math.max(safeDegradation, safeDose * 0.01f));
             float static01 = exposureRate > 10f
                 ? math.saturate(exposureRate * 0.01f)
                 : (safeIntensity > StaticVfxThreshold ? safeIntensity : 0f);
@@ -2128,16 +2181,20 @@ namespace Hecton8.Gameplay
             if (!_telemetryRing.IsCreated)
                 return;
 
-            double3 playerAbsolute = playerAup.ToAbsoluteDouble3();
+            double3 playerAbsolute = AbsoluteUniversePosition.IsFinite(in playerAup) ? playerAup.ToAbsoluteDouble3() : double3.zero;
+            float safeIntensity = SanitizeNonNegative(intensity01);
+            float safeDose = SanitizeNonNegative(accumulatedRads);
+            float safeShielding = Sanitize01(_lastShieldingFactor01);
+            float safeDegradation = Sanitize01(_lastCellularDegradation01);
             RadiationTelemetryEntry entry = new RadiationTelemetryEntry
             {
                 PlayerAup = playerAbsolute,
                 PlayerDepthMeters = (float)math.max(0d, -playerAbsolute.y),
-                CurrentExposureRate = intensity01,
-                CumulativeDoseRad = accumulatedRads,
-                ShieldingFactor01 = _lastShieldingFactor01,
-                CellularDegradation01 = _lastCellularDegradation01,
-                BurstExecutionMicroseconds = _lastBurstExecutionMicroseconds,
+                CurrentExposureRate = safeIntensity,
+                CumulativeDoseRad = safeDose,
+                ShieldingFactor01 = safeShielding,
+                CellularDegradation01 = safeDegradation,
+                BurstExecutionMicroseconds = SanitizeNonNegative(_lastBurstExecutionMicroseconds),
                 SourceCount = (ushort)math.clamp(_activeSourceCount, 0, ushort.MaxValue),
                 SourceVersion = (ushort)math.clamp(_sourceVersion, 0, ushort.MaxValue),
                 Frame = _currentSimulationFrame,
@@ -2452,11 +2509,19 @@ namespace Hecton8.Gameplay
                 if (Sources == null || SourceCount == null || Capacity <= 0)
                     return;
 
+                if (!math.all(math.isfinite(PlayerAup)) || !math.all(math.isfinite(OffsetMeters)))
+                    return;
+
+                float safeIntensity = NormalizeSourceIntensity(Intensity01);
+                if (safeIntensity <= 0f)
+                    return;
+
+                float safeRadius = math.isfinite(RadiusMeters) ? math.max(0.5f, RadiusMeters) : 0.5f;
                 Sources[0] = new RadiationSource
                 {
                     PositionAup = PlayerAup + (double3)OffsetMeters,
-                    Intensity01 = math.max(0f, Intensity01),
-                    RadiusMeters = math.max(0.5f, RadiusMeters),
+                    Intensity01 = safeIntensity,
+                    RadiusMeters = safeRadius,
                     SourceId = SourceId,
                     Active = 1
                 };

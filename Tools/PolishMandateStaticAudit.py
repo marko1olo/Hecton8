@@ -133,6 +133,23 @@ PUBLIC_NATIVE_RETURN_RE = re.compile(
     r"Native(?:Array|List|HashMap|ParallelHashMap|Queue)\s*<"
 )
 PUBLIC_NATIVE_OUT_REF_RE = re.compile(r"\b(?:out|ref)\s+Native(?:Array|List|HashMap|ParallelHashMap|Queue)\s*<")
+NATIVE_API_EXPOSURE_KIND_KEYS = (
+    "nativeApiExposureMutableReturn",
+    "nativeApiExposureOutRefMutable",
+    "nativeApiExposureAmbiguousMutable",
+)
+NATIVE_API_EXPOSURE_BUILD_SURFACE_KEYS = (
+    "nativeApiExposureBuildPlayerRuntime",
+    "nativeApiExposureBuildEditorOnly",
+    "nativeApiExposureBuildQaDevProof",
+)
+NATIVE_API_EXPOSURE_RISK_BUCKET_KEYS = (
+    "nativeApiRiskCoreVaultOrAllocatorSurface",
+    "nativeApiRiskEditorOrProofSurface",
+    "nativeApiRiskRuntimeOutRefMutableView",
+    "nativeApiRiskRuntimeReturnMutableView",
+    "nativeApiRiskRuntimeAmbiguousMutableView",
+)
 STRING_LITERAL_RE = re.compile(
     r"""
     (?:
@@ -347,6 +364,60 @@ def is_public_mutable_native_api_exposure(lines: list[str], line_number: int, sc
     return returns_native_view or PUBLIC_NATIVE_OUT_REF_RE.search(signature) is not None
 
 
+def classify_native_api_exposure_kind(signature: str) -> str:
+    returns_native_view = PUBLIC_NATIVE_RETURN_RE.search(signature) is not None and (
+        "(" in signature or "=>" in signature
+    )
+    if returns_native_view:
+        return "nativeApiExposureMutableReturn"
+    if PUBLIC_NATIVE_OUT_REF_RE.search(signature) is not None:
+        return "nativeApiExposureOutRefMutable"
+    return "nativeApiExposureAmbiguousMutable"
+
+
+def classify_native_api_build_surface(rel: str) -> str:
+    private_surface = classify_private_native_build_surface(rel)
+    if private_surface == "privateNativeBuildEditorOnly":
+        return "nativeApiExposureBuildEditorOnly"
+    if private_surface == "privateNativeBuildQaDevProof":
+        return "nativeApiExposureBuildQaDevProof"
+    return "nativeApiExposureBuildPlayerRuntime"
+
+
+def classify_native_api_primary_risk(rel: str, signature: str, kind: str, build_surface: str) -> str:
+    if build_surface != "nativeApiExposureBuildPlayerRuntime":
+        return "nativeApiRiskEditorOrProofSurface"
+
+    normalized = rel.replace("\\", "/")
+    if (
+        "/Core/Memory/" in normalized
+        or normalized.endswith("/Core/HectonArenaAllocator.cs")
+        or normalized.endswith("/Core/Memory/H8Memory.cs")
+        or normalized.endswith("/Core/Memory/GlobalDataVault.cs")
+    ):
+        return "nativeApiRiskCoreVaultOrAllocatorSurface"
+
+    if kind == "nativeApiExposureOutRefMutable":
+        return "nativeApiRiskRuntimeOutRefMutableView"
+    if kind == "nativeApiExposureMutableReturn":
+        return "nativeApiRiskRuntimeReturnMutableView"
+    return "nativeApiRiskRuntimeAmbiguousMutableView"
+
+
+def record_native_api_exposure_classification(
+    results: dict[str, list[Finding]],
+    finding: Finding,
+    rel: str,
+    signature: str,
+) -> None:
+    kind = classify_native_api_exposure_kind(signature)
+    build_surface = classify_native_api_build_surface(rel)
+    risk = classify_native_api_primary_risk(rel, signature, kind, build_surface)
+    results[kind].append(finding)
+    results[build_surface].append(finding)
+    results[risk].append(finding)
+
+
 def empty_results() -> dict[str, list[Finding]]:
     results: dict[str, list[Finding]] = {key: [] for key in LINE_PATTERNS}
     results.update(
@@ -364,6 +435,9 @@ def empty_results() -> dict[str, list[Finding]]:
         *PRIVATE_NATIVE_DECLARATION_KIND_KEYS,
         *PRIVATE_NATIVE_BUILD_SURFACE_KEYS,
         *PRIVATE_NATIVE_PRIMARY_RISK_BUCKET_KEYS,
+        *NATIVE_API_EXPOSURE_KIND_KEYS,
+        *NATIVE_API_EXPOSURE_BUILD_SURFACE_KEYS,
+        *NATIVE_API_EXPOSURE_RISK_BUCKET_KEYS,
     ):
         results[key] = []
     return results
@@ -440,9 +514,12 @@ def scan_all(files: Iterable[Path]) -> dict[str, list[Finding]]:
 
             record_line_patterns(results, rel, line_number, raw_line, code, lines)
             if is_public_mutable_native_api_exposure(lines, line_number, scan_code):
+                signature = collect_signature(lines, line_number)
+                finding = Finding(rel, line_number, signature)
                 results["nativeCollectionPublicMutableApiExposure"].append(
-                    Finding(rel, line_number, collect_signature(lines, line_number))
+                    finding
                 )
+                record_native_api_exposure_classification(results, finding, rel, signature)
 
             if "[BurstCompile" in scan_code:
                 attr_parts = [scan_code.strip()]

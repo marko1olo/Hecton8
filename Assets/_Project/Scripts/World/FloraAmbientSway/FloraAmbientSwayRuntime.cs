@@ -442,8 +442,17 @@ namespace Hecton8.World.FloraAmbientSway
                 return;
             }
 
+            if (!parameters.IsCreated || parameters.Length == 0 ||
+                !flowState.IsCreated || flowState.Length == 0 ||
+                !tuning.IsCreated || tuning.Length == 0)
+            {
+                RecordTelemetry(frame, TelemetryFlagVaultMissing, default);
+                return;
+            }
+
             float deltaTime = ResolveDeltaTime(in timing);
-            float currentTime = parameters.Length > 0 ? parameters[0].SwayMathParams.x : 0f;
+            ref readonly FloraSwayParamsDTO currentParams = ref ReadFirstParamsReadonly(parameters);
+            float currentTime = currentParams.SwayMathParams.x;
             if (_mockFlowEnabled)
             {
                 var mockFlowJob = new GenerateMockAmbientFlowJob
@@ -475,7 +484,7 @@ namespace Hecton8.World.FloraAmbientSway
                 return;
             }
 
-            FloraSwayParamsDTO dto = parameters[0];
+            ref readonly FloraSwayParamsDTO dto = ref ReadFirstParamsReadonly(parameters);
             uint flags = ValidateParams(in dto) ? 0u : TelemetryFlagInvalidNumber;
             RecordTelemetry(frame, flags, in dto);
             if ((flags & TelemetryFlagInvalidNumber) != 0u)
@@ -503,17 +512,18 @@ namespace Hecton8.World.FloraAmbientSway
                 return;
             }
 
+            ref readonly FloraSwayParamsDTO dto = ref ReadFirstParamsReadonly(parameters);
             if (!SystemInfo.supportsSetConstantBuffer)
             {
                 ReleaseGraphicsBuffer(ref _shaderParamsBufferA);
                 ReleaseGraphicsBuffer(ref _shaderParamsBufferB);
-                RecordTelemetry(AdvanceVisualFrameId(in timing), TelemetryFlagConstantBufferUnsupported, in parameters[0]);
+                RecordTelemetry(AdvanceVisualFrameId(in timing), TelemetryFlagConstantBufferUnsupported, in dto);
                 return;
             }
 
             if (!ShaderParamsBuffersReady())
             {
-                RecordTelemetry(AdvanceVisualFrameId(in timing), TelemetryFlagUploadSkipped, in parameters[0]);
+                RecordTelemetry(AdvanceVisualFrameId(in timing), TelemetryFlagUploadSkipped, in dto);
                 return;
             }
 
@@ -560,7 +570,8 @@ namespace Hecton8.World.FloraAmbientSway
                 return false;
             }
 
-            dto = parameters[0];
+            ref readonly FloraSwayParamsDTO source = ref ReadFirstParamsReadonly(parameters);
+            dto = source;
             return true;
         }
 
@@ -660,6 +671,12 @@ namespace Hecton8.World.FloraAmbientSway
 
             s_calculateKernel.Invoke(&job);
             return true;
+        }
+
+        private static unsafe ref readonly FloraSwayParamsDTO ReadFirstParamsReadonly(NativeArray<FloraSwayParamsDTO> parameters)
+        {
+            void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(parameters);
+            return ref UnsafeUtility.AsRef<FloraSwayParamsDTO>(ptr);
         }
 
         private bool EnsureVaultBuffers(IDataVault vault, bool clearExisting)
@@ -895,10 +912,10 @@ namespace Hecton8.World.FloraAmbientSway
                 {
                     writer.Write(TelemetrySourceHash);
                     writer.Write(ring.Length);
-                    writer.Write(cursorArray.IsCreated && cursorArray.Length > 0 ? cursorArray[0] : 0);
+                    writer.Write(ReadTelemetryCursor(cursorArray));
                     for (int i = 0; i < ring.Length; i++)
                     {
-                        SwayTelemetryEntry entry = ring[i];
+                        ref readonly SwayTelemetryEntry entry = ref ReadTelemetryEntryReadonly(ring, i);
                         writer.Write(entry.Frame);
                         writer.Write(entry.Flags);
                         writer.Write(entry.WrappedTime);
@@ -918,6 +935,21 @@ namespace Hecton8.World.FloraAmbientSway
             {
                 CrashTelemetryBuffer.ReportBlackBoxExportFailure();
             }
+        }
+
+        private static unsafe int ReadTelemetryCursor(NativeArray<int> cursorArray)
+        {
+            if (!cursorArray.IsCreated || cursorArray.Length == 0)
+                return 0;
+
+            int* cursor = (int*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(cursorArray);
+            return *cursor;
+        }
+
+        private static unsafe ref readonly SwayTelemetryEntry ReadTelemetryEntryReadonly(NativeArray<SwayTelemetryEntry> ring, int index)
+        {
+            SwayTelemetryEntry* entries = (SwayTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
+            return ref entries[index];
         }
 
         private bool EnsureShaderParamsBuffers()

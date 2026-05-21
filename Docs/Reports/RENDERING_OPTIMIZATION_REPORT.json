@@ -143,7 +143,7 @@
   "shinobu_275_screen_space_wound_decal_compressor": {
     "agentId": "SHINOBU_275",
     "scanner": "Decal_Projector_Inquisition",
-    "timestampUtc": "2026-05-21T19:34:06Z",
+    "timestampUtc": "2026-05-21T19:39:50Z",
     "evidenceClass": "STATIC_SOURCE_TARGETED",
     "scannedAssetCount": 5825,
     "candidateAssetCount": 336,
@@ -156,6 +156,11 @@
     "status": "PASS",
     "tokenHits": [
       {
+        "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+        "line": 617,
+        "text": "RequireNotContains(delta, \"DecalProjector\", \"Voxel laser burn path must not depend on DecalProjector.\") &&"
+      },
+      {
         "path": "Assets/_Project/Editor/ShorelineFoamGraftEditorTools.cs",
         "line": 102,
         "text": "internal static class ShorelineFoamDecalProjectorInquisition"
@@ -164,11 +169,6 @@
         "path": "Assets/_Project/Editor/ShorelineFoamGraftEditorTools.cs",
         "line": 138,
         "text": "decalProjectorHits += Contains(text, \"DecalProjector\");"
-      },
-      {
-        "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
-        "line": 617,
-        "text": "RequireNotContains(delta, \"DecalProjector\", \"Voxel laser burn path must not depend on DecalProjector.\") &&"
       }
     ],
     "activeViolations": [],

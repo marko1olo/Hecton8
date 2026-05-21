@@ -8,6 +8,7 @@ Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, compile, Play
 - Tool: `Tools/PolishMandateStaticAudit.py`
 - JSON artifact: `Docs/Reports/PROJECT_AUDIT_polish_private_native_risk_buckets.json`
 - Markdown artifact: `Docs/Reports/PROJECT_AUDIT_polish_private_native_risk_buckets.md`
+- Companion mutable API triage: `Docs/Reports/PROJECT_AUDIT_native_api_exposure_triage.md`
 - Command: `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_private_native_risk_buckets.json --report-path Docs\Reports\PROJECT_AUDIT_polish_private_native_risk_buckets.md`
 
 ## Raw Count Preservation
@@ -62,3 +63,5 @@ The serious current risk is the 776 owner-local runtime native fields across 97 
 The codebase has many systems that partially adopted Vault patterns while keeping old private persistent buffers in place. That is worse than either clean owner-local design or clean Vault ownership, because it creates ambiguous truth: a field can look local, backed by Vault, or mirrored into another route depending on the phase.
 
 The next real engineering step is not a broad refactor. It is route-by-route ownership reduction: one file, one fact family, one owner, one proof artifact.
+
+Companion API exposure scan now shows `nativeCollectionPublicMutableApiExposure=274` across 97 files. This is a separate but related smell: many read-looking methods return mutable native views. Private ownership cleanup should not be considered sufficient until public/internal native view exports are migrated to read-only adapters or explicit writer-lock routes.

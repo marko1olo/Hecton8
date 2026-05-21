@@ -7,6 +7,7 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -311,14 +312,14 @@ namespace Hecton8.Gameplay
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct SomaticKinematicsJob : IJob
     {
-        public NativeArray<PlayerKinematicState> State;
-        public NativeArray<PlayerBoundingSphere> BoundingSphere;
-        public NativeArray<SomaticHandStrokeSample> HandHistory;
-        [ReadOnly] public NativeArray<float> DragLut;
-        [ReadOnly] public NativeArray<SomaticKinematicsTuningData> Tuning;
-        public NativeArray<SomaticKinematicSignalScratch> SignalScratch;
-        public NativeArray<SomaticKinematicBlackBoxEntry> BlackBox;
-        public NativeArray<int> BlackBoxCursor;
+        [NoAlias] public NativeArray<PlayerKinematicState> State;
+        [NoAlias] public NativeArray<PlayerBoundingSphere> BoundingSphere;
+        [NoAlias] public NativeArray<SomaticHandStrokeSample> HandHistory;
+        [NoAlias, ReadOnly] public NativeArray<float> DragLut;
+        [NoAlias, ReadOnly] public NativeArray<SomaticKinematicsTuningData> Tuning;
+        [NoAlias] public NativeArray<SomaticKinematicSignalScratch> SignalScratch;
+        [NoAlias] public NativeArray<SomaticKinematicBlackBoxEntry> BlackBox;
+        [NoAlias] public NativeArray<int> BlackBoxCursor;
         public SomaticKinematicsFrameInput Input;
         public SomaticKinematicsFrameContext Context;
         public MockWorldSampler WorldSampler;
@@ -840,16 +841,17 @@ namespace Hecton8.Gameplay
         private const uint ShinobuExertionSignalLaneHash = 0x53484558u;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_06.h8dump";
         private const string CsvOverrideFileName = "kinematic_overrides.csv";
+        private const SystemID VaultOwnerSystem = SystemID.GameplayPlayer;
 
-        private VaultBufferHandle<PlayerKinematicState> _stateHandle;
-        private VaultBufferHandle<PlayerBoundingSphere> _sphereHandle;
-        private VaultBufferHandle<SomaticHandStrokeSample> _handHistoryHandle;
-        private VaultBufferHandle<SomaticKinematicsTuningData> _tuningHandle;
-        private VaultBufferHandle<float> _dragLutHandle;
-        private VaultBufferHandle<SomaticKinematicSignalScratch> _signalScratchHandle;
-        private VaultBufferHandle<SomaticKinematicBlackBoxEntry> _blackBoxHandle;
-        private VaultBufferHandle<int> _blackBoxCursorHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<PlayerKinematicState> _stateHandle;
+        private VaultGenerationHandle<PlayerBoundingSphere> _sphereHandle;
+        private VaultGenerationHandle<SomaticHandStrokeSample> _handHistoryHandle;
+        private VaultGenerationHandle<SomaticKinematicsTuningData> _tuningHandle;
+        private VaultGenerationHandle<float> _dragLutHandle;
+        private VaultGenerationHandle<SomaticKinematicSignalScratch> _signalScratchHandle;
+        private VaultGenerationHandle<SomaticKinematicBlackBoxEntry> _blackBoxHandle;
+        private VaultGenerationHandle<int> _blackBoxCursorHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
         private JobHandle _pendingJob;
         private IDataVault _dataVault;
         private IWeatherService _weatherService;
@@ -917,10 +919,12 @@ namespace Hecton8.Gameplay
 
         public unsafe ref PlayerKinematicState GetStateRef()
         {
-            if (!EnsureNativeState(false) || _dataVault == null)
+            if (!ResolveStateBuffer(out NativeArray<PlayerKinematicState> stateBuffer))
                 FatalMemoryException.ThrowStaleVaultHandle();
 
-            return ref _stateHandle.GetElementAsRef(_dataVault, 0);
+            return ref UnsafeUtility.ArrayElementAsRef<PlayerKinematicState>(
+                stateBuffer.GetUnsafePtr(),
+                0);
         }
 
         public void SetSeaglideState(bool active, float analog01, float3 controllerForward)
@@ -1018,9 +1022,7 @@ namespace Hecton8.Gameplay
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                CompletePendingJob(true);
-                ReleaseViews();
-                _dataVault = currentService as IDataVault;
+                BindDataVault(currentService as IDataVault, previousService as IDataVault);
                 EnsureNativeState(true);
             }
 
@@ -1139,7 +1141,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             _dataVault = vault;
-            if (!_stateHandle.IsCreated)
+            if (!AreSomaticVaultBuffersReady(vault))
             {
                 if (!allowColdInitialization)
                     return false;
@@ -1147,7 +1149,7 @@ namespace Hecton8.Gameplay
                 AllocateVaultBuffers(vault);
             }
 
-            if (!_stateHandle.IsCreated)
+            if (!AreSomaticVaultBuffersReady(vault))
                 return false;
 
             if (!_legacyScanAttempted && allowColdInitialization)
@@ -1161,22 +1163,29 @@ namespace Hecton8.Gameplay
 
         private void AllocateVaultBuffers(IDataVault vault)
         {
-            _stateHandle = vault.GetBufferHandle<PlayerKinematicState>(BufferID.ShinobuSomaticKinematicState, 1, SystemID.GameplayPlayer);
-            _sphereHandle = vault.GetBufferHandle<PlayerBoundingSphere>(BufferID.ShinobuSomaticBoundingSphere, 1, SystemID.GameplayPlayer);
-            _handHistoryHandle = vault.GetBufferHandle<SomaticHandStrokeSample>(BufferID.ShinobuSomaticHandStrokeHistory, HandHistoryCapacity, SystemID.GameplayPlayer);
-            _tuningHandle = vault.GetBufferHandle<SomaticKinematicsTuningData>(BufferID.ShinobuSomaticTuning, 1, SystemID.GameplayPlayer);
-            _dragLutHandle = vault.GetBufferHandle<float>(BufferID.ShinobuSomaticDragLut, DragLutCapacity, SystemID.GameplayPlayer);
-            _signalScratchHandle = vault.GetBufferHandle<SomaticKinematicSignalScratch>(BufferID.ShinobuSomaticSignalScratch, 1, SystemID.GameplayPlayer);
-            _blackBoxHandle = vault.GetBufferHandle<SomaticKinematicBlackBoxEntry>(BufferID.ShinobuSomaticBlackBox, BlackBoxCapacity, SystemID.GameplayPlayer);
-            _blackBoxCursorHandle = vault.GetBufferHandle<int>(BufferID.ShinobuSomaticBlackBoxCursor, 1, SystemID.GameplayPlayer);
-            _csvScratchHandle = vault.GetBufferHandle<byte>(BufferID.ShinobuSomaticCsvScratch, CsvScratchCapacity, SystemID.GameplayPlayer, NativeArrayOptions.UninitializedMemory);
-            InitializeBuffersIfCold(vault);
+            bool ready =
+                EnsureSomaticVaultBuffer(ref _stateHandle, BufferID.ShinobuSomaticKinematicState, 1, NativeArrayOptions.ClearMemory, out _) &&
+                EnsureSomaticVaultBuffer(ref _sphereHandle, BufferID.ShinobuSomaticBoundingSphere, 1, NativeArrayOptions.ClearMemory, out _) &&
+                EnsureSomaticVaultBuffer(ref _handHistoryHandle, BufferID.ShinobuSomaticHandStrokeHistory, HandHistoryCapacity, NativeArrayOptions.ClearMemory, out _) &&
+                EnsureSomaticVaultBuffer(ref _tuningHandle, BufferID.ShinobuSomaticTuning, 1, NativeArrayOptions.ClearMemory, out _) &&
+                EnsureSomaticVaultBuffer(ref _dragLutHandle, BufferID.ShinobuSomaticDragLut, DragLutCapacity, NativeArrayOptions.ClearMemory, out _) &&
+                EnsureSomaticVaultBuffer(ref _signalScratchHandle, BufferID.ShinobuSomaticSignalScratch, 1, NativeArrayOptions.ClearMemory, out _) &&
+                EnsureSomaticVaultBuffer(ref _blackBoxHandle, BufferID.ShinobuSomaticBlackBox, BlackBoxCapacity, NativeArrayOptions.ClearMemory, out _) &&
+                EnsureSomaticVaultBuffer(ref _blackBoxCursorHandle, BufferID.ShinobuSomaticBlackBoxCursor, 1, NativeArrayOptions.ClearMemory, out _) &&
+                EnsureSomaticVaultBuffer(ref _csvScratchHandle, BufferID.ShinobuSomaticCsvScratch, CsvScratchCapacity, NativeArrayOptions.UninitializedMemory, out _);
+
+            if (ready)
+            {
+                InitializeBuffersIfCold(vault);
+                return;
+            }
+
+            ReleaseSomaticVaultHandles(vault);
         }
 
         private void InitializeBuffersIfCold(IDataVault vault)
         {
-            NativeArray<PlayerKinematicState> stateBuffer = _stateHandle.Resolve(vault);
-            if (!stateBuffer.IsCreated || stateBuffer.Length == 0)
+            if (!TryResolveSomaticVaultBuffer(ref _stateHandle, BufferID.ShinobuSomaticKinematicState, 1, out NativeArray<PlayerKinematicState> stateBuffer))
                 return;
 
             float3 localPosition = _cachedTransform != null
@@ -1196,8 +1205,8 @@ namespace Hecton8.Gameplay
                 stateBuffer[0] = state;
             }
 
-            NativeArray<PlayerBoundingSphere> sphereBuffer = _sphereHandle.Resolve(vault);
-            if (sphereBuffer.IsCreated && sphereBuffer.Length > 0 && sphereBuffer[0].Radius <= 0.01f)
+            if (TryResolveSomaticVaultBuffer(ref _sphereHandle, BufferID.ShinobuSomaticBoundingSphere, 1, out NativeArray<PlayerBoundingSphere> sphereBuffer) &&
+                sphereBuffer[0].Radius <= 0.01f)
             {
                 PlayerBoundingSphere sphere = default;
                 sphere.CenterLocal = state.LocalPosition;
@@ -1206,13 +1215,15 @@ namespace Hecton8.Gameplay
                 sphereBuffer[0] = sphere;
             }
 
-            NativeArray<SomaticKinematicsTuningData> tuningBuffer = _tuningHandle.Resolve(vault);
-            if (tuningBuffer.IsCreated && tuningBuffer.Length > 0 && tuningBuffer[0].PlayerRadius <= 0.01f)
+            bool tuningReady = TryResolveSomaticVaultBuffer(ref _tuningHandle, BufferID.ShinobuSomaticTuning, 1, out NativeArray<SomaticKinematicsTuningData> tuningBuffer);
+            if (tuningReady && tuningBuffer[0].PlayerRadius <= 0.01f)
                 tuningBuffer[0] = SomaticKinematicsTuningData.CreateEmergency();
 
-            NativeArray<float> dragLut = _dragLutHandle.Resolve(vault);
-            if (dragLut.IsCreated && dragLut.Length >= DragLutCapacity && dragLut[0] <= 0f)
-                FillEmergencyDragLut(dragLut, tuningBuffer.IsCreated ? tuningBuffer[0].BaseDrag : 1.65f);
+            if (TryResolveSomaticVaultBuffer(ref _dragLutHandle, BufferID.ShinobuSomaticDragLut, DragLutCapacity, out NativeArray<float> dragLut) &&
+                dragLut[0] <= 0f)
+            {
+                FillEmergencyDragLut(dragLut, tuningReady ? tuningBuffer[0].BaseDrag : 1.65f);
+            }
 
             _mockWorldSampler = MockWorldSampler.Create(state.LocalPosition);
         }
@@ -1240,31 +1251,14 @@ namespace Hecton8.Gameplay
             if (vault == null)
                 return false;
 
-            state = _stateHandle.Resolve(vault);
-            sphere = _sphereHandle.Resolve(vault);
-            handHistory = _handHistoryHandle.Resolve(vault);
-            tuning = _tuningHandle.Resolve(vault);
-            dragLut = _dragLutHandle.Resolve(vault);
-            signalScratch = _signalScratchHandle.Resolve(vault);
-            blackBox = _blackBoxHandle.Resolve(vault);
-            blackBoxCursor = _blackBoxCursorHandle.Resolve(vault);
-
-            return state.IsCreated &&
-                   state.Length > 0 &&
-                   sphere.IsCreated &&
-                   sphere.Length > 0 &&
-                   handHistory.IsCreated &&
-                   handHistory.Length >= HandHistoryCapacity &&
-                   tuning.IsCreated &&
-                   tuning.Length > 0 &&
-                   dragLut.IsCreated &&
-                   dragLut.Length > 1 &&
-                   signalScratch.IsCreated &&
-                   signalScratch.Length > 0 &&
-                   blackBox.IsCreated &&
-                   blackBox.Length >= BlackBoxCapacity &&
-                   blackBoxCursor.IsCreated &&
-                   blackBoxCursor.Length > 0;
+            return TryResolveSomaticVaultBuffer(ref _stateHandle, BufferID.ShinobuSomaticKinematicState, 1, out state) &&
+                   TryResolveSomaticVaultBuffer(ref _sphereHandle, BufferID.ShinobuSomaticBoundingSphere, 1, out sphere) &&
+                   TryResolveSomaticVaultBuffer(ref _handHistoryHandle, BufferID.ShinobuSomaticHandStrokeHistory, HandHistoryCapacity, out handHistory) &&
+                   TryResolveSomaticVaultBuffer(ref _tuningHandle, BufferID.ShinobuSomaticTuning, 1, out tuning) &&
+                   TryResolveSomaticVaultBuffer(ref _dragLutHandle, BufferID.ShinobuSomaticDragLut, DragLutCapacity, out dragLut) &&
+                   TryResolveSomaticVaultBuffer(ref _signalScratchHandle, BufferID.ShinobuSomaticSignalScratch, 1, out signalScratch) &&
+                   TryResolveSomaticVaultBuffer(ref _blackBoxHandle, BufferID.ShinobuSomaticBlackBox, BlackBoxCapacity, out blackBox) &&
+                   TryResolveSomaticVaultBuffer(ref _blackBoxCursorHandle, BufferID.ShinobuSomaticBlackBoxCursor, 1, out blackBoxCursor);
         }
 
         private bool ResolveStateBuffer(out NativeArray<PlayerKinematicState> state)
@@ -1274,8 +1268,7 @@ namespace Hecton8.Gameplay
             if (vault == null)
                 return false;
 
-            state = _stateHandle.Resolve(vault);
-            return state.IsCreated && state.Length > 0;
+            return TryResolveSomaticVaultBuffer(ref _stateHandle, BufferID.ShinobuSomaticKinematicState, 1, out state);
         }
 
         private bool ResolveSphereBuffer(out NativeArray<PlayerBoundingSphere> sphere)
@@ -1285,8 +1278,7 @@ namespace Hecton8.Gameplay
             if (vault == null)
                 return false;
 
-            sphere = _sphereHandle.Resolve(vault);
-            return sphere.IsCreated && sphere.Length > 0;
+            return TryResolveSomaticVaultBuffer(ref _sphereHandle, BufferID.ShinobuSomaticBoundingSphere, 1, out sphere);
         }
 
         private bool ResolveTuningBuffers(out NativeArray<SomaticKinematicsTuningData> tuning, out NativeArray<float> dragLut)
@@ -1297,9 +1289,8 @@ namespace Hecton8.Gameplay
             if (vault == null)
                 return false;
 
-            tuning = _tuningHandle.Resolve(vault);
-            dragLut = _dragLutHandle.Resolve(vault);
-            return tuning.IsCreated && tuning.Length > 0 && dragLut.IsCreated;
+            return TryResolveSomaticVaultBuffer(ref _tuningHandle, BufferID.ShinobuSomaticTuning, 1, out tuning) &&
+                   TryResolveSomaticVaultBuffer(ref _dragLutHandle, BufferID.ShinobuSomaticDragLut, DragLutCapacity, out dragLut);
         }
 
         private bool ResolveBlackBoxBuffers(out NativeArray<SomaticKinematicBlackBoxEntry> blackBox, out NativeArray<int> cursor)
@@ -1310,9 +1301,8 @@ namespace Hecton8.Gameplay
             if (vault == null)
                 return false;
 
-            blackBox = _blackBoxHandle.Resolve(vault);
-            cursor = _blackBoxCursorHandle.Resolve(vault);
-            return blackBox.IsCreated && blackBox.Length > 0 && cursor.IsCreated && cursor.Length > 0;
+            return TryResolveSomaticVaultBuffer(ref _blackBoxHandle, BufferID.ShinobuSomaticBlackBox, BlackBoxCapacity, out blackBox) &&
+                   TryResolveSomaticVaultBuffer(ref _blackBoxCursorHandle, BufferID.ShinobuSomaticBlackBoxCursor, 1, out cursor);
         }
 
         private bool ResolveCsvScratch(out NativeArray<byte> scratch)
@@ -1322,8 +1312,86 @@ namespace Hecton8.Gameplay
             if (vault == null)
                 return false;
 
-            scratch = _csvScratchHandle.Resolve(vault);
-            return scratch.IsCreated && scratch.Length > 0;
+            return TryResolveSomaticVaultBuffer(ref _csvScratchHandle, BufferID.ShinobuSomaticCsvScratch, CsvScratchCapacity, out scratch);
+        }
+
+        private bool AreSomaticVaultBuffersReady(IDataVault vault)
+        {
+            return HasSomaticVaultBuffer(vault, in _stateHandle, BufferID.ShinobuSomaticKinematicState, 1) &&
+                   HasSomaticVaultBuffer(vault, in _sphereHandle, BufferID.ShinobuSomaticBoundingSphere, 1) &&
+                   HasSomaticVaultBuffer(vault, in _handHistoryHandle, BufferID.ShinobuSomaticHandStrokeHistory, HandHistoryCapacity) &&
+                   HasSomaticVaultBuffer(vault, in _tuningHandle, BufferID.ShinobuSomaticTuning, 1) &&
+                   HasSomaticVaultBuffer(vault, in _dragLutHandle, BufferID.ShinobuSomaticDragLut, DragLutCapacity) &&
+                   HasSomaticVaultBuffer(vault, in _signalScratchHandle, BufferID.ShinobuSomaticSignalScratch, 1) &&
+                   HasSomaticVaultBuffer(vault, in _blackBoxHandle, BufferID.ShinobuSomaticBlackBox, BlackBoxCapacity) &&
+                   HasSomaticVaultBuffer(vault, in _blackBoxCursorHandle, BufferID.ShinobuSomaticBlackBoxCursor, 1) &&
+                   HasSomaticVaultBuffer(vault, in _csvScratchHandle, BufferID.ShinobuSomaticCsvScratch, CsvScratchCapacity);
+        }
+
+        private bool EnsureSomaticVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            if (TryResolveSomaticVaultBuffer(ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystem, options);
+            return TryResolveSomaticVaultBuffer(ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private bool TryResolveSomaticVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            if (!IsSomaticVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool HasSomaticVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
+        {
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   requiredLength > 0 &&
+                   IsSomaticVaultHandle(in handle, bufferId) &&
+                   vault.TryReadHandle(in handle, out NativeArray<T> buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool IsSomaticVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)VaultOwnerSystem &&
+                   handle.Generation != 0u;
         }
 
         private bool TryLockSimulationBuffers()
@@ -1355,12 +1423,12 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private void UnlockSimulationBuffers()
+        private void UnlockSimulationBuffers(IDataVault vaultOverride = null)
         {
             if (!_buffersLocked)
                 return;
 
-            IDataVault vault = _dataVault;
+            IDataVault vault = vaultOverride ?? _dataVault;
             if (vault != null)
             {
                 vault.TryUnlockBuffer(BufferID.ShinobuSomaticBlackBoxCursor, SystemID.GameplayPlayer);
@@ -1489,12 +1557,7 @@ namespace Hecton8.Gameplay
             if (!ResolveStateBuffer(out NativeArray<PlayerKinematicState> stateBuffer))
                 return;
 
-            IDataVault vault = _dataVault;
-            if (vault == null)
-                return;
-
-            NativeArray<SomaticKinematicSignalScratch> scratchBuffer = _signalScratchHandle.Resolve(vault);
-            if (!scratchBuffer.IsCreated || scratchBuffer.Length == 0)
+            if (!TryResolveSomaticVaultBuffer(ref _signalScratchHandle, BufferID.ShinobuSomaticSignalScratch, 1, out NativeArray<SomaticKinematicSignalScratch> scratchBuffer))
                 return;
 
             PlayerKinematicState state = stateBuffer[0];
@@ -1881,9 +1944,19 @@ namespace Hecton8.Gameplay
 
         private void RebindServices()
         {
-            _dataVault = GlobalRegistry.DataVault;
+            BindDataVault(GlobalRegistry.DataVault, null);
             _weatherService = GlobalRegistry.Weather;
             _somaticProvider = GlobalRegistry.VRSomatic;
+        }
+
+        private void BindDataVault(IDataVault currentVault, IDataVault previousVault)
+        {
+            if (ReferenceEquals(_dataVault, currentVault))
+                return;
+
+            CompletePendingJob(true);
+            ReleaseViews(previousVault ?? _dataVault);
+            _dataVault = currentVault;
         }
 
         private void ResolveColdPaths()
@@ -1899,9 +1972,11 @@ namespace Hecton8.Gameplay
             return Path.GetFullPath(Path.Combine(_projectRoot, relativePath));
         }
 
-        private void ReleaseViews()
+        private void ReleaseViews(IDataVault releaseVault = null)
         {
-            UnlockSimulationBuffers();
+            IDataVault vault = releaseVault ?? _dataVault;
+            UnlockSimulationBuffers(vault);
+            ReleaseSomaticVaultHandles(vault);
             _stateHandle = default;
             _sphereHandle = default;
             _handHistoryHandle = default;
@@ -1913,6 +1988,30 @@ namespace Hecton8.Gameplay
             _csvScratchHandle = default;
             _jobPending = false;
             _pendingJob = default;
+        }
+
+        private void ReleaseSomaticVaultHandles(IDataVault vault)
+        {
+            ReleaseSomaticVaultHandle(vault, ref _stateHandle, BufferID.ShinobuSomaticKinematicState);
+            ReleaseSomaticVaultHandle(vault, ref _sphereHandle, BufferID.ShinobuSomaticBoundingSphere);
+            ReleaseSomaticVaultHandle(vault, ref _handHistoryHandle, BufferID.ShinobuSomaticHandStrokeHistory);
+            ReleaseSomaticVaultHandle(vault, ref _tuningHandle, BufferID.ShinobuSomaticTuning);
+            ReleaseSomaticVaultHandle(vault, ref _dragLutHandle, BufferID.ShinobuSomaticDragLut);
+            ReleaseSomaticVaultHandle(vault, ref _signalScratchHandle, BufferID.ShinobuSomaticSignalScratch);
+            ReleaseSomaticVaultHandle(vault, ref _blackBoxHandle, BufferID.ShinobuSomaticBlackBox);
+            ReleaseSomaticVaultHandle(vault, ref _blackBoxCursorHandle, BufferID.ShinobuSomaticBlackBoxCursor);
+            ReleaseSomaticVaultHandle(vault, ref _csvScratchHandle, BufferID.ShinobuSomaticCsvScratch);
+        }
+
+        private static void ReleaseSomaticVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            if (vault != null && IsSomaticVaultHandle(in handle, bufferId))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

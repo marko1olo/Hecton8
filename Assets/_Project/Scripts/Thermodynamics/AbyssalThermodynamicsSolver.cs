@@ -24,9 +24,7 @@ namespace Hecton8.Thermodynamics
         public const int CsvScratchBytes = 8192;
 
         private const int DefaultBatchSize = 64;
-        private const float ResolutionHysteresisSeconds = 3f;
         private const float DeterministicSimulationTickSeconds = 1f / 60f;
-        private const int MaxSimulationCadenceFrames = 12;
         private const float DefaultCellSizeMeters = 8f;
         private const float DefaultAmbientTemperatureCelsius = 2f;
         private const float DefaultWaterConductivity = 0.18f;
@@ -116,10 +114,6 @@ namespace Hecton8.Thermodynamics
         private GraphicsBuffer _thermalCellsBufferA;
         private GraphicsBuffer _thermalCellsBufferB;
         private int _thermalCellsUploadParity;
-        private int _desiredResolution = MaxResolution;
-        private float _resolutionSwitchTimer;
-        private bool _resolutionInitialized;
-        private int _cadenceFrameCursor;
 
         public static AbyssalThermodynamicsSolver ActiveRuntimeInstance { get; private set; }
         public bool IsInitialized => _nativeReady;
@@ -202,23 +196,12 @@ namespace Hecton8.Thermodynamics
             ThermalSolverConvergenceStateDTO* solverState = (ThermalSolverConvergenceStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(solverStateArray);
             ThermalResidualSlot64* solverResiduals = (ThermalResidualSlot64*)NativeArrayUnsafeUtility.GetUnsafePtr(solverResidualArray);
 
-            float quality = ResolveQualityWeight();
             uint nextFrame = _frame + 1u;
             CullExpiredTransientSources(sources, sourceCount, nextFrame);
             TryIngestThermalSourceSignals(sources, sourceCount, nextFrame);
             _hasRealSources = HasNonMockSources(sources, sourceCount);
 
-            int cadenceFrames = ResolveSimulationCadenceFrames(quality);
-            if (_frame != 0u)
-            {
-                _cadenceFrameCursor++;
-                if (_cadenceFrameCursor < cadenceFrames)
-                    return;
-            }
-
-            _cadenceFrameCursor = 0;
-            float simulationTickDelta = DeterministicSimulationTickSeconds * cadenceFrames;
-            ThermalGridTuningDTO tuning = BuildTuning(quality, simulationTickDelta);
+            ThermalGridTuningDTO tuning = BuildTuning();
             *tuningPtr = tuning;
             _frame = tuning.Frame;
             CullExpiredTransientSources(sources, sourceCount, tuning.Frame);
@@ -287,9 +270,9 @@ namespace Hecton8.Thermodynamics
             int jacobiPasses = math.max(1, tuning.JacobiIterations);
             ThermalGridTuningDTO passTuning = tuning;
             passTuning.JacobiIterations = 1;
-            float targetTolerance = AbyssalThermalMath.ResolveSolverTargetTolerance(tuning.GlobalQualityWeight);
-            float baseOmega = AbyssalThermalMath.ResolveSolverOmega(tuning.GlobalQualityWeight);
-            int residualSampleMask = AbyssalThermalMath.ResolveResidualSampleMask(tuning.GlobalQualityWeight);
+            float targetTolerance = AbyssalThermalMath.AuthoritativeSolverTargetTolerance;
+            float baseOmega = AbyssalThermalMath.AuthoritativeSolverOmega;
+            int residualSampleMask = AbyssalThermalMath.AuthoritativeResidualSampleMask;
             dependency = new InitializeThermalSolverConvergenceJob
             {
                 SolverState = solverState,
@@ -732,13 +715,10 @@ namespace Hecton8.Thermodynamics
                 tuning.AmbientTemperatureCelsius = math.isfinite(tuning.AmbientTemperatureCelsius) ? tuning.AmbientTemperatureCelsius : DefaultAmbientTemperatureCelsius;
                 tuning.WaterThermalConductivity = math.max(0.0001f, math.isfinite(tuning.WaterThermalConductivity) ? tuning.WaterThermalConductivity : DefaultWaterConductivity);
                 tuning.ConvectionSpeed = math.max(0f, math.isfinite(tuning.ConvectionSpeed) ? tuning.ConvectionSpeed : DefaultConvectionSpeed);
-                tuning.GlobalQualityWeight = math.saturate(math.isfinite(tuning.GlobalQualityWeight) ? tuning.GlobalQualityWeight : 1f);
-                tuning.JacobiIterations = AbyssalThermalMath.ResolveJacobiIterations(tuning.GlobalQualityWeight);
-                tuning.GridResolution = math.clamp(
-                    AbyssalThermalMath.SafeResolution(tuning.GridResolution),
-                    new int3(MinResolution, MinResolution, MinResolution),
-                    new int3(MaxResolution, MaxResolution, MaxResolution));
-                tuning.ActiveCellCount = math.clamp(tuning.GridResolution.x * tuning.GridResolution.y * tuning.GridResolution.z, 1, MaxCellCount);
+                tuning.GlobalQualityWeight = AbyssalThermalMath.AuthoritativeQualityWeight;
+                tuning.JacobiIterations = AbyssalThermalMath.ResolveJacobiIterations(AbyssalThermalMath.AuthoritativeQualityWeight);
+                tuning.GridResolution = new int3(MaxResolution, MaxResolution, MaxResolution);
+                tuning.ActiveCellCount = MaxCellCount;
                 tuning.DissipationPerStep = math.saturate(math.isfinite(tuning.DissipationPerStep) ? tuning.DissipationPerStep : DefaultDissipationPerStep);
                 tuning.MaxStableTemperatureCelsius = math.max(tuning.AmbientTemperatureCelsius + 1f, math.isfinite(tuning.MaxStableTemperatureCelsius) ? tuning.MaxStableTemperatureCelsius : DefaultMaxStableTemperatureCelsius);
                 tuning.HullInsulationConductivity = math.max(0.0001f, math.isfinite(tuning.HullInsulationConductivity) ? tuning.HullInsulationConductivity : DefaultHullInsulationConductivity);
@@ -750,7 +730,7 @@ namespace Hecton8.Thermodynamics
                 tuning.SubmarineHalfExtentX = math.max(0f, math.isfinite(tuning.SubmarineHalfExtentX) ? tuning.SubmarineHalfExtentX : 0f);
                 tuning.SubmarineHalfExtentY = math.max(0f, math.isfinite(tuning.SubmarineHalfExtentY) ? tuning.SubmarineHalfExtentY : 0f);
                 tuning.SubmarineHalfExtentZ = math.max(0f, math.isfinite(tuning.SubmarineHalfExtentZ) ? tuning.SubmarineHalfExtentZ : 0f);
-                tuning.SimulationTickDeltaSeconds = SanitizeSimulationTickDelta(tuning.SimulationTickDeltaSeconds);
+                tuning.SimulationTickDeltaSeconds = DeterministicSimulationTickSeconds;
                 tuningArray[0] = tuning;
                 ApplyTuningToSerializedFields(tuning);
                 return true;
@@ -808,7 +788,7 @@ namespace Hecton8.Thermodynamics
             _solverResidualSamples = Acquire<ThermalResidualSlot64>(SolverResidualSamplesId, AbyssalThermalMath.ResidualThreadSlotCount);
             _solverDumpLatch = Acquire<int>(SolverDumpLatchId, 1);
 
-            ThermalGridTuningDTO tuning = BuildTuning(ResolveQualityWeight(), DeterministicSimulationTickSeconds);
+            ThermalGridTuningDTO tuning = BuildTuning();
             if (!TryResolveArray(_vault, in _tuning, 1, out NativeArray<ThermalGridTuningDTO> tuningArray) ||
                 !TryResolveArray(_vault, in _sourceCount, 1, out NativeArray<int> sourceCountArray) ||
                 !TryResolveArray(_vault, in _profileCount, 1, out NativeArray<int> profileCountArray) ||
@@ -920,12 +900,12 @@ namespace Hecton8.Thermodynamics
             throw new InvalidOperationException("Abyssal thermodynamics requires GlobalDataVault before boot.");
         }
 
-        private ThermalGridTuningDTO BuildTuning(float quality, float simulationTickDeltaSeconds)
+        private ThermalGridTuningDTO BuildTuning()
         {
-            float safeQuality = math.saturate(math.isfinite(quality) ? quality : 1f);
-            float safeSimulationTickDelta = SanitizeSimulationTickDelta(simulationTickDeltaSeconds);
-            _activeResolution = ResolveStableResolution(safeQuality, safeSimulationTickDelta);
-            _activeCellCount = _activeResolution * _activeResolution * _activeResolution;
+            float safeQuality = AbyssalThermalMath.AuthoritativeQualityWeight;
+            const float safeSimulationTickDelta = DeterministicSimulationTickSeconds;
+            _activeResolution = MaxResolution;
+            _activeCellCount = MaxCellCount;
             float safeCellSize = math.max(0.001f, math.isfinite(cellSizeMeters) ? cellSizeMeters : DefaultCellSizeMeters);
             double3 anchorAup = TryResolveAnchorAup(out double3 resolvedAnchorAup)
                 ? resolvedAnchorAup
@@ -1002,58 +982,13 @@ namespace Hecton8.Thermodynamics
             return math.all(math.isfinite(anchorAup));
         }
 
-        private float ResolveQualityWeight()
+        private float ResolveVisualQualityWeight()
         {
             if (useQualityOverride)
                 return math.saturate(math.isfinite(qualityOverride) ? qualityOverride : 1f);
 
             float weight = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.isfinite(weight) ? weight : 1f);
-        }
-
-        private static int ResolveSimulationCadenceFrames(float quality)
-        {
-            float q = math.saturate(math.isfinite(quality) ? quality : 1f);
-            float smooth = q * q * (3f - (2f * q));
-            return math.clamp((int)math.round(math.lerp(MaxSimulationCadenceFrames, 1f, smooth)), 1, MaxSimulationCadenceFrames);
-        }
-
-        private static float SanitizeSimulationTickDelta(float value)
-        {
-            return math.clamp(math.isfinite(value) ? value : DeterministicSimulationTickSeconds, DeterministicSimulationTickSeconds, DeterministicSimulationTickSeconds * MaxSimulationCadenceFrames);
-        }
-
-        private int ResolveStableResolution(float quality, float deltaTime)
-        {
-            int resolved = AbyssalThermalMath.ResolveActiveResolution(quality, MinResolution, MaxResolution);
-            if (!_resolutionInitialized)
-            {
-                _resolutionInitialized = true;
-                _desiredResolution = resolved;
-                _resolutionSwitchTimer = 0f;
-                return resolved;
-            }
-
-            if (resolved == _activeResolution)
-            {
-                _desiredResolution = resolved;
-                _resolutionSwitchTimer = 0f;
-                return _activeResolution;
-            }
-
-            if (resolved != _desiredResolution)
-            {
-                _desiredResolution = resolved;
-                _resolutionSwitchTimer = 0f;
-                return _activeResolution;
-            }
-
-            _resolutionSwitchTimer += math.max(0f, deltaTime);
-            if (_resolutionSwitchTimer < ResolutionHysteresisSeconds)
-                return _activeResolution;
-
-            _resolutionSwitchTimer = 0f;
-            return _desiredResolution;
         }
 
         private static uint ComputeStateHash(int resolution, int iterations, float quality)
@@ -1268,7 +1203,7 @@ namespace Hecton8.Thermodynamics
                     new int3(MaxResolution, MaxResolution, MaxResolution));
                 float safeCellSize = math.max(0.001f, math.isfinite(tuning.CellSizeMeters) ? tuning.CellSizeMeters : DefaultCellSizeMeters);
                 float safeAmbient = math.isfinite(tuning.AmbientTemperatureCelsius) ? tuning.AmbientTemperatureCelsius : DefaultAmbientTemperatureCelsius;
-                float safeQuality = math.saturate(math.isfinite(tuning.GlobalQualityWeight) ? tuning.GlobalQualityWeight : ResolveQualityWeight());
+                float safeQuality = ResolveVisualQualityWeight();
                 Shader.SetGlobalVector(ThermalGridMetaId, new Vector4(safeResolution.x, safeCellSize, safeAmbient, safeQuality));
                 double3 origin = tuning.GridOriginAup;
                 float safeConvection = math.max(0f, math.isfinite(tuning.ConvectionSpeed) ? tuning.ConvectionSpeed : DefaultConvectionSpeed);
@@ -1276,7 +1211,7 @@ namespace Hecton8.Thermodynamics
             }
             else
             {
-                Shader.SetGlobalVector(ThermalGridMetaId, new Vector4(_activeResolution, math.max(0.001f, cellSizeMeters), ambientTemperatureCelsius, ResolveQualityWeight()));
+                Shader.SetGlobalVector(ThermalGridMetaId, new Vector4(_activeResolution, math.max(0.001f, cellSizeMeters), ambientTemperatureCelsius, ResolveVisualQualityWeight()));
             }
 
             _thermalCellsUploadParity ^= 1;

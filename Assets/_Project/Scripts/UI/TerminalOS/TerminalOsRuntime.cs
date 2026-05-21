@@ -240,13 +240,14 @@ namespace Hecton8.UI
             if (!_nativeResourcesReady)
                 return;
 
-            int frame = Time.frameCount;
-            int simulationFrame = ResolveSimulationFrame(frame);
+            int ownerFrame = Time.frameCount;
+            bool hasSimulationFrame = TryResolveSimulationFrame(out int simulationFrame);
+            int decryptionFinalizeFrame = hasSimulationFrame ? simulationFrame : ResolveScheduledDecryptionFrameForOwner();
             RefreshRuntimeOriginSnapshotForOwner();
             RefreshScalabilityPolicy();
             TryFinalizeClickResolveJob();
             TryFinalizeTerminalInteractionJob();
-            TryFinalizeDecryptionJob(simulationFrame);
+            TryFinalizeDecryptionJob(decryptionFinalizeFrame);
 
             bool visualPipelineBlocked = false;
             if (_formatScheduled)
@@ -261,8 +262,8 @@ namespace Hecton8.UI
                 }
             }
 
-            TryMonitorLayoutCsv(frame);
-            TryMonitorDecryptionCsv(frame);
+            TryMonitorLayoutCsv(ownerFrame);
+            TryMonitorDecryptionCsv(ownerFrame);
 
             int dirtyCount = 0;
             int dispatchedCount = 0;
@@ -281,22 +282,25 @@ namespace Hecton8.UI
 
             _lastDirtyCount = dirtyCount;
             _lastDispatchedCount = dispatchedCount;
-            if (!_decryptionScheduled && _lastDecryptionTelemetryFrame != simulationFrame)
-                RecordDecryptionTelemetry(simulationFrame, _lastDecryptionFaultFlags);
-            TryScheduleDecryptionPipeline(simulationFrame);
+            if (hasSimulationFrame)
+            {
+                if (!_decryptionScheduled && _lastDecryptionTelemetryFrame != simulationFrame)
+                    RecordDecryptionTelemetry(simulationFrame, _lastDecryptionFaultFlags);
+                TryScheduleDecryptionPipeline(simulationFrame);
+            }
             if (!visualPipelineBlocked)
                 UpdatePanelInstancesIfNeeded();
-            TryScheduleTerminalInteractionPipeline(frame, !visualPipelineBlocked);
+            TryScheduleTerminalInteractionPipeline(ownerFrame, !visualPipelineBlocked);
             TryScheduleClickResolveJob();
             if (!visualPipelineBlocked)
-                TryScheduleFormatJob(frame);
+                TryScheduleFormatJob(ownerFrame);
             RenderInstancedPanels();
             uint faultFlags = _lastFaultFlags;
             if (_terminalCount >= TerminalOsConstants.ActiveTargetTerminals && _lastFormatMainThreadMilliseconds > 0.5f)
                 faultFlags |= FaultFormatBudget;
             if (faultFlags != 0u)
                 TryDumpBlackBox(faultFlags);
-            RecordTelemetry(frame, dirtyCount, dispatchedCount, faultFlags);
+            RecordTelemetry(ownerFrame, dirtyCount, dispatchedCount, faultFlags);
         }
 
         public bool QueueClick(in TerminalClickSignal signal)
@@ -1085,13 +1089,24 @@ namespace Hecton8.UI
             return (clamped + 7) & ~7;
         }
 
-        private static int ResolveSimulationFrame(int fallbackFrame)
+        private static bool TryResolveSimulationFrame(out int frame)
         {
             uint frameId = SystemDispatcher.CurrentFrameId;
             if (frameId == 0u)
-                return fallbackFrame;
+            {
+                frame = 0;
+                return false;
+            }
 
-            return frameId > int.MaxValue ? int.MaxValue : (int)frameId;
+            frame = frameId > 2147483647u ? int.MaxValue : (int)frameId;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int ResolveScheduledDecryptionFrameForOwner()
+        {
+            uint frame = _decryptionScheduleFrame;
+            return frame > 2147483647u ? int.MaxValue : (int)frame;
         }
 
         private void EnsureNativeResources()
@@ -1203,26 +1218,50 @@ namespace Hecton8.UI
 
         private bool ValidateNativeBuffers()
         {
-            return TryOpenVaultBuffer(ref _terminalStatesHandle, out NativeArray<TerminalStateDTO> _) &&
-                   TryOpenVaultBuffer(ref _screenCommandsHandle, out NativeArray<ScreenCommandDTO> _) &&
-                   TryOpenVaultBuffer(ref _glyphUvsHandle, out NativeArray<float4> _) &&
-                   TryOpenVaultBuffer(ref _terminalPositionsHandle, out NativeArray<float4> _) &&
-                   TryOpenVaultBuffer(ref _terminalForwardHandle, out NativeArray<float4> _) &&
-                   TryOpenVaultBuffer(ref _dirtyIndicesHandle, out NativeArray<int> _) &&
-                   TryOpenVaultBuffer(ref _telemetryRingHandle, out NativeArray<TerminalTelemetryEntry> _) &&
-                   TryOpenVaultBuffer(ref _mockPowerSignalHandle, out NativeArray<MockPowerStateSignal> _) &&
-                   TryOpenVaultBuffer(ref _mockDamageSignalHandle, out NativeArray<MockDamageScalarSignal> _) &&
-                   TryOpenVaultBuffer(ref _mockPowerStatusSignalHandle, out NativeArray<MockPowerStatusSignal> _) &&
-                   TryOpenVaultBuffer(ref _buttonAabbHandle, out NativeArray<ButtonAABBDTO> _) &&
-                   TryOpenVaultBuffer(ref _panelInstancesHandle, out NativeArray<TerminalPanelInstanceDTO> _) &&
-                   TryOpenVaultBuffer(ref _clickScratchHandle, out NativeArray<TerminalClickSignal> _) &&
-                   TryOpenVaultBuffer(ref _terminalPlanesHandle, out NativeArray<TerminalPlaneDTO> _) &&
-                   TryOpenVaultBuffer(ref _gazeRayHandle, out NativeArray<GazeRayDTO> _) &&
-                   TryOpenVaultBuffer(ref _terminalInteractionsHandle, out NativeArray<TerminalInteractionDTO> _) &&
-                   TryOpenVaultBuffer(ref _decryptionPuzzlesHandle, out NativeArray<DecryptionPuzzleDTO> _) &&
-                   TryOpenVaultBuffer(ref _decryptionTerminalsHandle, out NativeArray<DecryptionTerminalDTO> _) &&
-                   TryOpenVaultBuffer(ref _decryptionKnobInputHandle, out NativeArray<DecryptionKnobInputDTO> _) &&
-                   TryOpenVaultBuffer(ref _decryptionTelemetryRingHandle, out NativeArray<DecryptionTelemetryEntry> _);
+            if (!TryOpenVaultBuffer(ref _terminalStatesHandle, out NativeArray<TerminalStateDTO> terminalStates) ||
+                !TryOpenVaultBuffer(ref _screenCommandsHandle, out NativeArray<ScreenCommandDTO> screenCommands) ||
+                !TryOpenVaultBuffer(ref _glyphUvsHandle, out NativeArray<float4> glyphUvs) ||
+                !TryOpenVaultBuffer(ref _terminalPositionsHandle, out NativeArray<float4> terminalPositions) ||
+                !TryOpenVaultBuffer(ref _terminalForwardHandle, out NativeArray<float4> terminalForward) ||
+                !TryOpenVaultBuffer(ref _dirtyIndicesHandle, out NativeArray<int> dirtyIndices) ||
+                !TryOpenVaultBuffer(ref _telemetryRingHandle, out NativeArray<TerminalTelemetryEntry> telemetryRing) ||
+                !TryOpenVaultBuffer(ref _mockPowerSignalHandle, out NativeArray<MockPowerStateSignal> mockPowerSignal) ||
+                !TryOpenVaultBuffer(ref _mockDamageSignalHandle, out NativeArray<MockDamageScalarSignal> mockDamageSignal) ||
+                !TryOpenVaultBuffer(ref _mockPowerStatusSignalHandle, out NativeArray<MockPowerStatusSignal> mockPowerStatusSignal) ||
+                !TryOpenVaultBuffer(ref _buttonAabbHandle, out NativeArray<ButtonAABBDTO> buttonAabbs) ||
+                !TryOpenVaultBuffer(ref _panelInstancesHandle, out NativeArray<TerminalPanelInstanceDTO> panelInstances) ||
+                !TryOpenVaultBuffer(ref _clickScratchHandle, out NativeArray<TerminalClickSignal> clickScratch) ||
+                !TryOpenVaultBuffer(ref _terminalPlanesHandle, out NativeArray<TerminalPlaneDTO> terminalPlanes) ||
+                !TryOpenVaultBuffer(ref _gazeRayHandle, out NativeArray<GazeRayDTO> gazeRays) ||
+                !TryOpenVaultBuffer(ref _terminalInteractionsHandle, out NativeArray<TerminalInteractionDTO> interactions) ||
+                !TryOpenVaultBuffer(ref _decryptionPuzzlesHandle, out NativeArray<DecryptionPuzzleDTO> decryptionPuzzles) ||
+                !TryOpenVaultBuffer(ref _decryptionTerminalsHandle, out NativeArray<DecryptionTerminalDTO> decryptionTerminals) ||
+                !TryOpenVaultBuffer(ref _decryptionKnobInputHandle, out NativeArray<DecryptionKnobInputDTO> decryptionKnobInput) ||
+                !TryOpenVaultBuffer(ref _decryptionTelemetryRingHandle, out NativeArray<DecryptionTelemetryEntry> decryptionTelemetryRing))
+            {
+                return false;
+            }
+
+            return terminalStates.Length >= _terminalCount &&
+                   screenCommands.Length >= _terminalCount &&
+                   glyphUvs.Length >= TerminalOsConstants.GlyphCount &&
+                   terminalPositions.Length >= _terminalCount &&
+                   terminalForward.Length >= _terminalCount &&
+                   dirtyIndices.Length >= _terminalCount &&
+                   telemetryRing.Length >= TerminalOsConstants.BlackBoxFrameCount &&
+                   mockPowerSignal.Length >= 1 &&
+                   mockDamageSignal.Length >= 1 &&
+                   mockPowerStatusSignal.Length >= 1 &&
+                   buttonAabbs.Length >= TerminalOsConstants.ButtonAabbCapacity &&
+                   panelInstances.Length >= _terminalCount &&
+                   clickScratch.Length >= TerminalOsConstants.MaxQueuedClicks &&
+                   terminalPlanes.Length >= _terminalCount &&
+                   gazeRays.Length >= 1 &&
+                   interactions.Length >= _terminalCount &&
+                   decryptionPuzzles.Length >= _terminalCount &&
+                   decryptionTerminals.Length >= _terminalCount &&
+                   decryptionKnobInput.Length >= 1 &&
+                   decryptionTelemetryRing.Length >= TerminalOsConstants.BlackBoxFrameCount;
         }
 
         private bool TryOpenVaultBuffer<T>(ref VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
@@ -2152,7 +2191,7 @@ namespace Hecton8.UI
             AuditLatestInteractions();
         }
 
-        private void TryScheduleDecryptionPipeline(int frame)
+        private void TryScheduleDecryptionPipeline(int simulationFrame)
         {
             if (!decryptionEnabled ||
                 _decryptionScheduled ||
@@ -2164,22 +2203,25 @@ namespace Hecton8.UI
                 return;
             }
 
-            CaptureDecryptionKnobInputForOwner(frame, knobInput);
+            if (knobInput.Length == 0)
+                return;
+
+            CaptureDecryptionKnobInputForOwner(simulationFrame, knobInput);
             DecryptionKnobInputDTO capturedInput = knobInput.Length > 0 ? knobInput[0] : default;
             bool inputGrabbed =
                 (capturedInput.Flags & (TerminalOsConstants.DecryptionKnobFlagActive | TerminalOsConstants.DecryptionKnobFlagGrab)) ==
                 (TerminalOsConstants.DecryptionKnobFlagActive | TerminalOsConstants.DecryptionKnobFlagGrab);
             int evaluationStride = inputGrabbed ? 1 : math.max(1, _decryptionFramesBetweenEvaluations);
-            if (evaluationStride > 1 && frame % evaluationStride != 0)
+            if (evaluationStride > 1 && simulationFrame % evaluationStride != 0)
                 return;
 
-            int puzzleCount = math.min(_terminalCount, puzzles.Length);
+            int puzzleCount = math.min(_terminalCount, math.min(puzzles.Length, decryptionTerminals.Length));
             if (puzzleCount <= 0)
                 return;
 
             DecryptionPuzzleDTO* puzzlePtr = (DecryptionPuzzleDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(puzzles);
             _decryptionScheduleTicks = Stopwatch.GetTimestamp();
-            _decryptionScheduleFrame = (uint)frame;
+            _decryptionScheduleFrame = (uint)simulationFrame;
 
             _decryptionHandle = new EvaluateDecryptionPipelineJob
             {
@@ -2192,14 +2234,14 @@ namespace Hecton8.UI
                 FreqWeight = decryptionFrequencyWeight,
                 PhaseWeight = decryptionPhaseWeight,
                 SolveThreshold01 = 1f - math.clamp(decryptionSnapTolerance01, 0.001f, 0.2f),
-                Frame = (uint)frame,
+                Frame = (uint)simulationFrame,
                 StepFrames = (uint)evaluationStride,
                 UnlockedSignals = SignalBus<TerminalUnlockedSignal>.OpenParallelWriter()
             }.Schedule();
             _decryptionScheduled = true;
         }
 
-        private void TryFinalizeDecryptionJob(int frame)
+        private void TryFinalizeDecryptionJob(int simulationFrame)
         {
             if (!_decryptionScheduled)
                 return;
@@ -2219,14 +2261,14 @@ namespace Hecton8.UI
                 faultFlags |= FaultDecryptionNonFinite;
 
             _lastDecryptionFaultFlags = faultFlags;
-            RecordDecryptionTelemetry(frame, faultFlags);
+            RecordDecryptionTelemetry(simulationFrame, faultFlags);
             _decryptionBufferUploadDirty = true;
             UploadDecryptionPuzzles();
             if ((faultFlags & (FaultDecryptionBudget | FaultDecryptionNonFinite)) != 0u)
                 TryDumpDecryptionBlackBox(faultFlags);
         }
 
-        private void CaptureDecryptionKnobInputForOwner(int frame, NativeArray<DecryptionKnobInputDTO> knobInput)
+        private void CaptureDecryptionKnobInputForOwner(int simulationFrame, NativeArray<DecryptionKnobInputDTO> knobInput)
         {
             if (!knobInput.IsCreated || knobInput.Length == 0)
                 return;
@@ -2235,7 +2277,7 @@ namespace Hecton8.UI
             {
                 Flags = TerminalOsConstants.DecryptionKnobFlagActive,
                 DeltaTime = HectonPhysicsContract.FixedDeltaTimeSeconds,
-                Frame = (uint)frame
+                Frame = (uint)simulationFrame
             };
 
             float2 analogDeltaSource = default;
@@ -3285,7 +3327,7 @@ namespace Hecton8.UI
             _telemetryCursor = (_telemetryCursor + 1) % TerminalOsConstants.BlackBoxFrameCount;
         }
 
-        private void RecordDecryptionTelemetry(int frame, uint faultFlags)
+        private void RecordDecryptionTelemetry(int simulationFrame, uint faultFlags)
         {
             if (!TryOpenVaultBuffer(ref _decryptionTelemetryRingHandle, out NativeArray<DecryptionTelemetryEntry> telemetryRing) ||
                 !TryOpenVaultBuffer(ref _decryptionPuzzlesHandle, out NativeArray<DecryptionPuzzleDTO> puzzles) ||
@@ -3307,7 +3349,7 @@ namespace Hecton8.UI
             int telemetryIndex = math.clamp(_decryptionTelemetryCursor, 0, telemetryRing.Length - 1);
             telemetryRing[telemetryIndex] = new DecryptionTelemetryEntry
             {
-                Frame = (uint)frame,
+                Frame = (uint)simulationFrame,
                 PuzzleID = puzzle.PuzzleID,
                 PlayerFrequency = puzzle.PlayerFrequency,
                 PlayerPhase = puzzle.PlayerPhase,
@@ -3320,7 +3362,7 @@ namespace Hecton8.UI
                 TerminalHash = terminal.TerminalHash,
                 FaultFlags = faultFlags
             };
-            _lastDecryptionTelemetryFrame = frame;
+            _lastDecryptionTelemetryFrame = simulationFrame;
             _decryptionTelemetryCursor = (_decryptionTelemetryCursor + 1) % telemetryRing.Length;
         }
 
