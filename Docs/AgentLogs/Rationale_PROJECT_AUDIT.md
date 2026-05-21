@@ -368,3 +368,15 @@ Solution: Classified and excluded those routes from read-only narrowing. The uns
 Rejected Alternatives: Narrowing generic Vault-open helpers by name, because several call sites write event slots, tuning, telemetry, output, CSV scratch, celestial buffers, and editor tuning arrays; adding read-only overloads without call-site migration proof.
 Scalability potential: Low/MX350/Quest avoids destabilizing seismic/tide ownership and writer routes. Middle/high/ultra can keep richer seismic/celestial outputs without accidental API churn in shared Vault helpers.
 Hardware Impact: 0 us measured. Read-only subagent triage only; no source edit, Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Problem: `BaseModuleCatalogRuntime.TryGetModuleSocketRangeFromVault` exposed immutable catalog socket definitions as a mutable native array to construction graph and editor gizmo readers.
+Solution: Converted the socket range route, `TryGetSocketRange`, and observed construction/editor helper signatures to `NativeArray<SocketDefinitionDTO>.ReadOnly`.
+Rejected Alternatives: Narrowing `TryLoadCatalogBytes` or `TryStartCatalogByteLoad`, because those methods intentionally hydrate a Vault byte lane; changing module/catalog DTO layout; copying sockets to managed arrays.
+Scalability potential: Low/MX350/Quest keeps construction adjacency indexing zero-copy and prevents external mutation of catalog socket truth. Middle/high/ultra can index larger module catalogs without changing authority ownership or allocation shape.
+Hardware Impact: 0 us measured. Static outcome after `Docs/Reports/PROJECT_AUDIT_polish_after_catalog_ecosystem_readonly.json`: `nativeCollectionPublicMutableApiExposure=215`, `nativeApiExposureOutRefMutable=164`, and `nativeApiRiskRuntimeOutRefMutableView=91`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Problem: `EcosystemDirector.GetBiomassSaveSnapshotArray` returned a mutable native array even though the subagent triage found no first-party call sites and the name is a snapshot/read accessor.
+Solution: Converted only that biomass save snapshot accessor to `NativeArray<EcosystemBiomassSaveRun>.ReadOnly`.
+Rejected Alternatives: Converting `GetSaveSnapshotArray` in the same pass, because the single SaveManager consumer cascades into save-section signatures and unsafe pointer-copy code; changing ecosystem save DTO layout or Vault aliases.
+Scalability potential: Low/MX350/Quest keeps save snapshot access zero-copy with no extra memory pressure. Middle/high/ultra can preserve richer ecosystem save data without opening mutable biomass run state to external writers.
+Hardware Impact: 0 us measured. Static outcome after `Docs/Reports/PROJECT_AUDIT_polish_after_catalog_ecosystem_readonly.json`: `nativeApiExposureMutableReturn=51`, down from 52 before the native-return pass. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

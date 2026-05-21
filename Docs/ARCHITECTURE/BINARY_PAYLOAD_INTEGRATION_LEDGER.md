@@ -4924,6 +4924,13 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Authority impact: quality remains a local presentation scalar from `HomeostasisBrain.GlobalQualityWeight`. Vitals/PDA/radiation/system-health signal facts, NativeQueue capacities, DataVault handles, and blackbox dump format are unchanged.
 - Verification: targeted scan clean for scalability listener/callback/registration, `GlobalRegistry.Scalability*`, quality tier, scalability tier, low-tier route, and `LOW LOD` text in `WristHologramHudRuntime.cs`; `git diff --check` passed with line-ending warning only. Build was not launched because CPU probe returned 93% with active `dotnet` and `csc` processes.
 
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON OpenXR Manual Override Lever Quality Pull Note
+
+- `Assets/_Project/Scripts/UI/VR/OpenXRManualOverrideLever.cs` removed scalability-event listener routing and now refreshes continuous IK quality in the dispatcher tick.
+- Binary payload impact: none. Native lever arrays, blackbox telemetry ring, prologue signal publication, haptic payloads, and serialized lever fields are unchanged. The `FormerlySerializedAs("lowTierIkBlend")` migration string remains as inert serialization compatibility metadata.
+- Authority impact: quality scales only IK blend presentation. Lever angle integration, latch truth, haptics, input route, and prologue completion signal ownership are unchanged.
+- Verification: targeted scan clean for active scalability listener/callback/registration, quality tier, scalability tier, low-tier runtime route, and hard 0.3 quality telemetry cutoff in `OpenXRManualOverrideLever.cs`; `git diff --check` passed with line-ending warning only. Build guard will be rechecked after documentation.
+
 ## 2026-05-22 - SHINOBU_275 Visor Wound Disk-State Texture Binding And Constants Clear Ownership
 
 - `Assets/_Project/Scripts/Visor/DeferredDecalPass.cs` and `Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs` now bind wound atlas, crack, lens dirt, blue-noise, and VR comfort textures through `RasterCommandBuffer.SetGlobalTexture` in the active disk source.

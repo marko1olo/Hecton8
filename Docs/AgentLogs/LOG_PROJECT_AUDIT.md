@@ -540,3 +540,15 @@ Cinematic Cheats used: None added. This was route protection, not simulation wor
 Exact Microseconds saved: 0 us measured. Static debt unchanged by design.
 
 Evidence: Subagent `019e4ce5-d823-70d2-99bf-5611a680fed2` reported no safe candidates: helper call sites include event slot, tuning, telemetry, output, CSV scratch, celestial buffer, commit/swap, and editor tuning writes. No source edit, Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Catalog Socket And Ecosystem Biomass Snapshot Narrowing
+
+What was wrong: `BaseModuleCatalogRuntime.TryGetModuleSocketRangeFromVault` returned mutable catalog socket arrays to read-only construction graph/editor consumers. `EcosystemDirector.GetBiomassSaveSnapshotArray` returned a mutable biomass save snapshot despite having no first-party call sites.
+
+What was done: Converted the base-module socket range route, `TryGetSocketRange`, and observed construction/editor socket range consumers to `NativeArray<SocketDefinitionDTO>.ReadOnly`. Converted only the biomass save snapshot accessor to `NativeArray<EcosystemBiomassSaveRun>.ReadOnly`.
+
+Cinematic Cheats used: No new simulation. Construction still uses compact socket catalog indexing instead of scene scans, and ecosystem biomass save data stays a packed snapshot rather than object-level serialization churn.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `217` to `215`, `nativeApiExposureOutRefMutable` from `165` to `164`, and `nativeApiExposureMutableReturn` from `52` to `51`.
+
+Evidence: Focused scans found read-only socket range declarations in `BaseModuleCatalogRuntime`, `HabitatConstructionManager`, `HabitatGraphManager`, and `BaseModuleCatalogEditorTools`, plus a read-only biomass accessor in `EcosystemDirector`. `python Tools\PolishMandateStaticAudit.py --source-root Assets/_Project/Scripts --report-path Docs/Reports/PROJECT_AUDIT_polish_after_catalog_ecosystem_readonly.md --json-path Docs/Reports/PROJECT_AUDIT_polish_after_catalog_ecosystem_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=215`, `nativeApiExposureBuildPlayerRuntime=202`, `nativeApiExposureOutRefMutable=164`, and `nativeApiExposureMutableReturn=51`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

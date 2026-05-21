@@ -3410,3 +3410,36 @@ Verification:
     Targeted scan found no `IScalabilityChangedEventListener`, `ScalabilityEvents`, `ScalabilityChangedEvent`, callback/register/unregister state, `GlobalRegistry.Scalability*`, `QualityTier`, `ScalabilityTier`, `LowTier`, `lowTier`, or `LOW LOD` route in `WristHologramHudRuntime.cs`. `git diff --check` passed with line-ending warning only. Build was not launched because CPU probe returned 93 percent with active `dotnet` and `csc`.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="OpenXRManualOverrideLeverQualityPull">
+  <WHAT_WAS_WRONG>
+    `OpenXRManualOverrideLever` retained a scalability event listener solely to refresh a continuous IK quality scalar, and telemetry bit 2 used a hard `_ikQualityWeight01 <= 0.3f` cutoff.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the alias import, listener interface, registration flag, register/unregister calls, latch cleanup call, and callback. `Tick` now pulls `HomeostasisBrain.GlobalQualityWeight` before lever/IK integration. Telemetry bit 2 now represents continuous quality pressure via `ResolveIkQualityPressure01()`.
+  </WHAT_WAS_DONE>
+  <STRUCT_LAYOUT>
+    No DTO layout changed. `ManualOverrideLeverTelemetryEntry` and blackbox ring allocation remain unchanged. The `FormerlySerializedAs("lowTierIkBlend")` migration string remains intentionally for serialized field migration only.
+  </STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>
+    IK blend stays continuous: `SmoothStep01(GlobalQualityWeight)` lerps `minimumQualityIkBlend` to `maximumQualityIkBlend`. Minimum quality uses lower IK contribution; middle interpolates; high/ultra uses maximum IK blend without changing lever truth.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    No Vault or SignalBus route changed. Existing native arrays for angles, velocities, targets, pivots, and blackbox remain unchanged.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    No job graph changed. Existing native state lifecycle and `_disposeHandle` remain unchanged; this pass added no `.Complete()` path.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    No asmdef, sibling runtime reference, SignalBus lane, DTO ABI, or GlobalRegistry route changed. Build guard will be rechecked after documentation.
+  </COMPILE_GUARD>
+  <CINEMATIC_CHEATS>
+    IK blend is a presentation fake over the authoritative lever angle/latch route. Quality affects hand target blend only; latch truth, haptics, and prologue signal remain hardware-invariant.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No measured speed claim. Removed one callback route and lifecycle registration pair.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scan found no active scalability listener/callback/registration, `QualityTier`, `ScalabilityTier`, `LowTier`, runtime `lowTier`, `LOW LOD`, or hard `<= 0.3f` telemetry cutoff in `OpenXRManualOverrideLever.cs`; only the `FormerlySerializedAs("lowTierIkBlend")` migration string remains. `git diff --check` passed with line-ending warning only.
+  </VERIFICATION>
+</SELF_AUDIT>
